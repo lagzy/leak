@@ -691,7 +691,16 @@ function PeerJSTransport(code,opts){
     c.on('close',()=>{ conns=conns.filter(o=>o!==c); connIds.delete(c.peer); });
   };
   loadPeerJS().then(Peer=>{
-    peer=new Peer(isHost?peerId:undefined,{debug:1});
+    peer=new Peer(isHost?peerId:undefined,{debug:1,
+      config:{iceServers:[
+        {urls:'stun:stun.l.google.com:19302'},
+        {urls:'stun:stun1.l.google.com:19302'},
+        // free OpenRelay TURN (no account) — relays traffic for symmetric-NAT peers
+        {urls:'turn:openrelay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
+        {urls:'turn:openrelay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject'},
+        {urls:'turn:openrelay.metered.ca:443?transport=tcp',username:'openrelayproject',credential:'openrelayproject'}
+      ]}
+    });
     peer.on('open',id=>{
       ui.peerStatus='open';
       if(isHost){
@@ -707,10 +716,16 @@ function PeerJSTransport(code,opts){
     peer.on('error',err=>{
       ui.peerStatus='error';
       const t=String(err&&err.type||err);
+      // dedupe: only show each distinct P2P error type once per session so the
+      // screen doesn't fill with identical red toasts.
+      const key='p2p-err:'+t;
+      if(ui.p2pSeen&&ui.p2pSeen.has(key))return;
+      if(!ui.p2pSeen)ui.p2pSeen=new Set();
+      ui.p2pSeen.add(key);
       if(t==='unavailable-id'){ toast('a host is already running this room code on the P2P network — try rejoining or pick another code','warn',6000); }
       else if(t==='peer-unavailable'){ toast('room not found on the P2P network — make sure the host created it with cross-device ON','warn',6000); }
-      else if(t==='network'||t==='server-error'){ toast('P2P network unreachable — falling back to same-browser mode','warn',6000); }
-      else { toast('P2P error: '+t+' — try same-browser mode','warn',6000); }
+      else if(t==='network'||t==='server-error'){ toast('P2P network unreachable — try same-browser mode','warn',6000); }
+      else { toast('P2P error: '+t+' — try same-browser mode (same browser always works)','warn',6000); }
     });
   }).catch(e=>{
     ui.peerStatus='error';
