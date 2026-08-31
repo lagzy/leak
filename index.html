@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>leak — hide & seek, but unfair</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💧</text></svg>">
+<link href="https://cdn.jsdelivr.net/fontsource/fonts/space-grotesk@latest/latin-400-normal.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/fontsource/fonts/space-grotesk@latest/latin-500-normal.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/fontsource/fonts/space-grotesk@latest/latin-700-normal.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/fontsource/fonts/jetbrains-mono@latest/latin-400-normal.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/fontsource/fonts/jetbrains-mono@latest/latin-700-normal.css" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{
+  --paper:#f3f3f0; --ink:#141518; --ink-soft:#5c6066;
+  --hider:#12c98f; --hider-dark:#0a8f66;
+  --seeker:#ff4d2a; --seeker-dark:#d13a1a;
+  --gold:#f0b429; --danger:#ff3b30;
+  --card:#ffffff; --line:rgba(20,21,24,.1);
+  --r-lg:22px; --r-md:14px; --r-sm:9px;
+  --shadow:0 10px 30px rgba(20,21,24,.10), 0 2px 8px rgba(20,21,24,.06);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:'Space Grotesk',system-ui,sans-serif;
+  background:var(--paper); color:var(--ink);
+  overflow:hidden; touch-action:manipulation;
+  background-image:radial-gradient(rgba(20,21,24,.045) 1px, transparent 1px);
+  background-size:22px 22px;
+}
+.mono{font-family:'JetBrains Mono',monospace}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select{font-family:inherit;color:inherit}
+
+/* ---------- screens ---------- */
+.screen{position:fixed;inset:0;opacity:0;pointer-events:none;transform:translateY(10px);
+  transition:opacity .45s cubic-bezier(.22,.9,.3,1),transform .45s cubic-bezier(.22,.9,.3,1);
+  display:flex;flex-direction:column;overflow:hidden}
+.screen.active{opacity:1;pointer-events:auto;transform:translateY(0)}
+
+/* ---------- home ---------- */
+#scr-home{align-items:center;justify-content:center;gap:0;padding:24px}
+.logo{font-weight:700;font-size:clamp(64px,17vw,110px);letter-spacing:-.05em;line-height:1;display:flex;align-items:baseline}
+.logo .drop{width:.16em;height:.16em;border-radius:50%;background:var(--seeker);margin-left:.08em;
+  animation:drip 2.6s ease-in-out infinite}
+@keyframes drip{0%,100%{transform:translateY(0) scale(1);opacity:1}50%{transform:translateY(.18em) scale(.86);opacity:.55}}
+.tag{color:var(--ink-soft);margin:10px 0 34px;font-size:15px;letter-spacing:.02em}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
+  box-shadow:var(--shadow);padding:22px;width:min(400px,100%);animation:fadeUp .6s .1s both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.field{width:100%;border:1px solid var(--line);border-radius:var(--r-md);padding:13px 15px;
+  font-size:16px;background:#fafaf8;outline:none;transition:border .2s, box-shadow .2s}
+.field:focus{border-color:var(--ink);box-shadow:0 0 0 3px rgba(20,21,24,.08)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  padding:14px 18px;border-radius:var(--r-md);font-size:16px;font-weight:700;letter-spacing:.01em;
+  background:var(--ink);color:var(--paper);transition:transform .15s,opacity .2s;user-select:none}
+.btn:active{transform:scale(.97)}
+.btn:focus-visible,.icon-btn:focus-visible,.role-chip:focus-visible,.dbtn:focus-visible,
+.field:focus-visible,.sbtn:focus-visible,#chip-casino:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid rgba(20,21,24,.22)}
+.btn.small{width:auto;padding:9px 14px;font-size:13.5px;border-radius:10px}
+.btn[disabled]{opacity:.35;pointer-events:none}
+.btn.hider{background:var(--hider-dark);color:#fff}
+.btn.seeker{background:var(--seeker-dark);color:#fff}
+.divider{display:flex;align-items:center;gap:12px;color:var(--ink-soft);font-size:12px;margin:16px 0;
+  text-transform:uppercase;letter-spacing:.14em}
+.divider:before,.divider:after{content:'';flex:1;height:1px;background:var(--line)}
+.join-row{display:flex;gap:10px}
+.join-row .field{flex:1;text-transform:uppercase;letter-spacing:.28em;font-family:'JetBrains Mono',monospace}
+.foot{margin-top:18px;color:var(--ink-soft);font-size:12px;text-align:center;max-width:380px;line-height:1.6}
+.mode-row{display:flex;gap:8px;margin-top:18px;width:min(400px,100%)}
+.mode-opt{flex:1;padding:10px 8px;border-radius:var(--r-md);font-size:13px;font-weight:600;
+  border:1px solid var(--line);background:var(--card);color:var(--ink-soft);transition:all .2s}
+.mode-opt[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:transparent}
+.foot button{color:var(--ink);text-decoration:underline;text-underline-offset:3px;font-size:12px}
+
+/* ---------- lobby ---------- */
+#scr-lobby{padding:0}
+.lob-scroll{flex:1;overflow-y:auto;padding:18px 18px 120px;max-width:560px;margin:0 auto;width:100%}
+.topbar{display:flex;align-items:center;gap:10px;padding:14px 18px;max-width:560px;margin:0 auto;width:100%}
+.mini-logo{font-weight:700;font-size:22px;letter-spacing:-.04em}
+.mini-logo i{font-style:normal;color:var(--seeker)}
+.code-chip{margin-left:auto;display:flex;align-items:center;gap:8px;background:var(--ink);color:var(--paper);
+  border-radius:999px;padding:8px 8px 8px 16px;font-family:'JetBrains Mono',monospace;font-weight:700;
+  letter-spacing:.3em;font-size:16px}
+.code-chip button{background:rgba(255,255,255,.16);border-radius:999px;padding:6px 12px;color:#fff;font-size:12px;font-weight:700;letter-spacing:.05em}
+.sec-title{font-size:12px;text-transform:uppercase;letter-spacing:.16em;color:var(--ink-soft);margin:22px 0 10px}
+#lobby-map{height:170px;border-radius:var(--r-lg);border:1px solid var(--line);box-shadow:var(--shadow);overflow:hidden;z-index:0}
+.corners{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
+.corner{font-size:11.5px;color:var(--ink-soft);background:var(--card);border:1px solid var(--line);
+  border-radius:8px;padding:7px 9px;display:flex;gap:6px;align-items:center}
+.corner b{color:var(--ink);font-weight:500}
+.corner .n{width:16px;height:16px;border-radius:4px;background:var(--ink);color:var(--paper);
+  font-size:10px;display:inline-flex;align-items:center;justify-content:center;flex:none;font-family:'JetBrains Mono',monospace}
+.plist{display:flex;flex-direction:column;gap:8px}
+.prow{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);
+  border-radius:var(--r-md);padding:11px 13px;animation:fadeUp .35s both}
+.prow .av{width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:14px;color:#fff;background:var(--ink)}
+.prow .nm{font-weight:700;font-size:15px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prow .nm small{display:block;font-weight:400;color:var(--ink-soft);font-size:11px}
+.role-chip{border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;border:1px solid var(--line);transition:all .2s}
+.role-chip.hider{background:rgba(18,201,143,.14);color:var(--hider-dark);border-color:rgba(18,201,143,.4)}
+.role-chip.seeker{background:rgba(255,77,42,.12);color:var(--seeker-dark);border-color:rgba(255,77,42,.4)}
+.role-chip.random{background:rgba(20,21,24,.06);color:var(--ink-soft)}
+.settings{display:flex;gap:10px}
+.settings label{flex:1;background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:10px 12px;font-size:12px;color:var(--ink-soft)}
+.settings select{width:100%;border:none;background:none;font-weight:700;font-size:15px;color:var(--ink);outline:none;margin-top:3px}
+.lob-actions{position:fixed;bottom:0;left:0;right:0;padding:14px 18px calc(14px + env(safe-area-inset-bottom));
+  background:linear-gradient(transparent,var(--paper) 30%);display:flex;gap:10px;justify-content:center;max-width:560px;margin:0 auto}
+.lob-note{font-size:11px;color:var(--ink-soft);text-align:center;margin-top:14px;line-height:1.6}
+.host-pill{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;background:var(--ink);color:var(--paper);
+  padding:2px 7px;border-radius:6px;margin-left:6px;vertical-align:middle}
+#role-hint{margin-top:10px;opacity:.7}
+
+/* ---------- game ---------- */
+#scr-game{background:#0d0f10}
+#map{position:absolute;inset:0;z-index:0;background:#111}
+.hud-top{position:absolute;top:0;left:0;right:0;z-index:19;
+  padding:calc(6px + env(safe-area-inset-top)) 6px 10px;
+  background:linear-gradient(180deg,rgba(13,15,16,.55) 0%,rgba(13,15,16,.18) 60%,transparent 100%);
+  pointer-events:none}
+.hud-top-inner{display:flex;align-items:center;gap:8px;pointer-events:none}
+.hud-pill{pointer-events:auto;background:rgba(13,15,16,.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid rgba(255,255,255,.12);border-radius:999px;color:#fff;box-shadow:0 6px 20px rgba(0,0,0,.35)}
+.hud-phase{padding:8px 14px;display:flex;align-items:center;gap:9px;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.hud-phase .dot{width:8px;height:8px;border-radius:50%;background:var(--hider);animation:pulse 1.6s infinite}
+.hud-phase .dot.seeker{background:var(--seeker)}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
+.hud-timer{padding:8px 14px;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:16px;letter-spacing:.04em}
+.hud-right{margin-left:auto;display:flex;gap:8px;pointer-events:auto}
+.hud-hearts{padding:8px 13px;font-size:15px;letter-spacing:2px;display:flex;gap:1px;align-items:center}
+.hud-hearts .h{transition:all .3s}
+.hud-hearts .h.off{opacity:.22;filter:grayscale(1)}
+.hud-hearts.shake{animation:shake .5s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}
+.icon-btn{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px}
+#chip-casino{padding:9px 15px;background:rgba(240,180,41,.92);color:#231a02;font-weight:700;font-size:13px;
+  animation:casinoPulse 1.4s infinite;display:none}
+#chip-casino.on{display:block}
+@keyframes casinoPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+#zone-banner,#slow-banner{position:absolute;left:50%;transform:translateX(-50%);z-index:22;display:none;
+  border-radius:14px;padding:10px 16px;color:#fff;font-weight:700;font-size:13.5px;text-align:center;
+  box-shadow:0 8px 24px rgba(0,0,0,.4);max-width:calc(100% - 32px)}
+#zone-banner{top:calc(64px + env(safe-area-inset-top));background:var(--danger);animation:blink 1s infinite}
+#slow-banner{top:calc(64px + env(safe-area-inset-top));background:#3b3f45;border:1px solid rgba(255,255,255,.2)}
+#slow-banner.fast{background:var(--danger)}
+@keyframes blink{50%{opacity:.72}}
+#buff-bar{position:absolute;top:calc(62px + env(safe-area-inset-top));left:12px;z-index:18;display:flex;
+  flex-direction:column;gap:6px;pointer-events:none;max-width:70%}
+.buff-chip{pointer-events:auto;background:rgba(13,15,16,.78);backdrop-filter:blur(12px);color:#fff;
+  border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:7px 11px;font-size:12.5px;font-weight:500;
+  display:flex;gap:7px;align-items:center;animation:fadeUp .3s both}
+.buff-chip.debuff{border-color:rgba(255,77,42,.6)}
+.buff-chip .use{background:#fff;color:var(--ink);border-radius:8px;padding:3px 9px;font-size:11px;font-weight:700}
+.buff-chip .t{font-family:'JetBrains Mono',monospace;font-size:11px;opacity:.75}
+.dock{position:absolute;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:20;
+  display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
+.dock-card{pointer-events:auto;background:rgba(13,15,16,.82);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,.13);border-radius:20px;padding:13px 16px;color:#fff;width:min(430px,100%);
+  box-shadow:0 12px 34px rgba(0,0,0,.45);animation:fadeUp .4s both}
+.dock-title{font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.6;margin-bottom:9px;font-weight:700}
+.dock-btns{display:flex;gap:8px}
+.dbtn{flex:1;padding:12px;border-radius:13px;font-weight:700;font-size:14.5px;color:#fff;
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);transition:transform .15s,background .2s}
+.dbtn:active{transform:scale(.96)}
+.dbtn.primary{background:var(--hider-dark);border-color:transparent}
+.dbtn.primary.seeker{background:var(--seeker-dark)}
+.dbtn.gold{background:var(--gold);color:#231a02;border-color:transparent}
+.dock-hint{font-size:11.5px;opacity:.55;margin-top:9px;text-align:center;line-height:1.5}
+.nearby-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.nearby-row .sbtn.catch{flex:1 1 auto;font-size:13px;padding:11px 10px}
+.pos-chip{position:absolute;right:12px;bottom:calc(150px + env(safe-area-inset-bottom));z-index:20;
+  padding:8px 13px;font-size:12px;font-weight:700;letter-spacing:.06em}
+
+/* map markers */
+.mk{position:relative}
+.mk .d{width:16px;height:16px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5)}
+.mk .lbl{position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:3px;white-space:nowrap;
+  background:rgba(13,15,16,.85);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;letter-spacing:.03em}
+.mk.me .d{box-shadow:0 0 0 5px rgba(255,255,255,.25),0 2px 8px rgba(0,0,0,.5)}
+.fake-dot{width:15px;height:15px;border-radius:50%;background:var(--seeker);border:2px solid #fff;
+  box-shadow:0 0 0 0 rgba(255,77,42,.6);animation:fakePulse 1.3s infinite}
+@keyframes fakePulse{0%{box-shadow:0 0 0 0 rgba(255,77,42,.55)}100%{box-shadow:0 0 0 16px rgba(255,77,42,0)}}
+.corner-dot{width:11px;height:11px;background:#fff;border-radius:3px;border:2px solid var(--ink);box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.leaflet-container{font-family:'Space Grotesk',sans-serif}
+.leaflet-control-attribution{background:rgba(13,15,16,.6)!important;color:#aaa!important;font-size:9px!important}
+.leaflet-control-attribution a{color:#ccc!important}
+
+/* ---------- overlays ---------- */
+.ov{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;
+  background:rgba(13,15,16,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  opacity:0;pointer-events:none;transition:opacity .3s}
+.ov.open{opacity:1;pointer-events:auto}
+.panel{background:var(--card);border-radius:26px;padding:26px;width:min(420px,100%);max-height:86vh;overflow-y:auto;
+  box-shadow:0 24px 60px rgba(0,0,0,.35);transform:translateY(18px) scale(.97);transition:transform .35s cubic-bezier(.22,1.1,.36,1)}
+.ov.open .panel{transform:none}
+.panel h2{font-size:24px;letter-spacing:-.02em;margin-bottom:6px}
+.panel .sub{color:var(--ink-soft);font-size:14px;line-height:1.55;margin-bottom:18px}
+
+#ov-reveal{background:#0d0f10;flex-direction:column;gap:0}
+#ov-reveal .role-word{font-size:clamp(48px,14vw,84px);font-weight:700;letter-spacing:-.04em;color:#fff;
+  animation:revealIn .8s cubic-bezier(.22,1.1,.36,1) both}
+#ov-reveal .role-sub{color:rgba(255,255,255,.6);margin:14px 0 40px;font-size:15px;text-align:center;max-width:320px;line-height:1.6;animation:fadeUp .6s .25s both}
+#ov-reveal .btn{width:min(300px,80%);animation:fadeUp .6s .4s both}
+@keyframes revealIn{from{opacity:0;transform:scale(.7);filter:blur(8px)}to{opacity:1;transform:none;filter:none}}
+#ov-reveal.hider{background:radial-gradient(120% 120% at 50% 110%, #0e6e50 0%, #0d0f10 62%)}
+#ov-reveal.seeker{background:radial-gradient(120% 120% at 50% 110%, #a52c12 0%, #0d0f10 62%)}
+#ov-reveal .mini{position:absolute;top:calc(20px + env(safe-area-inset-top));left:24px;color:rgba(255,255,255,.8);font-weight:700;font-size:20px;letter-spacing:-.04em}
+
+/* casino */
+.slot{display:flex;gap:10px;justify-content:center;margin:6px 0 20px}
+.reel{width:74px;height:88px;background:#141518;border-radius:16px;display:flex;align-items:center;justify-content:center;
+  font-size:40px;box-shadow:inset 0 4px 14px rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.08)}
+.reel.spin{animation:reelShake .1s infinite}
+@keyframes reelShake{0%{transform:translateY(-2px)}100%{transform:translateY(2px)}}
+.bcards{display:flex;gap:12px}
+.bcard{flex:1;border:1.5px solid var(--line);border-radius:18px;padding:16px 13px;text-align:center;cursor:pointer;
+  transition:transform .2s,border-color .2s,box-shadow .2s;background:#fafaf8;animation:flipIn .5s both}
+.bcard:nth-child(2){animation-delay:.12s}
+@keyframes flipIn{from{opacity:0;transform:rotateY(70deg)}to{opacity:1;transform:none}}
+.bcard:hover{transform:translateY(-4px)}
+.bcard.picked{border-color:var(--ink);box-shadow:0 0 0 3px rgba(20,21,24,.15);transform:translateY(-4px)}
+.bcard .ic{font-size:34px;margin-bottom:8px}
+.bcard .bn{font-weight:700;font-size:16px;letter-spacing:-.01em;margin-bottom:6px}
+.bcard .bd{font-size:11.5px;color:var(--ink-soft);line-height:1.5}
+.gold-title{color:var(--ink);display:flex;align-items:center;gap:8px}
+.gold-title span.badge{background:var(--gold);border-radius:8px;padding:3px 8px;font-size:11px;font-weight:700;color:#231a02}
+
+/* scream */
+#ov-scream .panel{background:#141518;color:#fff;text-align:center;border:1px solid rgba(255,77,42,.5)}
+#sc-time{font-family:'JetBrains Mono',monospace;font-size:46px;font-weight:700;color:var(--seeker);margin:4px 0 2px}
+#sc-btn{width:168px;height:168px;border-radius:50%;margin:20px auto;background:var(--seeker);color:#fff;
+  font-size:19px;font-weight:700;line-height:1.3;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 10px 40px rgba(255,77,42,.4);transition:transform .12s;user-select:none;touch-action:none}
+#sc-btn.held{transform:scale(.92);box-shadow:0 4px 18px rgba(255,77,42,.55)}
+.sc-meter{height:12px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;margin:4px 0 8px}
+.sc-meter i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--seeker),var(--gold));transition:width .12s}
+#sc-db{font-family:'JetBrains Mono',monospace;font-size:13px;opacity:.7}
+.sc-prog{height:8px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;margin-top:14px}
+.sc-prog i{display:block;height:100%;width:0%;background:var(--hider);transition:width .15s}
+
+/* sheet */
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:90;background:var(--card);border-radius:26px 26px 0 0;
+  box-shadow:0 -14px 40px rgba(0,0,0,.2);transform:translateY(105%);transition:transform .4s cubic-bezier(.22,1,.36,1);
+  max-height:74vh;display:flex;flex-direction:column;padding:10px 18px calc(18px + env(safe-area-inset-bottom));max-width:560px;margin:0 auto}
+.sheet.open{transform:none}
+.grab{width:44px;height:5px;border-radius:99px;background:rgba(20,21,24,.15);margin:6px auto 14px;flex:none}
+.sheet-body{overflow-y:auto}
+.srow{display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--line)}
+.srow:last-child{border:none}
+.srow .nm{flex:1;min-width:0;font-weight:700;font-size:14.5px}
+.srow .nm small{display:block;font-weight:400;font-size:11px;color:var(--ink-soft)}
+.tag-role{font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:6px;letter-spacing:.06em;text-transform:uppercase}
+.tag-role.hider{background:rgba(18,201,143,.15);color:var(--hider-dark)}
+.tag-role.seeker{background:rgba(255,77,42,.13);color:var(--seeker-dark)}
+.tag-role.dead{background:rgba(20,21,24,.08);color:var(--ink-soft)}
+.srow .hh{font-size:12px;letter-spacing:1px;min-width:44px;text-align:center}
+.sbtn{border-radius:9px;padding:7px 11px;font-size:12px;font-weight:700;border:1px solid var(--line);white-space:nowrap}
+.sbtn.catch{background:var(--seeker-dark);color:#fff;border-color:transparent}
+.sbtn.warn{color:var(--danger);border-color:rgba(255,59,48,.4)}
+.sbtn.quit{color:var(--ink-soft)}
+
+/* toasts */
+#toasts{position:fixed;top:calc(14px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:300;
+  display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;width:min(400px,calc(100% - 28px))}
+.toast{background:rgba(13,15,16,.9);color:#fff;border-radius:14px;padding:11px 17px;font-size:13.5px;font-weight:500;
+  box-shadow:0 10px 30px rgba(0,0,0,.35);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.1);
+  animation:toastIn .45s cubic-bezier(.22,1.2,.36,1) both;text-align:center;max-width:100%}
+.toast.warn{background:rgba(255,59,48,.94)}
+.toast.good{background:rgba(10,143,102,.94)}
+.toast.gold{background:rgba(240,180,41,.95);color:#231a02}
+.toast.out{animation:toastOut .35s both}
+@keyframes toastIn{from{opacity:0;transform:translateY(-16px) scale(.92)}to{opacity:1;transform:none}}
+@keyframes toastOut{to{opacity:0;transform:translateY(-12px) scale(.95)}}
+
+/* dev */
+#dev{position:fixed;left:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:250}
+#dev-toggle{background:rgba(20,21,24,.75);color:#fff;border-radius:999px;padding:7px 12px;font-size:11px;font-weight:700;
+  letter-spacing:.08em;opacity:.55;backdrop-filter:blur(8px)}
+#dev-panel{display:none;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);
+  padding:10px;margin-bottom:8px;flex-direction:column;gap:6px;width:172px}
+#dev.open #dev-panel{display:flex}
+#dev-panel button{text-align:left;padding:8px 10px;border-radius:9px;font-size:12px;font-weight:500;background:#f4f4f1}
+#dev-panel button:active{background:#e8e8e3}
+#dev-panel .t{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--ink-soft);padding:2px 10px}
+
+/* end */
+#ov-end{z-index:120}
+#end-title{font-size:clamp(40px,10vw,60px);letter-spacing:-.03em}
+.end-win{color:var(--hider-dark)} .end-lose{color:var(--seeker-dark)}
+.end-list{margin:16px 0 20px;display:flex;flex-direction:column;gap:7px}
+.end-row{display:flex;gap:9px;align-items:center;font-size:14px;background:#f6f6f3;border-radius:11px;padding:9px 12px}
+.end-row .st{margin-left:auto;font-size:12px;color:var(--ink-soft);font-weight:700}
+
+.how-list{display:flex;flex-direction:column;gap:9px;font-size:13.5px;line-height:1.55;color:var(--ink)}
+.how-list b{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-soft);margin-bottom:1px}
+::-webkit-scrollbar{width:0;height:0}
+@media (prefers-reduced-motion:reduce){
+  .logo .drop,.hud-phase .dot,.fake-dot,#chip-casino,.casinoPulse,.reel.spin,
+  .toast,.panel,.prow,.bcard,.dock-card,.buff-chip{animation:none!important}
+  .screen,.ov{transition:opacity .15s linear!important;transform:none!important}
+  *{scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ HOME ============ -->
+<div id="scr-home" class="screen active">
+  <div class="logo">leak<span class="drop"></span></div>
+  <div class="tag">hide &amp; seek — but unfair.</div>
+  <div class="card">
+    <input id="home-name" class="field" maxlength="14" placeholder="your name" autocomplete="off">
+    <div style="height:10px"></div>
+    <button id="btn-create" class="btn">create game</button>
+    <div class="divider">or join</div>
+    <div class="join-row">
+      <input id="home-code" class="field" maxlength="4" placeholder="CODE" autocomplete="off">
+      <button id="btn-join" class="btn ghost" style="width:110px;flex:none">join</button>
+    </div>
+  </div>
+  <div class="mode-row" id="mode-row">
+    <button class="mode-opt" id="mode-local" aria-pressed="true">same browser (tabs)</button>
+    <button class="mode-opt" id="mode-peer" aria-pressed="false">cross device (P2P)</button>
+  </div>
+  <div class="foot" id="home-foot">
+    prototype · syncs between tabs of <b>this browser</b> (open a tab per player) · add bots to test solo ·
+    works on GitHub Pages · <button id="btn-how">how to play</button>
+  </div>
+</div>
+
+<!-- ============ LOBBY ============ -->
+<div id="scr-lobby" class="screen">
+  <div class="topbar">
+    <button class="icon-btn" id="btn-leave" aria-label="leave room" style="background:rgba(20,21,24,.06)">←</button>
+    <div class="mini-logo">leak<i>.</i></div>
+    <div class="code-chip"><span id="lobby-code">----</span><button id="btn-copy" aria-label="copy room code">copy</button></div>
+  </div>
+  <div class="lob-scroll">
+    <div class="sec-title">play zone — Root, 6037</div>
+    <div id="lobby-map"></div>
+    <div class="corners" id="corner-list"></div>
+    <div class="sec-title">settings <span id="set-lock" style="text-transform:none;letter-spacing:0"></span></div>
+    <div class="settings" id="lobby-settings">
+      <label>hide time<select id="sel-hide"><option value="5">5 min</option><option value="10" selected>10 min</option><option value="15">15 min</option></select></label>
+      <label>game length<select id="sel-total"><option value="30">30 min</option><option value="45" selected>45 min</option><option value="60">60 min</option></select></label>
+      <label>casino<select disabled style="opacity:.6"><option>every 15 min</option></select></label>
+    </div>
+    <div class="sec-title">players <span id="pcount" style="text-transform:none;letter-spacing:0"></span></div>
+    <div class="plist" id="lobby-players"></div>
+    <div style="height:10px"></div>
+    <button id="btn-addbot" class="btn ghost" style="font-size:14px;padding:11px">＋ add test bot</button>
+    <div class="lob-note" id="role-hint">tap a role chip to cycle hider → seeker → random</div>
+    <div class="lob-note">everyone starts at <b>Bahnhofstrasse 17</b> · roles are picked or random ·
+    nobody may leave the rectangle · breaking rules costs a ♥</div>
+  </div>
+  <div class="lob-actions">
+    <button id="btn-start" class="btn" style="max-width:380px">lock roles &amp; start</button>
+  </div>
+</div>
+
+<!-- ============ GAME ============ -->
+<div id="scr-game" class="screen">
+  <div id="map"></div>
+  <div class="hud-top"><div class="hud-top-inner">
+    <div class="hud-pill hud-phase"><span class="dot" id="hud-dot"></span><span id="hud-phase">—</span></div>
+    <div class="hud-pill hud-timer" id="hud-timer">00:00</div>
+    <div class="hud-right">
+      <button class="hud-pill icon-btn" id="chip-casino" aria-label="open casino">🎰 casino open</button>
+      <div class="hud-pill hud-hearts" id="hud-hearts" aria-label="hearts remaining"></div>
+      <button class="hud-pill icon-btn" id="btn-mute" aria-label="toggle sound">🔔</button>
+    </div>
+  </div></div>
+  <div id="zone-banner">⚠ you left the zone — get back!</div>
+  <div id="slow-banner">🐌 slow-mo active — walk max 3 km/h</div>
+  <div id="buff-bar"></div>
+  <button class="hud-pill pos-chip" id="btn-posmode" aria-label="toggle position mode">📍 sim</button>
+  <div class="dock" id="dock"></div>
+</div>
+
+<!-- ============ OVERLAYS ============ -->
+<div id="ov-reveal" class="ov">
+  <div class="mini">leak.</div>
+  <div class="role-word" id="reveal-word">you hide.</div>
+  <div class="role-sub" id="reveal-sub"></div>
+  <button class="btn" id="btn-enter">enter the field</button>
+</div>
+
+<div id="ov-casino" class="ov"><div class="panel">
+  <h2 class="gold-title">casino <span class="badge">every 15 min</span></h2>
+  <p class="sub">spin, then pick <b>one</b> of the two buffs.</p>
+  <div class="slot"><div class="reel" id="r0">🍒</div><div class="reel" id="r1">🔔</div><div class="reel" id="r2">⭐</div></div>
+  <button class="btn" id="btn-spin" style="background:var(--gold);color:#231a02">🎰 pull the lever</button>
+  <div class="bcards" id="casino-cards" style="display:none;margin-top:16px"></div>
+</div></div>
+
+<div id="ov-scream" class="ov"><div class="panel">
+  <h2 style="color:var(--seeker)">🎤 scream order!</h2>
+  <p class="sub" style="color:rgba(255,255,255,.6)">a seeker played a buff on you. scream at <b>65</b>+ dB
+  for <b>4 seconds</b>. fail or ignore = <b>lose a ♥</b>.</p>
+  <div id="sc-time">30</div>
+  <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.5;margin-bottom:6px">seconds left</div>
+  <div id="sc-btn">HOLD<br>TO SCREAM</div>
+  <div class="sc-meter"><i id="sc-fill"></i></div>
+  <div id="sc-db">-- dB</div>
+  <div class="sc-prog"><i id="sc-prog"></i></div>
+  <div style="font-size:11px;opacity:.5;margin-top:8px">screamed so far: <span class="mono" id="sc-held">0.0</span>s / 4s</div>
+  <button class="btn" id="sc-retry" style="display:none;margin-top:10px;background:rgba(255,255,255,.12);font-size:13px;padding:9px">🎤 retry mic permission</button>
+</div></div>
+
+<div id="ov-shift" class="ov"><div class="panel">
+  <h2>📍 shift</h2>
+  <p class="sub">relocate your hiding spot — max <b>20 m</b> from where you are.</p>
+  <label class="sec-title" style="margin-top:0">direction — <span class="mono" id="sh-bv">180</span>°</label>
+  <input type="range" id="sh-bearing" min="0" max="359" value="180" style="width:100%">
+  <label class="sec-title">distance — <span class="mono" id="sh-dv">12</span> m</label>
+  <input type="range" id="sh-dist" min="1" max="20" value="12" style="width:100%">
+  <div style="height:16px"></div>
+  <button class="btn hider" id="btn-shift-ok">move there</button>
+  <div style="height:8px"></div>
+  <button class="btn ghost" id="btn-shift-cancel">cancel</button>
+</div></div>
+
+<div id="ov-confirm" class="ov"><div class="panel">
+  <h2 id="cf-title"></h2>
+  <p class="sub" id="cf-text"></p>
+  <button class="btn" id="cf-ok">confirm</button>
+  <div style="height:8px"></div>
+  <button class="btn ghost" id="cf-cancel">cancel</button>
+</div></div>
+
+<div id="ov-how" class="ov"><div class="panel">
+  <h2>how to play</h2>
+  <p class="sub">real-life hide &amp; seek around Root, with chaotic buffs.</p>
+  <div class="how-list">
+    <div><b>1 · start</b>everyone meets at Bahnhofstrasse 17. pick hider / seeker / random.</div>
+    <div><b>2 · hide</b>hiders get 10 minutes to hide inside the rectangle. seekers count down.</div>
+    <div><b>3 · seek</b>seekers hunt. find a hider in real life, then tap <i>catch</i> on their name.</div>
+    <div><b>4 · casino</b>every 15 minutes a casino opens: spin, get 2 buff offers, keep one. seeker buffs sabotage hiders (scream orders, radar circles, ringing phones). hider buffs fight back (slow-mo, decoys, 20 m shifts).</div>
+    <div><b>5 · hearts</b>break a rule (leave the zone, ignore a scream, get reported) → lose 1 of 3 ♥. zero hearts = you lose automatically.</div>
+    <div><b>6 · win</b>seekers win by catching every hider before time runs out. hiders win by surviving.</div>
+  </div>
+  <div style="height:16px"></div>
+  <button class="btn" id="btn-how-close">got it</button>
+</div></div>
+
+<div id="ov-end" class="ov"><div class="panel">
+  <h2 id="end-title">—</h2>
+  <p class="sub" id="end-sub"></p>
+  <div class="end-list" id="end-list"></div>
+  <button class="btn" id="btn-rematch">rematch (same room)</button>
+  <div style="height:8px"></div>
+  <button class="btn ghost" id="btn-end-home">back to home</button>
+</div></div>
+
+<div class="sheet" id="sheet">
+  <div class="grab"></div>
+  <div class="sec-title" style="margin-top:0">players</div>
+  <div class="sheet-body" id="sheet-list"></div>
+</div>
+
+<div id="dev">
+  <div id="dev-panel">
+    <div class="t">prototype tools</div>
+    <button id="dev-skip">⏩ end hiding phase</button>
+    <button id="dev-casino">🎰 open casino now</button>
+    <button id="dev-heart">💔 lose a heart</button>
+    <button id="dev-end">🏁 end game now</button>
+    <button id="dev-reset">🧹 reset room</button>
+  </div>
+  <button id="dev-toggle" aria-label="toggle developer tools">⚙ dev</button>
+</div>
+
+<div id="toasts"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+/* ================================================================
+   leak — hide & seek prototype (GitHub Pages friendly, no server)
+   storage-safe: works even in sandboxed preview iframes where
+   localStorage/sessionStorage are blocked (falls back to memory).
+   sync: BroadcastChannel + localStorage (same browser tabs).
+================================================================ */
+'use strict';
+const $=id=>document.getElementById(id);
+const now=()=>Date.now();
+const uid=()=>Math.random().toString(36).slice(2,10);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const fmt=ms=>{ms=Math.max(0,ms);const s=Math.floor(ms/1000);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
+
+/* ---------------- safe storage (sandbox-proof) ---------------- */
+function safeRef(name){ try{return window[name];}catch(e){return null;} }
+function makeStore(webStorage){
+  const mem=new Map();
+  return {
+    get(k){ try{ if(webStorage){const v=webStorage.getItem(k); if(v!==null)return v;} }catch(e){} return mem.has(k)?mem.get(k):null; },
+    set(k,v){ try{ webStorage&&webStorage.setItem(k,v); }catch(e){} mem.set(k,v); },
+    del(k){ try{ webStorage&&webStorage.removeItem(k); }catch(e){} mem.delete(k); }
+  };
+}
+const LS=makeStore(safeRef('localStorage'));
+const SS=makeStore(safeRef('sessionStorage'));
+const storageAvailable=(()=>{try{const s=safeRef('localStorage');if(!s)return false;s.getItem('x');return true;}catch(e){return false;}})();
+
+/* ---------------- zone (geocoded via OSM Nominatim) ---------------- */
+const CORNERS=[
+ {name:'Bahnhofstrasse 17',lat:47.1179626,lng:8.3919364},
+ {name:'Luzernerstrasse 2',lat:47.1161184,lng:8.3929389},
+ {name:'Schulstrasse 4',   lat:47.1140680,lng:8.3896612},
+ {name:'Oberwilstrasse 1', lat:47.1161175,lng:8.3959608},
+];
+const PADLAT=0.00025, PADLNG=0.00042; // ~25-28 m pad
+// ZONE_POLY: the actual 4-corner polygon shape (order matters for the draw + point-in-polygon).
+const ZONE_POLY=CORNERS.map(c=>[c.lat,c.lng]);
+const Z={
+ minLat:Math.min(...CORNERS.map(c=>c.lat))-PADLAT,
+ maxLat:Math.max(...CORNERS.map(c=>c.lat))+PADLAT,
+ minLng:Math.min(...CORNERS.map(c=>c.lng))-PADLNG,
+ maxLng:Math.max(...CORNERS.map(c=>c.lng))+PADLNG,
+};
+const START={lat:CORNERS[0].lat,lng:CORNERS[0].lng};
+// inZone: point-in-polygon test against the real 4-corner shape (bounding box Z is only for fitBounds/mask).
+// boundary tolerance: a point within ~3 m of any edge/vertex counts as inside, so players
+// standing exactly on a corner (e.g. START at Bahnhofstrasse 17) aren't flagged out-of-zone.
+const _segDistM=(p,a,b)=>{ // approx metres from point p to segment a-b (equirectangular, fine at this scale)
+  const toRad=x=>x*Math.PI/180,R=6371000,k=Math.cos(toRad(p.lat));
+  const ax=(a.lng-p.lng)*k*R*0.5,ay=(a.lat-p.lat)*R*0.5,bx=(b.lng-p.lng)*k*R*0.5,by=(b.lat-p.lat)*R*0.5;
+  const dx=bx-ax,dy=by-ay,t=Math.max(0,Math.min(1,((ax*dx)+(ay*dy))/((dx*dx)+(dy*dy)||1)));
+  const ex=ax+dx*t,ey=ay+dy*t;return Math.sqrt(ex*ex+ey*ey);
+};
+const inZone=p=>{
+  if(!p)return false;
+  if(p.lat<Z.minLat||p.lat>Z.maxLat||p.lng<Z.minLng||p.lng>Z.maxLng)return false; // fast reject
+  let inside=false;
+  for(let i=0,j=ZONE_POLY.length-1;i<ZONE_POLY.length;j=i++){
+    const yi=ZONE_POLY[i][0],xi=ZONE_POLY[i][1],yj=ZONE_POLY[j][0],xj=ZONE_POLY[j][1];
+    const intersect=((yi>p.lat)!==(yj>p.lat))&&(p.lng<(xj-xi)*(p.lat-yi)/(yj-yi)+xi);
+    if(intersect)inside=!inside;
+  }
+  if(inside)return true;
+  // on/near the boundary? treat as inside (tolerance ~5 m for GPS jitter + corner-standing).
+  for(let i=0,j=ZONE_POLY.length-1;i<ZONE_POLY.length;j=i++){
+    if(_segDistM(p,{lat:ZONE_POLY[i][0],lng:ZONE_POLY[i][1]},{lat:ZONE_POLY[j][0],lng:ZONE_POLY[j][1]})<=5)return true;
+  }
+  return false;
+};
+const randInZone=()=>{ // sample inside the polygon: reject points outside (bounded retries).
+  for(let i=0;i<30;i++){const lat=Z.minLat+Math.random()*(Z.maxLat-Z.minLat),lng=Z.minLng+Math.random()*(Z.maxLng-Z.minLng);if(inZone({lat,lng}))return{lat,lng};}
+  return START;
+};
+function distM(a,b){if(!a||!b)return 1e9;const R=6371000,r=x=>x*Math.PI/180;
+ const dLat=r(b.lat-a.lat),dLng=r(b.lng-a.lng);
+ const h=Math.sin(dLat/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dLng/2)**2;
+ return 2*R*Math.asin(Math.sqrt(h));}
+function dest(p,bearing,m){const R=6371000,r=x=>x*Math.PI/180,br=r(bearing);
+ const la1=r(p.lat),lo1=r(p.lng),d=m/R;
+ const la2=Math.asin(Math.sin(la1)*Math.cos(d)+Math.cos(la1)*Math.sin(d)*Math.cos(br));
+ const lo2=lo1+Math.atan2(Math.sin(br)*Math.sin(d)*Math.cos(la1),Math.cos(d)-Math.sin(la1)*Math.sin(la2));
+ return{lat:la2*180/Math.PI,lng:lo2*180/Math.PI};}
+
+/* ---------------- identity ---------------- */
+/* myId persists in localStorage (not session) so a reopened tab reclaims its
+   seat instead of appearing as a new player (Phase 1 #3: reconnection). */
+let myId=LS.get('leak.id'); if(!myId){myId=uid();LS.set('leak.id',myId);}
+let myName=LS.get('leak.name')||'';
+let room=null, tickIv=null; // transport declared in the transport block
+let muted=LS.get('leak.muted')==='1';
+const ui={screen:'home',simMode:true,sheetOpen:false,screamOpen:false,lastCasinoWin:0,seenLog:new Set(),revealKey:'',lastPosWrite:0,zoneOutSince:0,lastZoneHit:0,botTick:0,lastMapUpd:0,seenReveal:new Set(),zoneViolations:0,hostHeart:0,hostSeen:0,buffWarned:new Set(),seenCasinoOnce:false};
+
+const me=()=>room?room.players.find(p=>p.id===myId):null;
+const aliveHiders=()=>room?room.players.filter(p=>p.role==='hider'&&p.status==='alive'):[];
+const aliveSeekers=()=>room?room.players.filter(p=>p.role==='seeker'&&p.status==='alive'):[];
+const roomKey=c=>'leak-room-'+c;
+
+/* mergeRoom: per-field merge of an incoming room into our local room, so two
+   tabs that commit near-simultaneously don't clobber each other (Phase 1 #1).
+   Players/fx/log union by id; newer per-element seq wins; envelope scalars
+   (phase, timestamps, hostId, winner) follow the higher room seq. */
+function mergeRoom(incoming){
+  if(!room||!incoming||incoming.code!==room.code){return false;}
+  let changed=false;
+  if((incoming.seq||0)>=(room.seq||0)){
+    if(room.phase!==incoming.phase){room.phase=incoming.phase;changed=true;}
+    if((room.startedAt||0)!==(incoming.startedAt||0)){room.startedAt=incoming.startedAt;changed=true;}
+    room.hideMin=incoming.hideMin; room.totalMin=incoming.totalMin; room.casinoMin=incoming.casinoMin;
+    room.hideEndsAt=Math.max(room.hideEndsAt||0,incoming.hideEndsAt||0);
+    room.gameEndsAt=Math.max(room.gameEndsAt||0,incoming.gameEndsAt||0);
+    room.forceCasinoId=Math.max(room.forceCasinoId||0,incoming.forceCasinoId||0);
+    if(room.hostId!==incoming.hostId){room.hostId=incoming.hostId;changed=true;}
+    if(room.winner!==incoming.winner){room.winner=incoming.winner;changed=true;}
+    room.seq=incoming.seq; changed=true;
+  }
+  const byId=new Map(room.players.map(p=>[p.id,p]));
+  incoming.players.forEach(ip=>{const cur=byId.get(ip.id);
+    if(!cur){byId.set(ip.id,ip);changed=true;}
+    else if((ip.seq||0)>=(cur.seq||0)){byId.set(ip.id,ip);changed=true;}});
+  room.players=[...byId.values()];
+  const fxById=new Map(room.fx.map(f=>[f.id,f]));
+  incoming.fx.forEach(ifx=>{const cur=fxById.get(ifx.id);
+    if(!cur||(ifx.until||0)>(cur.until||0))fxById.set(ifx.id,ifx);});
+  room.fx=[...fxById.values()];
+  const logIds=new Set(room.log.map(l=>l.id));
+  incoming.log.forEach(l=>{if(!logIds.has(l.id)){room.log.push(l);changed=true;}});
+  if(room.log.length>40)room.log=room.log.slice(-40);
+  return changed;
+}
+function applyRoom(incoming){ if(!room){room=incoming;return true;} return mergeRoom(incoming); }
+
+/* ---------------- transport abstraction (Phase 3 #18) ----------------
+   A Transport owns how room state and presence travel between clients.
+   LocalTransport = today's behavior (BroadcastChannel + localStorage event
+   + ask handshake). PeerJSTransport (Phase 3 #19) is opt-in for cross-device.
+   Interface:
+     .broadcast(room)        — push a room snapshot to peers
+     .ask(code)              — request the current room (join handshake)
+     .presence()             — host heartbeat ping
+     .close()                — tear down
+   Incoming updates arrive via the shared onIncomingRoom/onPresence hooks
+   (applyRoom/renderAll), set up once below. */
+let transport=null;
+
+function LocalTransport(code){
+  const key=roomKey(code);
+  let bc=null;
+  try{ bc=new BroadcastChannel('leak-ch-'+code); }catch(e){ bc={postMessage:function(){},close:function(){}}; }
+  bc.onmessage=e=>{
+    const d=e.data||{};
+    if(d.ask){ if(room&&room.code===d.ask){ try{bc.postMessage({room});}catch(_){} } return; }
+    if(d.presence){ ui.hostSeen=Date.now(); return; }
+    if(d.room){ if(applyRoom(d.room))renderAll(); }
+  };
+  return {
+    broadcast(room){ LS.set(key,JSON.stringify(room)); try{bc.postMessage({room});}catch(e){} },
+    ask(code){ try{bc.postMessage({ask:code});}catch(e){} },
+    presence(){ try{bc.postMessage({presence:1});}catch(e){} },
+    close(){ try{bc&&bc.close();}catch(e){} }
+  };
+}
+// storage event is the LocalTransport fallback sync path between tabs.
+window.addEventListener('storage',e=>{
+  if(room&&e.key===roomKey(room.code)&&e.newValue){
+    try{const inc=JSON.parse(e.newValue); if(applyRoom(inc))renderAll();}catch(_){}
+  }
+});
+
+function saveRoom(){
+  if(!room)return;
+  if(typeof room.seq==='number')room.seq++; else room.seq=1;
+  LS.set(roomKey(room.code),JSON.stringify(room));
+  if(transport)transport.broadcast(room);
+}
+/* PeerJSTransport: free cross-device sync over WebRTC data channels, using the
+   free public PeerJS Cloud signaling server (no account, no keys, no server
+   cost). Data flows P2P between browsers; signaling only finds peers.
+   Honest limits handled below: symmetric NAT needs TURN (paid) → we detect
+   failure and fall back; one peer supports ~5-10 connections → cap rooms. */
+let peerMode=LS.get('leak.peer')==='1'; // user choice: cross-device?
+function loadPeerJS(){return new Promise((res,rej)=>{
+  if(window.Peer)return res(window.Peer);
+  const sc=document.createElement('script');
+  sc.src='https://unpkg.com/peerjs@1.1.0/dist/peerjs.min.js';
+  sc.onload=()=>window.Peer?res(window.Peer):rej(new Error('PeerJS failed'));
+  sc.onerror=()=>rej(new Error('PeerJS load failed'));
+  document.head.appendChild(sc);
+});}
+function PeerJSTransport(code,opts){
+  const isHost=!!opts.host;
+  const peerId='leak-'+code;
+  let peer=null, conns=[], closed=false;
+  const connIds=new Set(); // dedupe by remote peer id
+  const onConn=(c)=>{
+    if(connIds.has(c.peer)){return;}
+    connIds.add(c.peer);
+    conns.push(c);
+    c.on('data',d=>{
+      try{
+        const msg=JSON.parse(d);
+        if(msg.ask&&isHost&&room){ try{c.send(JSON.stringify({room}));}catch(_){} return; }
+        if(msg.presence){ ui.hostSeen=Date.now(); return; }
+        if(msg.room){ if(applyRoom(msg.room)){
+          // host re-broadcasts merged room to all OTHER connections (relay)
+          if(isHost){ const snap=JSON.stringify({room}); conns.forEach(o=>{if(o!==c&&o.open)try{o.send(snap);}catch(_){}}); }
+          renderAll();
+        } }
+      }catch(e){}
+    });
+    c.on('open',()=>{ if(isHost&&room){ try{c.send(JSON.stringify({room}));}catch(_){} } });
+    c.on('close',()=>{ conns=conns.filter(o=>o!==c); connIds.delete(c.peer); });
+  };
+  loadPeerJS().then(Peer=>{
+    peer=new Peer(isHost?peerId:undefined,{debug:1});
+    peer.on('open',id=>{
+      ui.peerStatus='open';
+      if(isHost){
+        peer.on('connection',onConn);
+      }else{
+        const c=peer.connect(peerId,{reliable:false});
+        c.on('open',()=>{ ui.peerStatus='connected'; });
+        c.on('data',d=>{try{const msg=JSON.parse(d); if(msg.presence){ui.hostSeen=Date.now();return;} if(msg.room){ if(applyRoom(msg.room))renderAll(); }}catch(e){}});
+        c.on('close',()=>{ ui.peerStatus='disconnected'; });
+        onConn(c); // track for sending our own commits
+      }
+    });
+    peer.on('error',err=>{
+      ui.peerStatus='error';
+      const t=String(err&&err.type||err);
+      if(t==='unavailable-id'){ toast('a host is already running this room code on the P2P network — try rejoining or pick another code','warn',6000); }
+      else if(t==='peer-unavailable'){ toast('room not found on the P2P network — make sure the host created it with cross-device ON','warn',6000); }
+      else if(t==='network'||t==='server-error'){ toast('P2P network unreachable — falling back to same-browser mode','warn',6000); }
+      else { toast('P2P error: '+t+' — try same-browser mode','warn',6000); }
+    });
+  }).catch(e=>{
+    ui.peerStatus='error';
+    toast('could not load the cross-device module — using same-browser sync','warn',6000);
+  });
+  return {
+    broadcast(room){ // host: relay to all; joiner: send to host
+      if(isHost){ const snap=JSON.stringify({room}); conns.forEach(o=>{if(o.open)try{o.send(snap);}catch(_){}}); }
+      else { conns.forEach(o=>{if(o.open)try{o.send(JSON.stringify({room}));}catch(_){}}); }
+    },
+    ask(code){ if(!isHost){ conns.forEach(o=>{if(o.open)try{o.send(JSON.stringify({ask:code}));}catch(_){}}); } },
+    presence(){ if(isHost){ const snap=JSON.stringify({presence:1}); conns.forEach(o=>{if(o.open)try{o.send(snap);}catch(_){}}); } },
+    close(){ closed=true; try{conns.forEach(c=>c.close&&c.close());}catch(e){} try{peer&&peer.destroy&&peer.destroy();}catch(e){} }
+  };
+}
+function chanFor(code,opts){
+  try{ transport&&transport.close(); }catch(e){}
+  transport = peerMode ? PeerJSTransport(code,opts||{}) : LocalTransport(code);
+}
+function commit(fn){ if(!room)return; fn(room); saveRoom(); renderAll(); }
+
+/* ---------------- sound (quiet) ---------------- */
+let actx=null;
+function ac(){ if(!actx){try{actx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}} if(actx&&actx.state==='suspended')actx.resume(); return actx; }
+function tone(f,d,type,g,delay=0){ if(muted)return; const c=ac(); if(!c)return;
+  const t=c.currentTime+delay,o=c.createOscillator(),v=c.createGain();
+  o.type=type||'sine';o.frequency.value=f;
+  v.gain.setValueAtTime(0.0001,t);v.gain.linearRampToValueAtTime(g||0.04,t+0.012);
+  v.gain.exponentialRampToValueAtTime(0.0001,t+d);
+  o.connect(v);v.connect(c.destination);o.start(t);o.stop(t+d+0.06);}
+const sNotif=()=>{tone(660,.12,'sine',.04);tone(880,.15,'sine',.035,.09);};
+const sWarn =()=>{tone(233,.18,'triangle',.05);tone(174,.24,'triangle',.045,.14);};
+const sHeart=()=>{sWarn();vib([90,60,90]);};
+const sCatch=()=>{tone(196,.3,'sawtooth',.035);tone(147,.4,'sawtooth',.03,.12);};
+const sGold =()=>{tone(523,.1,'sine',.04);tone(659,.1,'sine',.04,.09);tone(784,.16,'sine',.045,.18);};
+const sWin  =()=>{[523,659,784,1046].forEach((f,i)=>tone(f,.16,'sine',.045,i*.12));};
+const sLose =()=>{[330,262,196].forEach((f,i)=>tone(f,.22,'triangle',.045,i*.16));};
+const sRing =()=>{tone(1040,.1,'sine',.05);tone(1040,.1,'sine',.05,.18);};
+const vib=p=>{try{navigator.vibrate&&navigator.vibrate(p);}catch(e){}};
+
+/* ---------------- toasts & log ---------------- */
+function toast(text,tone_,ms=4000){
+  const box=$('toasts'); if(box.children.length>3)box.firstChild.remove();
+  const el=document.createElement('div'); el.className='toast '+(tone_||''); el.innerHTML=text;
+  box.appendChild(el); if(tone_!=='silent')sNotif();
+  setTimeout(()=>{el.classList.add('out');setTimeout(()=>el.remove(),380);},ms);
+}
+function logEvent(text){ room.log.push({id:uid(),text}); if(room.log.length>40)room.log.shift(); }
+function flushLog(){ if(!room)return;
+  room.log.forEach(l=>{ if(!ui.seenLog.has(l.id)){ ui.seenLog.add(l.id); toast(l.text); } });
+}
+
+/* ---------------- buffs ---------------- */
+const BUFFS={
+ seeker:[
+  {id:'scream',icon:'🎤',name:'scream',desc:'a hider must scream at 65+ dB for 4s within 30 seconds. fail = they lose a ♥.'},
+  {id:'radar', icon:'📡',name:'radar', desc:'a live circle around a random hider for 90s. radius 80–420 m — 10% chance of a ~10 m pinpoint.'},
+  {id:'ring',  icon:'🔔',name:'ring',  desc:"a hider's phone starts ringing for 10 seconds. honor rule: they can't silence it."},
+ ],
+ hider:[
+  {id:'slow', icon:'🐌',name:'slow-mo', desc:'a seeker may only walk 3 km/h for the next 90 seconds.'},
+  {id:'decoy',icon:'👻',name:'decoy',   desc:"a fake hider blip appears on every seeker's map for 60 seconds."},
+  {id:'shift',icon:'📍',name:'shift',   desc:'relocate your hiding spot by up to 20 meters.'},
+  {id:'ghost',icon:'🌫️',name:'ghost',   desc:'you become invisible to radar, ring and scream for 120 seconds.'},
+]};
+const casinoWinIdx=()=>room&&room.startedAt?Math.floor((now()-room.startedAt)/(room.casinoMin*60000)):0;
+function casinoOpenFor(p){
+  if(!p||room.phase==='lobby'||room.phase==='end')return false;
+  if(room.forceCasinoId&&p.casinoForce!==room.forceCasinoId)return true;
+  const w=casinoWinIdx(); return w>=1&&(p.casinoDone||0)<w;
+}
+
+/* ---------------- room lifecycle ---------------- */
+function genCode(){const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<4;i++)s+=A[Math.floor(Math.random()*A.length)];return s;}
+function newPlayer(name,bot){
+  return {id:bot?uid():myId,name,bot:!!bot,roleChoice:'random',role:null,hearts:3,status:'alive',
+    pos:{lat:START.lat,lng:START.lng},speed:0,hidePos:null,casinoDone:0,casinoForce:0,
+    slowUntil:0,ghostUntil:0,ringUntil:0,shiftReady:false,pendingTask:null,caughtBy:null,wander:null,seq:0,joinedAt:Date.now()};
+}
+function createRoom(){
+  const name=myName.trim(); if(!name){toast('enter your name first','warn');return;}
+  LS.set('leak.name',name);
+  room={code:genCode(),hostId:myId,phase:'lobby',hideMin:10,totalMin:45,casinoMin:15,
+    startedAt:0,hideEndsAt:0,gameEndsAt:0,winner:null,forceCasinoId:0,players:[],fx:[],log:[],seq:0};
+  ui.hostSeen=Date.now(); // we are host, heartbeat present
+  room.players.push(newPlayer(name,false));
+  chanFor(room.code,{host:true}); saveRoom(); ui.seenLog=new Set(); showScreen('lobby');
+  toast('room created — share code <b>'+room.code+'</b>'+(storageAvailable?'':'<br><small>(storage blocked here: state lives in memory)</small>'),'gold',5000);
+}
+function joinRoom(code){
+  const name=myName.trim(); if(!name){toast('enter your name first','warn');return;}
+  code=(code||'').trim().toUpperCase(); if(code.length!==4){toast('code has 4 letters','warn');return;}
+  LS.set('leak.name',name);
+  const finish=()=>{
+    ui.seenLog=new Set();
+    const existing=room.players.find(p=>p.id===myId);
+    if(existing){
+      // Phase 1 #3: reclaiming a seat (reopened tab / reconnect).
+      if(room.phase!=='lobby' && existing.status==='spectate'){existing.status='alive';}
+      existing.name=name; // name may have changed in another tab
+      saveRoom(); toast('reconnected to your seat','good');
+    }else{
+      if(room.phase==='lobby'){room.players.push(newPlayer(name,false));}
+      else{room.players.push(Object.assign(newPlayer(name,false),{status:'spectate'}));toast('game already running — joined as spectator','warn');}
+      saveRoom();
+    }
+    showScreen(room.phase==='lobby'?'lobby':'game');
+    toast('joined room '+room.code,'good');
+  };
+  // same-browser path: try local storage first (a tab may have the room in memory+LS)
+  if(!peerMode){
+    const raw=LS.get(roomKey(code));
+    if(raw){
+      try{room=JSON.parse(raw);}catch(e){room=null;}
+      if(room){chanFor(code,{host:false});finish();return;}
+    }
+  }
+  // not in storage (or cross-device) → ask over the transport
+  chanFor(code,{host:false});
+  try{transport&&transport.ask(code);}catch(e){}
+  const t0=now();
+  const timeout=peerMode?10000:1400; // P2P signaling needs more time than a local broadcast
+  const iv=setInterval(()=>{
+    if(room&&room.code===code){clearInterval(iv);finish();}
+    else if(now()-t0>timeout){clearInterval(iv);
+      toast(peerMode?'room not found on the P2P network — check the code and that the host has cross-device ON.'
+        :'room not found. create it first, then join with the code from another tab of the same browser.','warn',6000);}
+  },120);
+}
+const BOT_NAMES=['Mara','Jonas','Livia','Nino','Aylin','Reto','Sena','Kai'];
+function addBot(){
+  const used=room.players.map(p=>p.name);
+  const nm=BOT_NAMES.find(n=>!used.includes(n))||('bot·'+uid().slice(0,3));
+  commit(r=>{const b=newPlayer(nm,true);b.roleChoice=['hider','seeker','random'][Math.floor(Math.random()*3)];r.players.push(b);});
+}
+function startGame(){
+  commit(r=>{
+    r.players.forEach(p=>{ p.role=p.roleChoice==='random'?(Math.random()<.5?'hider':'seeker'):p.roleChoice; });
+    if(r.players.every(p=>p.role==='hider'))r.players[r.players.length-1].role='seeker';
+    if(r.players.every(p=>p.role==='seeker'))r.players[r.players.length-1].role='hider';
+    const t=now();
+    r.players.forEach(p=>{ p.hearts=3;p.status='alive';p.pos={lat:START.lat,lng:START.lng};p.hidePos=null;
+      p.casinoDone=0;p.casinoForce=0;p.slowUntil=0;p.ghostUntil=0;p.ringUntil=0;p.shiftReady=false;p.pendingTask=null;p.caughtBy=null;
+      if(p.bot&&p.role==='hider')p.hidePos=randInZone(); });
+    r.fx=[];r.log=[];
+    r.startedAt=t;r.hideEndsAt=t+r.hideMin*60000;r.gameEndsAt=t+r.totalMin*60000;
+    r.phase='hide';r.winner=null;r.forceCasinoId=0;
+    logEvent('🏁 game started at Bahnhofstrasse 17 — hiders, run!');
+  });
+  ui.seenLog=new Set(); flushLog();
+}
+function resetRoom(){
+  commit(r=>{ r.phase='lobby';r.winner=null;r.fx=[];r.log=[];r.startedAt=0;r.forceCasinoId=0;
+    r.players.forEach(p=>{p.role=null;p.hearts=3;p.status='alive';p.hidePos=null;p.pos={lat:START.lat,lng:START.lng};
+      p.pendingTask=null;p.slowUntil=0;p.ghostUntil=0;p.ringUntil=0;p.shiftReady=false;p.casinoDone=0;p.casinoForce=0;});});
+  ui.seenLog=new Set(); showScreen('lobby');
+}
+
+/* ---------------- hearts / rules ---------------- */
+function loseHeart(pid,reason){
+  commit(r=>{
+    const p=r.players.find(x=>x.id===pid); if(!p||p.status!=='alive')return;
+    p.hearts=Math.max(0,p.hearts-1);
+    if(p.hearts<=0){ p.status=p.role==='hider'?'caught':'out'; logEvent('💀 '+escN(p.name)+' lost all hearts — out.'); }
+    else logEvent('⚠ '+escN(p.name)+' lost a ♥ ('+reason+').');
+  });
+  if(pid===myId){ sHeart(); $('hud-hearts').classList.add('shake'); setTimeout(()=>$('hud-hearts').classList.remove('shake'),600); }
+}
+
+/* ---------------- buff application ---------------- */
+function pickBuff(b){
+  const m=me(); if(!m)return;
+  commit(r=>{
+    const p=r.players.find(x=>x.id===myId);
+    if(r.forceCasinoId&&p.casinoForce!==r.forceCasinoId)p.casinoForce=r.forceCasinoId;
+    else p.casinoDone=casinoWinIdx();
+  });
+  applyBuff(b); closeOv('ov-casino'); renderAll();
+}
+function applyBuff(b){
+  const t=now();
+  if(me().role==='seeker'){
+    const targets=aliveHiders().filter(p=>!(p.ghostUntil>t));
+    if(!targets.length){ commit(r=>{const p=me();if(r.forceCasinoId)p.casinoForce=0;else p.casinoDone=0;}); toast('all hiders are ghosted — spin refunded','warn'); return; }
+    const tgt=targets[Math.floor(Math.random()*targets.length)];
+    if(b.id==='scream'){
+      if(tgt.bot){ commit(()=>{logEvent('😱 a hider screamed their lungs out');}); toast('🎤 '+tgt.name+' screamed!','good'); }
+      else commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.pendingTask={byId:myId,deadline:now()+30000,holdMs:4000,dbMin:65};logEvent('🎤 a scream order was played');});
+    }else if(b.id==='radar'){
+      const jackpot=Math.random()<0.10;
+      const radius=jackpot?8+Math.random()*7:80+Math.random()*340;
+      const center=tgt.hidePos||tgt.pos||randInZone();
+      commit(r=>{r.fx.push({id:uid(),kind:'circle',forId:myId,center,radius,until:now()+90000,label:jackpot?'radar · PINPOINT':'radar'});logEvent('📡 radar sweep activated');});
+      toast(jackpot?'📡 jackpot — ~10 m pinpoint!':'📡 radar circle on your map ('+Math.round(radius)+' m)', 'gold',5000);
+    }else if(b.id==='ring'){
+      commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.ringUntil=now()+10000;logEvent('🔔 someone\'s phone is ringing…');});
+      toast('🔔 '+escN(tgt.name)+"'s phone is ringing",'good');
+    }
+  }else{
+    if(b.id==='slow'){
+      const sk=aliveSeekers(); if(!sk.length){commit(r=>{me().casinoDone=0;});toast('no seekers to slow — spin refunded','warn');return;}
+      const tgt=sk[Math.floor(Math.random()*sk.length)];
+      commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.slowUntil=now()+90000;logEvent('🐌 slow-mo was played on a seeker');});
+      toast('🐌 '+tgt.name+' may only walk 3 km/h','good');
+    }else if(b.id==='decoy'){
+      commit(r=>{r.fx.push({id:uid(),kind:'fake',forId:'seekers',center:randInZone(),until:now()+60000});logEvent('👻 a decoy blip appeared');});
+      toast('👻 fake hider planted on seeker maps','good');
+    }else if(b.id==='shift'){
+      commit(r=>{me().shiftReady=true;}); toast('📍 shift ready — tap it in your buff bar','good');
+    }else if(b.id==='ghost'){
+      commit(r=>{me().ghostUntil=now()+120000;}); toast('🌫️ you are ghosted for 120 s','good');
+    }
+  }
+  sGold();
+}
+
+/* ---------------- actions ---------------- */
+function setHideSpot(){
+  const m=me(); const p=m.pos||START;
+  if(!inZone(p)){toast('you are outside the zone','warn');return;}
+  commit(r=>{me().hidePos={lat:p.lat,lng:p.lng};});
+  toast('hidden ✓ stay quiet','good'); vib(40);
+}
+function doCatch(pid){
+  const tgt=room.players.find(p=>p.id===pid);
+  askConfirm('catch '+tgt.name+'?','you physically found them. they are out of the game.','caught!',true,()=>{
+    commit(r=>{const p=r.players.find(x=>x.id===pid);if(p&&p.status==='alive'){p.status='caught';p.caughtBy=myId;logEvent('🕵️ '+escN(p.name)+' was caught by '+escN(me().name)+'!');}});
+    sCatch(); vib([60,50,60]);
+  });
+}
+function doReport(pid){
+  const tgt=room.players.find(p=>p.id===pid);
+  askConfirm('report '+tgt.name+'?','they broke a rule and lose 1 ♥. use honor — no griefing.','report',true,()=>{
+    loseHeart(pid,'reported'); sWarn();
+  });
+}
+function surrender(){
+  askConfirm('give up?','you reveal yourself and are out.','give up',true,()=>{
+    commit(r=>{const p=me();p.status='caught';p.caughtBy=null;logEvent('🏳️ '+escN(p.name)+' gave up.');});
+  });
+}
+function askConfirm(title,text,ok,danger,onOk){
+  $('cf-title').textContent=title;$('cf-text').textContent=text;
+  const okB=$('cf-ok');okB.textContent=ok;okB.style.background=danger?'var(--danger)':'var(--ink)';okB.style.color='#fff';
+  openOv('ov-confirm');
+  okB.onclick=()=>{closeOv('ov-confirm');onOk();};
+}
+
+/* ---------------- casino UI ---------------- */
+const SYMS=['🍒','🔔','⭐','💧','7️⃣','🍋'];
+function openCasino(){
+  if(!casinoOpenFor(me()))return;
+  openOv('ov-casino');
+  $('btn-spin').style.display='flex'; $('casino-cards').style.display='none';
+  $('btn-spin').disabled=false; sGold();
+}
+$('btn-spin').onclick=()=>{
+  $('btn-spin').disabled=true;
+  const reels=[$('r0'),$('r1'),$('r2')]; reels.forEach(r=>r.classList.add('spin'));
+  const iv=setInterval(()=>{reels.forEach(r=>r.textContent=SYMS[Math.floor(Math.random()*SYMS.length)]);tone(1200+Math.random()*600,.03,'square',.015);},80);
+  setTimeout(()=>{clearInterval(iv);reels.forEach(r=>r.classList.remove('spin'));
+    reels.forEach(r=>r.textContent='💧');
+    const pool=BUFFS[me().role].slice();
+    const a=pool.splice(Math.floor(Math.random()*pool.length),1)[0];
+    const b=pool.splice(Math.floor(Math.random()*pool.length),1)[0];
+    $('btn-spin').style.display='none';
+    const box=$('casino-cards');box.style.display='flex';box.innerHTML='';
+    [a,b].forEach(bf=>{
+      const el=document.createElement('div');el.className='bcard';
+      el.innerHTML='<div class="ic">'+bf.icon+'</div><div class="bn">'+bf.name+'</div><div class="bd">'+bf.desc+'</div>';
+      el.onclick=()=>{el.classList.add('picked');el.parentElement.querySelectorAll('.bcard').forEach(o=>o.style.pointerEvents='none');
+        setTimeout(()=>pickBuff(bf),380);};
+      box.appendChild(el);
+    });
+    sGold();
+  },1500);
+};
+
+/* ---------------- scream task ---------------- */
+let micAnalyser=null,micData=null,micReady=false,micDenied=false,scIv=null;
+async function ensureMic(){
+  // Phase 1 #7: micDenied is NOT permanent — a retry button can clear it so a
+  // player who dismissed the prompt once can still complete the scream task.
+  if(micReady)return true;
+  try{
+    const st=await navigator.mediaDevices.getUserMedia({audio:true});
+    const mc=new (window.AudioContext||window.webkitAudioContext)();
+    const src=mc.createMediaStreamSource(st);micAnalyser=mc.createAnalyser();micAnalyser.fftSize=512;
+    src.connect(micAnalyser);micData=new Uint8Array(micAnalyser.fftSize);micReady=true;micDenied=false;return true;
+  }catch(e){micDenied=true;return false;}
+}
+function micRms(){
+  if(!micAnalyser)return 0;
+  micAnalyser.getByteTimeDomainData(micData);
+  let s=0;for(let i=0;i<micData.length;i++){const v=(micData[i]-128)/128;s+=v*v;}
+  return Math.sqrt(s/micData.length);
+}
+/* Phase 1 #6: closeScream centralizes all scream-modal teardown so any path
+   (phase→end, host reset, task expired elsewhere) can stop the interval and
+   detach listeners without duplicating the cleanup. */
+function closeScream(){
+  if(scIv){clearInterval(scIv);scIv=null;}
+  const btn=$('sc-btn'); if(btn&&btn._clean)btn._clean();
+  ui.screamOpen=false; closeOv('ov-scream');
+}
+function openScream(task){
+  ui.screamOpen=true;openOv('ov-scream');ensureMic();
+  let heldMs=0,holding=false,lastT=now();
+  const btn=$('sc-btn');
+  const down=e=>{e.preventDefault();holding=true;btn.classList.add('held');};
+  const up=()=>{holding=false;btn.classList.remove('held');};
+  btn.addEventListener('pointerdown',down);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);
+  btn._clean=()=>{btn.removeEventListener('pointerdown',down);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);};
+  const retry=$('sc-retry');
+  if(retry)retry.onclick=async()=>{micDenied=false; await ensureMic();};
+  clearInterval(scIv);
+  scIv=setInterval(()=>{
+    const left=task.deadline-now();
+    $('sc-time').textContent=Math.max(0,Math.ceil(left/1000));
+    const rms=micRms();
+    const loud=micReady?rms>0.055:true; // fallback: holding alone counts
+    const db=micReady?Math.round(clamp(38+rms*520,38,99)):Math.round(holding?66+Math.random()*6:40);
+    $('sc-fill').style.width=(clamp(rms*8,0,1)*100)+'%';
+    // Phase 1 #7: surface a clear degraded mic state, not a buried footnote.
+    const degraded=micDenied||(!micReady&&!micDenied&&navigator.mediaDevices);
+    $('sc-db').textContent=db+' dB '+(micReady?'':degraded?'· mic blocked — hold counts (honor fallback)':'· mic off — holding counts');
+    if(retry)retry.style.display=micDenied?'inline-block':'none';
+    const dt=now()-lastT;lastT=now();
+    if(holding&&loud){heldMs+=dt;vib(8);}
+    $('sc-held').textContent=(heldMs/1000).toFixed(1);
+    $('sc-prog').style.width=clamp(heldMs/task.holdMs*100,0,100)+'%';
+    if(heldMs>=task.holdMs){finishScream(true);}
+    else if(left<=0){finishScream(false);}
+  },100);
+  function finishScream(ok){
+    closeScream();
+    commit(r=>{me().pendingTask=null;logEvent(ok?'😱 scream delivered.':'🙉 a scream order was ignored.');});
+    if(ok){toast('scream delivered ✓','good');sGold();}
+    else{toast('scream failed — you lose a ♥','warn');loseHeart(myId,'ignored scream');}
+  }
+}
+
+/* ---------------- overlays ---------------- */
+function openOv(id){const el=$(id); el.classList.add('open');
+  el.setAttribute('role','dialog'); el.setAttribute('aria-modal','true');}
+function closeOv(id){const el=$(id); el.classList.remove('open');
+  el.removeAttribute('role'); el.removeAttribute('aria-modal');}
+document.querySelectorAll('.ov').forEach(ov=>{
+  if(ov.id==='ov-reveal'||ov.id==='ov-scream'||ov.id==='ov-end')return;
+  ov.addEventListener('click',e=>{if(e.target===ov&&ov.id!=='ov-casino'&&ov.id!=='ov-confirm')closeOv(ov.id);});
+});
+$('btn-how').onclick=()=>openOv('ov-how');
+$('btn-how-close').onclick=()=>closeOv('ov-how');
+$('btn-enter').onclick=()=>{closeOv('ov-reveal');};
+$('btn-shift-cancel').onclick=()=>closeOv('ov-shift');
+$('sh-bearing').oninput=e=>{$('sh-bv').textContent=e.target.value;};
+$('sh-dist').oninput=e=>{$('sh-dv').textContent=e.target.value;};
+$('btn-shift-ok').onclick=()=>{
+  const m=me();const base=m.hidePos||m.pos||START;
+  const np=dest(base,+$('sh-bearing').value,+$('sh-dist').value);
+  commit(r=>{me().hidePos=np;me().shiftReady=false;});
+  closeOv('ov-shift');toast('shifted '+$('sh-dist').value+' m — new spot set','good');
+};
+$('cf-cancel').onclick=()=>closeOv('ov-confirm');
+
+/* ---------------- screens ---------------- */
+function showScreen(name){
+  ui.screen=name;
+  ['home','lobby','game'].forEach(s=>$('scr-'+s).classList.toggle('active',s===name));
+  if(name==='lobby')setTimeout(()=>{initLobbyMap();renderLobby();},60);
+  if(name==='game')setTimeout(()=>{initGameMap();renderAll();},60);
+}
+
+/* ---------------- lobby render ---------------- */
+let lobbyMap=null;
+function initLobbyMap(){
+  if(lobbyMap){lobbyMap.invalidateSize();return;}
+  try{
+    lobbyMap=L.map('lobby-map',{zoomControl:false,attributionControl:false,scrollWheelZoom:false,dragging:false});
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19}).addTo(lobbyMap);
+    L.polygon(ZONE_POLY,{color:'#fff',weight:2,dashArray:'6 6',fill:false}).addTo(lobbyMap);
+    L.marker([START.lat,START.lng],{icon:L.divIcon({className:'',html:'<div class="mk"><div class="d" style="background:#f0b429"></div><div class="lbl">start</div></div>',iconSize:[16,16],iconAnchor:[8,8]})}).addTo(lobbyMap);
+    lobbyMap.fitBounds([[Z.minLat,Z.minLng],[Z.maxLat,Z.maxLng]],{padding:[14,14]});
+  }catch(e){}
+  const cl=$('corner-list');cl.innerHTML='';
+  CORNERS.forEach((c,i)=>{const d=document.createElement('div');d.className='corner';
+    d.innerHTML='<span class="n">'+(i+1)+'</span><span><b>'+c.name+'</b><br>6037 Root</span>';cl.appendChild(d);});
+}
+function renderLobby(){
+  if(!room||ui.screen!=='lobby')return;
+  $('lobby-code').textContent=room.code;
+  const isHost=room.hostId===myId;
+  $('set-lock').textContent=isHost?'(you are host)':'(host decides)';
+  $('sel-hide').value=room.hideMin;$('sel-total').value=room.totalMin;
+  $('sel-hide').disabled=!isHost;$('sel-total').disabled=!isHost;
+  $('btn-addbot').style.display=isHost?'flex':'none';
+  $('btn-start').style.display=isHost?'flex':'none';
+  $('pcount').textContent='('+room.players.length+')';
+  $('btn-start').disabled=room.players.length<2;
+  const box=$('lobby-players');box.innerHTML='';
+  room.players.forEach(p=>{
+    const row=document.createElement('div');row.className='prow';
+    const canPick=isHost||p.id===myId;
+    row.innerHTML='<div class="av">'+esc(p.name.slice(0,1).toUpperCase())+'</div>'+
+      '<div class="nm">'+esc(p.name)+(p.bot?' <small>test bot</small>':'')+'</div>'+
+      (room.hostId===p.id?'<span class="host-pill">host</span>':'');
+    const chip=document.createElement('button');chip.className='role-chip '+p.roleChoice;chip.textContent=p.roleChoice;
+    chip.setAttribute('aria-label','role for '+p.name+': '+p.roleChoice+' (tap to cycle)');
+    if(canPick)chip.onclick=()=>commit(r=>{const q=r.players.find(x=>x.id===p.id);
+      q.roleChoice=q.roleChoice==='hider'?'seeker':q.roleChoice==='seeker'?'random':'hider';});
+    else{chip.style.pointerEvents='none';}
+    row.appendChild(chip);
+    if(isHost&&p.bot){const rm=document.createElement('button');rm.className='icon-btn';rm.textContent='✕';
+      rm.onclick=()=>commit(r=>{r.players=r.players.filter(x=>x.id!==p.id);});row.appendChild(rm);}
+    box.appendChild(row);
+  });
+}
+function esc(s){return String(s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));}
+
+/* ---------------- game map ---------------- */
+let gMap=null,gStatic=false;const gLayers={};
+function initGameMap(){
+  if(gMap){gMap.invalidateSize();return;}
+  gMap=L.map('map',{zoomControl:false,attributionControl:true});
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    {maxZoom:20,attribution:'Imagery © Esri'}).addTo(gMap);
+  gMap.fitBounds([[Z.minLat,Z.minLng],[Z.maxLat,Z.maxLng]],{padding:[30,30]});
+  gMap.on('click',e=>{
+    if(!room||ui.screen!=='game')return;
+    if(!ui.simMode)return;
+    const m=me();if(!m)return;
+    commit(r=>{me().pos={lat:e.latlng.lat,lng:e.latlng.lng};});
+    if(!inZone(e.latlng))toast('⚠ that spot is outside the zone','warn');
+  });
+  drawZoneStatic();
+}
+function drawZoneStatic(){
+  if(gStatic)return;gStatic=true;
+  const outer=[[Z.minLat-.02,Z.minLng-.03],[Z.minLat-.02,Z.maxLng+.03],[Z.maxLat+.02,Z.maxLng+.03],[Z.maxLat+.02,Z.minLng-.03]];
+  L.polygon([outer,ZONE_POLY],{color:'none',fillColor:'#000',fillOpacity:.42,interactive:false}).addTo(gMap);
+  L.polygon(ZONE_POLY,{color:'#fff',weight:2,dashArray:'7 7',fill:false,interactive:false}).addTo(gMap);
+  CORNERS.forEach(c=>{L.marker([c.lat,c.lng],{icon:L.divIcon({className:'',html:'<div class="corner-dot"></div>',iconSize:[11,11],iconAnchor:[5,5]}),interactive:true})
+    .addTo(gMap).bindTooltip(c.name+' · 6037 Root',{direction:'top',offset:[0,-6]});});
+  L.marker([START.lat,START.lng],{icon:L.divIcon({className:'',html:'<div style="font-size:19px;text-shadow:0 2px 4px #000">🏁</div>',iconSize:[20,20],iconAnchor:[10,10]})})
+    .addTo(gMap).bindTooltip('start · Bahnhofstrasse 17',{direction:'top'});
+}
+function mkIcon(p,cls,color,label,isMe){
+  return L.divIcon({className:'',iconSize:[16,16],iconAnchor:[8,8],
+    html:'<div class="mk '+(isMe?'me ':'')+cls+'"><div class="d" style="background:'+color+'"></div><div class="lbl">'+label+'</div></div>'});
+}
+function upsertLayer(key,make,update){
+  if(gLayers[key]){update&&update(gLayers[key]);}
+  else{gLayers[key]=make();gLayers[key].addTo(gMap);}
+}
+function updateMap(){
+  if(!gMap||!room||ui.screen!=='game')return;
+  const t=now(),m=me();if(!m)return;
+  const want=new Set();
+  const revealAll=m.status!=='alive'||room.phase==='end';
+  room.players.forEach(p=>{
+    if(p.role==='seeker'&&p.status==='alive'&&p.id!==myId&&p.pos){
+      want.add('sk-'+p.id);
+      upsertLayer('sk-'+p.id,
+        ()=>L.marker([p.pos.lat,p.pos.lng],{icon:mkIcon(p,'sk','#ff4d2a',p.name),interactive:false}),
+        ly=>ly.setLatLng([p.pos.lat,p.pos.lng]));
+    }
+    if(revealAll&&p.role==='hider'&&p.id!==myId){
+      const hp=p.hidePos||p.pos;if(hp){want.add('hd-'+p.id);
+        upsertLayer('hd-'+p.id,
+          ()=>L.marker([hp.lat,hp.lng],{icon:mkIcon(p,'hd','#12c98f',p.name+(p.status!=='alive'?' ✕':'')),interactive:false}),
+          ly=>ly.setLatLng([hp.lat,hp.lng]));}
+    }
+  });
+  if(m.pos){want.add('me');
+    upsertLayer('me',()=>L.marker([m.pos.lat,m.pos.lng],{icon:mkIcon(m,'','#4d8dff',m.name,true),zIndexOffset:900,interactive:false}),
+      ly=>ly.setLatLng([m.pos.lat,m.pos.lng]));}
+  if(m.role==='hider'&&m.hidePos){want.add('hide');
+    upsertLayer('hide',()=>L.circleMarker([m.hidePos.lat,m.hidePos.lng],{radius:9,color:'#fff',weight:2,fillColor:'#12c98f',fillOpacity:.9}),
+      ly=>ly.setLatLng([m.hidePos.lat,m.hidePos.lng]));}
+  room.fx.forEach(f=>{
+    if(f.until<t)return;
+    if(!(f.forId===myId||(f.forId==='seekers'&&m.role==='seeker')))return;
+    if(f.kind==='circle'){want.add('fx-'+f.id);
+      upsertLayer('fx-'+f.id,
+        ()=>L.circle([f.center.lat,f.center.lng],{radius:f.radius,color:'#ff4d2a',weight:2,fillColor:'#ff4d2a',fillOpacity:.13,dashArray:'5 6'})
+          .bindTooltip(f.label,{permanent:true,direction:'center'}),
+        ly=>ly.setLatLng([f.center.lat,f.center.lng]));}
+    if(f.kind==='fake'){want.add('fx-'+f.id);
+      upsertLayer('fx-'+f.id,
+        ()=>L.marker([f.center.lat,f.center.lng],{icon:L.divIcon({className:'',html:'<div class="fake-dot"></div>',iconSize:[15,15],iconAnchor:[7,7]}),interactive:false}),
+        ly=>ly.setLatLng([f.center.lat,f.center.lng]));}
+  });
+  Object.keys(gLayers).forEach(k=>{if(!want.has(k)){gMap.removeLayer(gLayers[k]);delete gLayers[k];}});
+}
+
+/* ---------------- geolocation ---------------- */
+let watchId=null;
+function setPosMode(sim){
+  ui.simMode=sim;$('btn-posmode').textContent=sim?'📍 sim':'🛰 gps';
+  if(sim){if(watchId!=null){try{navigator.geolocation.clearWatch(watchId);}catch(e){}watchId=null;}toast('sim mode — tap the map to move','silent');}
+  else{
+    if(!navigator.geolocation){toast('no GPS here — staying in sim','warn');ui.simMode=true;$('btn-posmode').textContent='📍 sim';return;}
+    try{
+      watchId=navigator.geolocation.watchPosition(pos=>{
+        commit(r=>{const p=me();if(p){p.pos={lat:pos.coords.latitude,lng:pos.coords.longitude};p.speed=pos.coords.speed||0;}});
+      },()=>{toast('GPS denied — back to sim mode (tap map)','warn');setPosMode(true);},{enableHighAccuracy:true,maximumAge:2000});
+      toast('GPS mode — walk for real 🚶','silent');
+    }catch(e){ui.simMode=true;$('btn-posmode').textContent='📍 sim';}
+  }
+}
+$('btn-posmode').onclick=()=>setPosMode(!ui.simMode);
+
+/* ---------------- HUD render ---------------- */
+function renderGame(){
+  if(!room||ui.screen!=='game')return;
+  const m=me();if(!m)return;const t=now();
+  const ph=room.phase;
+  $('hud-phase').textContent=ph==='hide'?'hiding':ph==='seek'?'seeking':'ended';
+  $('hud-dot').className='dot'+(m.role==='seeker'?' seeker':'');
+  $('hud-dot').style.background=m.role==='seeker'?'var(--seeker)':'var(--hider)';
+  $('hud-hearts').innerHTML=[0,1,2].map(i=>'<span class="h'+(i<m.hearts?'':' off')+'">♥</span>').join('');
+  $('btn-mute').textContent=muted?'🔕':'🔔';
+  $('chip-casino').classList.toggle('on',casinoOpenFor(m));
+  const z=$('zone-banner');
+  if(m.pos&&!inZone(m.pos)&&ph!=='end'&&m.status==='alive'){z.style.display='block';
+    const el=ui.zoneOutSince?Math.floor((t-ui.zoneOutSince)/1000):0;
+    z.innerHTML='⚠ you left the zone — return!'+(ui.zoneOutSince?' ('+(Math.max(0,20-el))+'s until −♥)':'');
+  }else z.style.display='none';
+  const sb=$('slow-banner');
+  if(m.slowUntil>t&&ph==='seek'){sb.style.display='block';
+    const fast=(m.speed||0)>0.92;sb.classList.toggle('fast',fast);
+    sb.innerHTML=fast?'🐌 TOO FAST — max 3 km/h!':'🐌 slow-mo · max 3 km/h · '+Math.ceil((m.slowUntil-t)/1000)+'s';
+  }else sb.style.display='none';
+  const bb=$('buff-bar');let bhtml='';
+  if(m.ghostUntil>t)bhtml+='<div class="buff-chip">🌫️ ghost <span class="t">'+Math.ceil((m.ghostUntil-t)/1000)+'s</span></div>';
+  if(m.shiftReady&&ph!=='end')bhtml+='<div class="buff-chip">📍 shift ready <button class="use" id="use-shift">use</button></div>';
+  room.fx.forEach(f=>{if(f.forId===myId&&f.until>t)bhtml+='<div class="buff-chip">📡 '+f.label+' <span class="t">'+Math.ceil((f.until-t)/1000)+'s</span></div>';});
+  bb.innerHTML=bhtml;
+  const us=$('use-shift');if(us)us.onclick=()=>openOv('ov-shift');
+  const dk=$('dock');let dhtml='';
+  if(ph==='hide'&&m.role==='hider'&&m.status==='alive'){
+    dhtml=m.hidePos
+      ?'<div class="dock-card"><div class="dock-title">hider</div><div class="dock-btns"><div class="dbtn" style="pointer-events:none">✓ hidden — stay quiet</div></div><div class="dock-hint">seekers start in '+fmt(room.hideEndsAt-t)+'</div></div>'
+      :'<div class="dock-card"><div class="dock-title">hider · find a spot</div><div class="dock-btns"><button class="dbtn primary" id="d-hide">📍 hide here</button><button class="dbtn" id="d-players">players</button></div><div class="dock-hint">'+fmt(room.hideEndsAt-t)+' until seekers are released</div></div>';
+  }else if(ph==='hide'&&m.role==='seeker'){
+    dhtml='<div class="dock-card"><div class="dock-title">seeker · wait</div><div class="dock-btns"><div class="dbtn" style="pointer-events:none">🙈 counting…</div><button class="dbtn" id="d-players">players</button></div><div class="dock-hint">hiders released in '+fmt(room.hideEndsAt-t)+'</div></div>';
+  }else if(ph==='seek'&&m.status==='alive'){
+    if(m.role==='seeker'){
+      // Phase 2 #11: nearby hiders quick-catch strip (within ~50m).
+      const nearby=room.players.filter(p=>p.role==='hider'&&p.status==='alive'&&p.id!==myId&&p.pos&&distM(m.pos,p.pos)<50);
+      let strip='';
+      if(nearby.length){
+        strip='<div class="nearby-row">'+nearby.map(p=>'<button class="dbtn sbtn catch" data-catch="'+p.id+'">🎯 '+esc(p.name)+' · '+Math.round(distM(m.pos,p.pos))+'m</button>').join('')+'</div>';
+      }
+      dhtml='<div class="dock-card"><div class="dock-title">seeker · hunt</div>'+
+        (nearby.length?strip:'<div class="dock-btns"><button class="dbtn primary seeker" id="d-players">🕵️ find &amp; catch</button></div>')+
+        '<div class="dock-hint">'+(nearby.length?'tap a nearby hider to catch · ':'find hiders in real life, then tap catch · ')+'time left '+fmt(room.gameEndsAt-t)+'</div></div>';
+    }
+    else
+      dhtml='<div class="dock-card"><div class="dock-title">hider · survive</div><div class="dock-btns"><div class="dbtn" style="pointer-events:none">🤫 '+aliveHiders().length+' hiders alive</div><button class="dbtn" id="d-players">players</button></div><div class="dock-hint">survive '+fmt(room.gameEndsAt-t)+' to win · seeker dots are live</div></div>';
+  }else{
+    dhtml='<div class="dock-card"><div class="dock-title">'+(room.phase==='end'?'game over':'spectating')+'</div><div class="dock-btns"><button class="dbtn" id="d-players">players</button></div><div class="dock-hint">all positions revealed</div></div>';
+  }
+  // Phase 2 #11: fold nearby hiders + nearest distance into the signature so
+  // the quick-catch strip re-renders as the seeker moves.
+  let nearest=9999;
+  if(ph==='seek'&&m.role==='seeker'&&m.status==='alive'&&m.pos){
+    nearest=Math.min(9999,...room.players.filter(p=>p.role==='hider'&&p.status==='alive'&&p.pos).map(p=>distM(m.pos,p.pos)));
+  }
+  const sig=dhtml.length+ph+m.role+m.status+(m.hidePos?1:0)+aliveHiders().length+Math.round(nearest)+fmt((room.hideEndsAt||room.gameEndsAt||0)-t);
+  if(dk.dataset.sig!==sig){dk.innerHTML=dhtml;dk.dataset.sig=sig;}
+  const dh=$('d-hide');if(dh&&!dh._w){dh._w=1;dh.onclick=setHideSpot;}
+  const dp=$('d-players');if(dp&&!dp._w){dp._w=1;dp.onclick=openSheet;}
+  dk.querySelectorAll('[data-catch]').forEach(b=>{b.onclick=()=>doCatch(b.dataset.catch);});
+}
+
+/* ---------------- players sheet ---------------- */
+function openSheet(){ui.sheetOpen=true;renderSheet();$('sheet').classList.add('open');}
+function closeSheet(){ui.sheetOpen=false;$('sheet').classList.remove('open');}
+$('sheet').addEventListener('click',e=>{if(e.target===$('sheet'))closeSheet();});
+function renderSheet(){
+  if(!ui.sheetOpen||!room)return;
+  const m=me();const box=$('sheet-list');box.innerHTML='';
+  room.players.forEach(p=>{
+    const row=document.createElement('div');row.className='srow';
+    const st=p.status==='alive'?'':(p.status==='caught'?'caught':'out');
+    row.innerHTML='<span class="tag-role '+(st?'dead':p.role)+'">'+(st||p.role)+'</span>'+
+      '<div class="nm">'+esc(p.name)+(p.id===myId?' (you)':'')+(p.bot?' <small>bot</small>':'')+
+      (p.caughtBy?'<small> caught by '+esc((room.players.find(x=>x.id===p.caughtBy)||{}).name||'—')+'</small>':'')+'</div>'+
+      '<div class="hh">'+[0,1,2].map(i=>i<p.hearts?'♥':'<span style="opacity:.2">♥</span>').join('')+'</div>';
+    if(m.role==='seeker'&&m.status==='alive'&&p.role==='hider'&&p.status==='alive'&&p.id!==myId&&room.phase==='seek'){
+      const b=document.createElement('button');b.className='sbtn catch';b.textContent='catch';b.onclick=()=>{closeSheet();doCatch(p.id);};row.appendChild(b);}
+    if(p.id!==myId&&m.status==='alive'&&room.phase!=='end'){
+      const b=document.createElement('button');b.className='sbtn warn';b.textContent='⚠ report';b.onclick=()=>{closeSheet();doReport(p.id);};row.appendChild(b);}
+    if(p.id===myId&&m.role==='hider'&&m.status==='alive'&&room.phase!=='end'&&room.phase!=='lobby'){
+      const b=document.createElement('button');b.className='sbtn quit';b.textContent='give up';b.onclick=()=>{closeSheet();surrender();};row.appendChild(b);}
+    box.appendChild(row);
+  });
+}
+
+/* ---------------- end / reveal ---------------- */
+function renderReveal(){
+  const m=me();if(!m||!m.role)return;
+  const key='leak-reveal-'+room.code+':'+room.startedAt;
+  // Phase 2 #14: guard with an in-memory set too, so the reveal shows exactly
+  // once per game per tab even when storage is blocked (sandbox fallback).
+  if(SS.get(key)||ui.seenReveal.has(key))return;
+  SS.set(key,'1'); ui.seenReveal.add(key);
+  const ov=$('ov-reveal');ov.className='ov open '+(m.role);
+  $('reveal-word').textContent=m.role==='hider'?'you hide.':'you seek.';
+  $('reveal-sub').innerHTML=m.role==='hider'
+    ?'you have <b>'+room.hideMin+' minutes</b> to vanish inside the rectangle. set your hiding spot, stay silent, survive until the end.'
+    :'hiders get <b>'+room.hideMin+' minutes</b> of head start. then you hunt. find them in real life, tap catch. use casino buffs to flush them out.';
+}
+function renderEnd(){
+  if(room.phase!=='end'){closeOv('ov-end');return;}
+  const m=me();
+  const mySideWon=room.winner===(m?m.role:null);
+  $('end-title').textContent=room.winner==='hiders'?'hiders win.':'seekers win.';
+  $('end-title').className=mySideWon?'end-win':'end-lose';
+  $('end-sub').textContent=mySideWon?'your side survived the leak.':'your side got flushed out.';
+  // Phase 2 #15: tint the wordmark's drop the winner color while the end screen is up.
+  const drop=document.querySelector('#scr-home .drop');
+  if(drop)drop.style.background=room.winner==='hiders'?'var(--hider)':'var(--seeker)';
+  const list=$('end-list');list.innerHTML='';
+  room.players.forEach(p=>{
+    const r=document.createElement('div');r.className='end-row';
+    const st=p.status==='alive'?'survived ♥'+p.hearts:p.status==='caught'?'caught':'out';
+    let streak='';
+    if(p.role==='hider'&&p.status==='alive')streak=' · survived the round';
+    else if(p.role==='seeker'&&p.caughtBy===null&&p.status!=='alive')streak=' · flushed out';
+    else if(p.caughtBy)streak=' · caught';
+    r.innerHTML='<span>'+esc(p.name)+(p.bot?' 🤖':'')+'</span><span class="tag-role '+p.role+'" style="margin-left:6px">'+p.role+'</span>'+
+      '<span class="st">'+st+esc(streak)+'</span>';
+    list.appendChild(r);
+  });
+  $('btn-rematch').style.display=(room.hostId===myId)?'flex':'none';
+  openOv('ov-end');
+  if(!renderEnd._played){renderEnd._played=true;mySideWon?sWin():sLose();setTimeout(()=>renderEnd._played=false,4000);}
+}
+
+/* ---------------- master render ---------------- */
+function renderAll(){
+  if(!room)return;
+  flushLog();
+  if(ui.screen==='lobby')renderLobby();
+  if(ui.screen==='game'){
+    renderGame();updateMap();
+    const m=me();
+    if(m&&(room.phase==='hide'||room.phase==='seek'))renderReveal();
+    if(m&&m.pendingTask&&!ui.screamOpen&&now()<m.pendingTask.deadline+500)openScream(m.pendingTask);
+    if((!m||!m.pendingTask)&&ui.screamOpen)closeScream(); // #6: tear down if task cleared elsewhere
+    if(room.phase==='end')renderEnd();else closeOv('ov-end');
+    renderSheet();
+  }
+}
+
+/* ---------------- tick ---------------- */
+let lastTimerTxt='';
+function tick(){
+  if(!room)return;
+  const t=now();let dirty=false;
+  /* Phase 1 #2: host presence heartbeat + migration. The host pings every
+     ~2s so non-hosts know it's alive; if no ping arrives in ~7s, the oldest
+     non-host alive player promotes itself and starts driving bots. */
+  if(room.hostId===myId){
+    if(t-ui.hostHeart>2000){ui.hostHeart=t; try{transport&&transport.presence();}catch(e){}}
+  }else{
+    if(ui.hostSeen && t-ui.hostSeen>7000 && room.phase!=='lobby' && room.phase!=='end'){
+      const cand=room.players.filter(p=>!p.bot && p.id!==room.hostId && p.status==='alive')
+        .sort((a,b)=>(a.joinedAt||0)-(b.joinedAt||0))[0];
+      if(cand && cand.id===myId){
+        room.hostId=myId; logEvent('👑 host migrated to '+escN(cand.name)+' (prev host dropped)');
+        ui.hostSeen=t; dirty=true;
+      }
+    }
+  }
+  if(room.phase==='hide'||room.phase==='seek'){
+    if(room.phase==='hide'&&t>=room.hideEndsAt){room.phase='seek';logEvent('🕵️ seekers released — the hunt begins!');dirty=true;sWarn();}
+    if(room.phase==='seek'){
+      if(aliveHiders().length===0){room.phase='end';room.winner='seekers';logEvent('🏁 every hider found — seekers win.');dirty=true;}
+      else if(t>=room.gameEndsAt){room.phase='end';room.winner='hiders';logEvent('🏁 time up — hiders win.');dirty=true;}
+    }
+    const before=room.fx.length;room.fx=room.fx.filter(f=>f.until>t);if(room.fx.length!==before)dirty=true;
+    const w=casinoWinIdx();
+    if(w!==ui.lastCasinoWin){ui.lastCasinoWin=w;
+      if(w>=1&&casinoOpenFor(me())){
+        const first=!ui.seenCasinoOnce; ui.seenCasinoOnce=true;
+        toast(first?'🎰 casino open — tap the gold chip to spin & grab a buff':'🎰 casino opened — grab a buff','gold',first?5500:4000);
+        sGold(); vib([40,40,40]);
+      }}
+    const m=me();
+    if(m&&m.ringUntil>t){if(!tick._ring){tick._ring=setInterval(sRing,650);vib([120,80,120,80,120]);
+      toast('🔔 your phone is ringing! honor rule: you can\'t silence it','warn',6000);} }
+    else if(tick._ring){clearInterval(tick._ring);tick._ring=null;}
+    if(m&&m.pos&&!inZone(m.pos)&&m.status==='alive'){
+      // Phase 1 #5: escalating grace — 1st exit 20s, 2nd 12s, 3rd+ 6s.
+      if(!ui.zoneOutSince)ui.zoneOutSince=t;
+      const grace=ui.zoneViolations>=2?6000:ui.zoneViolations===1?12000:20000;
+      if(t-ui.zoneOutSince>grace&&t-ui.lastZoneHit>5000){
+        ui.lastZoneHit=t; ui.zoneOutSince=t; ui.zoneViolations++;
+        loseHeart(myId,'left the zone');
+      }
+    }else ui.zoneOutSince=0;
+    /* Phase 2 #12: soft cue when a timed buff/debuff is ~10s from ending. */
+    const warnAt=ms=>ms>0&&ms<=10000;
+    const warnKey=(id,ms)=>id+':'+Math.ceil(ms/1000);
+    if(m){
+      const checks=[
+        ['ghost',warnAt(m.ghostUntil-t)?m.ghostUntil:0],
+        ['slow',warnAt(m.slowUntil-t)?m.slowUntil:0],
+        ['ring',warnAt(m.ringUntil-t)?m.ringUntil:0],
+      ];
+      checks.forEach(([k,until])=>{
+        const ms=until-t;
+        if(until&&warnAt(ms)){const wk=warnKey(k,ms); if(!ui.buffWarned.has(wk)){ui.buffWarned.add(wk);sNotif();vib(30);}}
+        else if(!until||t>until){ ['ghost','slow','ring'].forEach(x=>{for(const it of ui.buffWarned){if(it.startsWith(x+':'))ui.buffWarned.delete(it);}}); }
+      });
+    }
+    if(room.hostId===myId&&t-ui.botTick>2000){
+      ui.botTick=t;let moved=false;
+      room.players.forEach(p=>{
+        if(!p.bot||p.status!=='alive')return;
+        if(p.pendingTask){p.pendingTask=null;logEvent('😱 a hider screamed');moved=true;}
+        if(room.phase==='seek'&&p.role==='seeker'){
+          const targets=aliveHiders();
+          const goal=targets.length?(targets[Math.floor(Math.random()*targets.length)].hidePos||randInZone()):(p.wander||(p.wander=randInZone()));
+          if(distM(p.pos,goal)<6)p.wander=randInZone();
+          const d=distM(p.pos,goal)||1,st=Math.min(1,2.8/d);
+          p.pos={lat:p.pos.lat+(goal.lat-p.pos.lat)*st,lng:p.pos.lng+(goal.lng-p.pos.lng)*st};moved=true;
+        }
+      });
+      if(moved)dirty=true;
+    }
+    let txt='00:00';
+    if(room.phase==='hide')txt=fmt(room.hideEndsAt-t);
+    else if(room.phase==='seek')txt=fmt(room.gameEndsAt-t);
+    if(txt!==lastTimerTxt){lastTimerTxt=txt;$('hud-timer').textContent=txt;}
+    renderGame();
+    if(t-ui.lastMapUpd>1200){ui.lastMapUpd=t;updateMap();renderSheet();}
+  }
+  if(dirty){saveRoom();renderAll();}
+}
+
+/* ---------------- wire up ---------------- */
+$('home-name').value=myName;
+$('home-name').oninput=e=>myName=e.target.value;
+$('home-code').addEventListener('input',e=>e.target.value=e.target.value.toUpperCase());
+$('home-code').addEventListener('keydown',e=>{if(e.key==='Enter')joinRoom($('home-code').value);});
+$('btn-create').onclick=()=>{ac();createRoom();};
+$('btn-join').onclick=()=>{ac();joinRoom($('home-code').value);};
+function reflectMode(){
+  $('mode-local').setAttribute('aria-pressed',String(!peerMode));
+  $('mode-peer').setAttribute('aria-pressed',String(peerMode));
+  $('home-foot').innerHTML = peerMode
+    ? 'cross-device mode · free PeerJS WebRTC sync (no server) · up to ~6 players · symmetric-NAT may fail · works on GitHub Pages · <button id="btn-how">how to play</button>'
+    : 'prototype · syncs between tabs of <b>this browser</b> (open a tab per player) · add bots to test solo · works on GitHub Pages · <button id="btn-how">how to play</button>';
+  $('btn-how').onclick=()=>openOv('ov-how'); // re-bind after innerHTML swap
+}
+$('mode-local').onclick=()=>{peerMode=false;LS.set('leak.peer','0');reflectMode();};
+$('mode-peer').onclick=()=>{peerMode=true;LS.set('leak.peer','1');reflectMode();toast('cross-device on — host creates, others join with the code from any device','silent',3500);};
+reflectMode();
+$('btn-leave').onclick=()=>{room=null; try{transport&&transport.close();}catch(e){} transport=null;
+  ui.seenLog=new Set(); ui.seenReveal=new Set(); ui.sheetOpen=false; ui.screamOpen=false;
+  $('sheet').classList.remove('open'); showScreen('home');};
+$('btn-copy').onclick=()=>{
+  const c=room.code;
+  try{
+    if(navigator.clipboard)navigator.clipboard.writeText(c).then(()=>toast('code copied','silent'));
+    else toast('code: <b class="mono">'+c+'</b>','silent');
+  }catch(e){toast('code: <b class="mono">'+c+'</b>','silent');}
+};
+$('sel-hide').onchange=e=>commit(r=>{r.hideMin=+e.target.value;});
+$('sel-total').onchange=e=>commit(r=>{r.totalMin=+e.target.value;});
+$('btn-addbot').onclick=addBot;
+$('btn-start').onclick=()=>{ac();startGame();showScreen('game');};
+$('btn-mute').onclick=()=>{muted=!muted;LS.set('leak.muted',muted?'1':'0');$('btn-mute').textContent=muted?'🔕':'🔔';toast(muted?'sound off':'sound on (quiet)','silent');};
+$('chip-casino').onclick=openCasino;
+$('btn-end-home').onclick=()=>{closeOv('ov-end');room=null;showScreen('home');};
+$('btn-rematch').onclick=()=>{closeOv('ov-end');resetRoom();};
+$('dev-toggle').onclick=()=>$('dev').classList.toggle('open');
+$('dev-skip').onclick=()=>{if(room&&room.phase==='hide')commit(r=>{r.hideEndsAt=Date.now();});};
+$('dev-casino').onclick=()=>{if(room)commit(r=>{r.forceCasinoId=Date.now();});toast('🎰 casino forced for everyone','gold');};
+$('dev-heart').onclick=()=>loseHeart(myId,'dev testing');
+$('dev-end').onclick=()=>{if(room&&room.phase==='seek')commit(r=>{r.phase='end';r.winner=aliveHiders().length?'hiders':'seekers';});};
+$('dev-reset').onclick=()=>{if(room)resetRoom();};
+document.addEventListener('pointerdown',()=>ac(),{once:true});
+
+setPosMode(true);
+tickIv=setInterval(tick,250);
+showScreen('home');
+if(!storageAvailable){
+  setTimeout(()=>toast('running in a sandboxed preview — storage is blocked, using in-memory mode. fully works on GitHub Pages.','warn',7000),800);
+}
+</script>
+</body>
+</html>
