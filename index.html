@@ -622,11 +622,12 @@ function saveRoom(){
    (websockets to a free managed server — NO NAT traversal needed, so it works
    on every phone network where PeerJS P2P fails). Free tier: 200 concurrent
    clients, no credit card. Requires a free Supabase project URL + publishable
-   key (stored in localStorage, NOT hardcoded in the repo).
+   key (hardcoded below as the default; a custom key can still be set and
+   stored in localStorage via the "set Supabase key" button).
    Broadcast is pub/sub: every client publishes room snapshots on commit and
    merges incoming ones (Phase 1 merge). Host drives bots + presence pings. */
 const SUPA_URL='https://cjzmytwooszpxxmcrdeu.supabase.co';
-let supaCfg={url:SUPA_URL,key:LS.get('leak.supa_key')||''};
+let supaCfg={url:SUPA_URL,key:LS.get('leak.supa_key')||'sb_publishable_TUn2UVtCEeE6B2KeaCXhtQ_o9K7ieN8'};
 function loadSupabase(){return new Promise((res,rej)=>{
   if(window.supabase&&window.supabase.createClient)return res(window.supabase);
   const sc=document.createElement('script');
@@ -730,7 +731,7 @@ function createRoom(){
   room={code:genCode(),hostId:myId,phase:'lobby',hideMin:10,totalMin:45,casinoMin:15,
     startedAt:0,hideEndsAt:0,gameEndsAt:0,winner:null,forceCasinoId:0,players:[],fx:[],log:[],seq:0};
   ui.hostSeen=Date.now(); // we are host, heartbeat present
-  room.players.push(newPlayer(name,false));
+  room.players.push(newPlayer(name,false));
   if(!supaCfg.key){toast('set your Supabase key first','warn',5000);}
   chanFor(room.code,{host:true}); saveRoom(); ui.seenLog=new Set(); showScreen('lobby');
   toast('room created — share code <b>'+room.code+'</b>'+(storageAvailable?'':'<br><small>(storage blocked here: state lives in memory)</small>'),'gold',5000);
