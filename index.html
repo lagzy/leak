@@ -70,10 +70,6 @@ input,select{font-family:inherit;color:inherit}
 .join-row{display:flex;gap:10px}
 .join-row .field{flex:1;text-transform:uppercase;letter-spacing:.28em;font-family:'JetBrains Mono',monospace}
 .foot{margin-top:18px;color:var(--ink-soft);font-size:12px;text-align:center;max-width:380px;line-height:1.6}
-.mode-row{display:flex;gap:8px;margin-top:18px;width:min(400px,100%)}
-.mode-opt{flex:1;padding:10px 8px;border-radius:var(--r-md);font-size:13px;font-weight:600;
-  border:1px solid var(--line);background:var(--card);color:var(--ink-soft);transition:all .2s}
-.mode-opt[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:transparent}
 .foot button{color:var(--ink);text-decoration:underline;text-underline-offset:3px;font-size:12px}
 
 /* ---------- lobby ---------- */
@@ -322,17 +318,9 @@ input,select{font-family:inherit;color:inherit}
       <button id="btn-join" class="btn ghost" style="width:110px;flex:none">join</button>
     </div>
   </div>
-  <div class="mode-row" id="mode-row">
-    <button class="mode-opt" id="mode-local" aria-pressed="true">same browser</button>
-    <button class="mode-opt" id="mode-supabase" aria-pressed="false">cross device ★</button>
-    <button class="mode-opt" id="mode-peer" aria-pressed="false">cross device (P2P)</button>
+    <div class="foot" id="home-foot">
+    cross-device · syncs to any phone via Supabase · <button id="btn-supa-set">set Supabase key</button> · <button id="btn-how">how to play</button>
   </div>
-  <div class="foot" id="home-foot">
-    prototype · syncs between tabs of <b>this browser</b> (open a tab per player) · add bots to test solo ·
-    works on GitHub Pages · <button id="btn-how">how to play</button>
-  </div>
-</div>
-
 <!-- ============ LOBBY ============ -->
 <div id="scr-lobby" class="screen">
   <div class="topbar">
@@ -612,8 +600,8 @@ function applyRoom(incoming){ if(!room){room=incoming;return true;} return merge
 
 /* ---------------- transport abstraction (Phase 3 #18) ----------------
    A Transport owns how room state and presence travel between clients.
-   LocalTransport = today's behavior (BroadcastChannel + localStorage event
-   + ask handshake). PeerJSTransport (Phase 3 #19) is opt-in for cross-device.
+   SupabaseTransport (below) is the only transport: websockets to a free
+   managed server. NO NAT traversal needed — works on every phone network.
    Interface:
      .broadcast(room)        — push a room snapshot to peers
      .ask(code)              — request the current room (join handshake)
@@ -623,29 +611,6 @@ function applyRoom(incoming){ if(!room){room=incoming;return true;} return merge
    (applyRoom/renderAll), set up once below. */
 let transport=null;
 
-function LocalTransport(code){
-  const key=roomKey(code);
-  let bc=null;
-  try{ bc=new BroadcastChannel('leak-ch-'+code); }catch(e){ bc={postMessage:function(){},close:function(){}}; }
-  bc.onmessage=e=>{
-    const d=e.data||{};
-    if(d.ask){ if(room&&room.code===d.ask){ try{bc.postMessage({room});}catch(_){} } return; }
-    if(d.presence){ ui.hostSeen=Date.now(); return; }
-    if(d.room){ if(applyRoom(d.room))renderAll(); }
-  };
-  return {
-    broadcast(room){ LS.set(key,JSON.stringify(room)); try{bc.postMessage({room});}catch(e){} },
-    ask(code){ try{bc.postMessage({ask:code});}catch(e){} },
-    presence(){ try{bc.postMessage({presence:1});}catch(e){} },
-    close(){ try{bc&&bc.close();}catch(e){} }
-  };
-}
-// storage event is the LocalTransport fallback sync path between tabs.
-window.addEventListener('storage',e=>{
-  if(room&&e.key===roomKey(room.code)&&e.newValue){
-    try{const inc=JSON.parse(e.newValue); if(applyRoom(inc))renderAll();}catch(_){}
-  }
-});
 
 function saveRoom(){
   if(!room)return;
@@ -653,104 +618,15 @@ function saveRoom(){
   LS.set(roomKey(room.code),JSON.stringify(room));
   if(transport)transport.broadcast(room);
 }
-/* PeerJSTransport: free cross-device sync over WebRTC data channels, using the
-   free public PeerJS Cloud signaling server (no account, no keys, no server
-   cost). Data flows P2P between browsers; signaling only finds peers.
-   Honest limits handled below: symmetric NAT needs TURN (paid) → we detect
-   failure and fall back; one peer supports ~5-10 connections → cap rooms. */
-let syncMode=LS.get('leak.sync')||'local'; // 'local' | 'peer' | 'supabase'
-const peerMode=()=>syncMode==='peer';
-function loadPeerJS(){return new Promise((res,rej)=>{
-  if(window.Peer)return res(window.Peer);
-  const sc=document.createElement('script');
-  sc.src='https://unpkg.com/peerjs@1.1.0/dist/peerjs.min.js';
-  sc.onload=()=>window.Peer?res(window.Peer):rej(new Error('PeerJS failed'));
-  sc.onerror=()=>rej(new Error('PeerJS load failed'));
-  document.head.appendChild(sc);
-});}
-function PeerJSTransport(code,opts){
-  const isHost=!!opts.host;
-  const peerId='leak-'+code;
-  let peer=null, conns=[], closed=false;
-  const connIds=new Set(); // dedupe by remote peer id
-  const onConn=(c)=>{
-    if(connIds.has(c.peer)){return;}
-    connIds.add(c.peer);
-    conns.push(c);
-    c.on('data',d=>{
-      try{
-        const msg=JSON.parse(d);
-        if(msg.ask&&isHost&&room){ try{c.send(JSON.stringify({room}));}catch(_){} return; }
-        if(msg.presence){ ui.hostSeen=Date.now(); return; }
-        if(msg.room){ if(applyRoom(msg.room)){
-          // host re-broadcasts merged room to all OTHER connections (relay)
-          if(isHost){ const snap=JSON.stringify({room}); conns.forEach(o=>{if(o!==c&&o.open)try{o.send(snap);}catch(_){}}); }
-          renderAll();
-        } }
-      }catch(e){}
-    });
-    c.on('open',()=>{ if(isHost&&room){ try{c.send(JSON.stringify({room}));}catch(_){} } });
-    c.on('close',()=>{ conns=conns.filter(o=>o!==c); connIds.delete(c.peer); });
-  };
-  loadPeerJS().then(Peer=>{
-    peer=new Peer(isHost?peerId:undefined,{debug:1,
-      config:{iceServers:[
-        {urls:'stun:stun.l.google.com:19302'},
-        {urls:'stun:stun1.l.google.com:19302'},
-        // free OpenRelay TURN (no account) — relays traffic for symmetric-NAT peers
-        {urls:'turn:openrelay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
-        {urls:'turn:openrelay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject'},
-        {urls:'turn:openrelay.metered.ca:443?transport=tcp',username:'openrelayproject',credential:'openrelayproject'}
-      ]}
-    });
-    peer.on('open',id=>{
-      ui.peerStatus='open';
-      if(isHost){
-        peer.on('connection',onConn);
-      }else{
-        const c=peer.connect(peerId,{reliable:false});
-        c.on('open',()=>{ ui.peerStatus='connected'; });
-        c.on('data',d=>{try{const msg=JSON.parse(d); if(msg.presence){ui.hostSeen=Date.now();return;} if(msg.room){ if(applyRoom(msg.room))renderAll(); }}catch(e){}});
-        c.on('close',()=>{ ui.peerStatus='disconnected'; });
-        onConn(c); // track for sending our own commits
-      }
-    });
-    peer.on('error',err=>{
-      ui.peerStatus='error';
-      const t=String(err&&err.type||err);
-      // dedupe: only show each distinct P2P error type once per session so the
-      // screen doesn't fill with identical red toasts.
-      const key='p2p-err:'+t;
-      if(ui.p2pSeen&&ui.p2pSeen.has(key))return;
-      if(!ui.p2pSeen)ui.p2pSeen=new Set();
-      ui.p2pSeen.add(key);
-      if(t==='unavailable-id'){ toast('a host is already running this room code on the P2P network — try rejoining or pick another code','warn',6000); }
-      else if(t==='peer-unavailable'){ toast('room not found on the P2P network — make sure the host created it with cross-device ON','warn',6000); }
-      else if(t==='network'||t==='server-error'){ toast('P2P network unreachable — try same-browser mode','warn',6000); }
-      else { toast('P2P error: '+t+' — try same-browser mode (same browser always works)','warn',6000); }
-    });
-  }).catch(e=>{
-    ui.peerStatus='error';
-    toast('could not load the cross-device module — using same-browser sync','warn',6000);
-  });
-  return {
-    broadcast(room){ // host: relay to all; joiner: send to host
-      if(isHost){ const snap=JSON.stringify({room}); conns.forEach(o=>{if(o.open)try{o.send(snap);}catch(_){}}); }
-      else { conns.forEach(o=>{if(o.open)try{o.send(JSON.stringify({room}));}catch(_){}}); }
-    },
-    ask(code){ if(!isHost){ conns.forEach(o=>{if(o.open)try{o.send(JSON.stringify({ask:code}));}catch(_){}}); } },
-    presence(){ if(isHost){ const snap=JSON.stringify({presence:1}); conns.forEach(o=>{if(o.open)try{o.send(snap);}catch(_){}}); } },
-    close(){ closed=true; try{conns.forEach(c=>c.close&&c.close());}catch(e){} try{peer&&peer.destroy&&peer.destroy();}catch(e){} }
-  };
-}
-/* SupabaseTransport: robust cross-device sync via Supabase Realtime Broadcast
+/* cross-device sync (Supabase Realtime Broadcast robust cross-device sync via Supabase Realtime Broadcast
    (websockets to a free managed server — NO NAT traversal needed, so it works
    on every phone network where PeerJS P2P fails). Free tier: 200 concurrent
    clients, no credit card. Requires a free Supabase project URL + publishable
    key (stored in localStorage, NOT hardcoded in the repo).
    Broadcast is pub/sub: every client publishes room snapshots on commit and
    merges incoming ones (Phase 1 merge). Host drives bots + presence pings. */
-let supaCfg={url:LS.get('leak.supa_url')||'',key:LS.get('leak.supa_key')||''};
+const SUPA_URL='https://cjzmytwooszpxxmcrdeu.supabase.co';
+let supaCfg={url:SUPA_URL,key:LS.get('leak.supa_key')||''};
 function loadSupabase(){return new Promise((res,rej)=>{
   if(window.supabase&&window.supabase.createClient)return res(window.supabase);
   const sc=document.createElement('script');
@@ -760,12 +636,10 @@ function loadSupabase(){return new Promise((res,rej)=>{
   document.head.appendChild(sc);
 });}
 function promptSupabase(){
-  const u=prompt('Supabase project URL (https://xxxx.supabase.co):',supaCfg.url);
-  if(u===null)return false; supaCfg.url=(u||'').trim();
-  const k=prompt('Supabase publishable key (sb_publishable_...):',supaCfg.key);
+  const k=prompt('Supabase publishable key (sb_publishable_... - from Settings > API):',supaCfg.key);
   if(k===null)return false; supaCfg.key=(k||'').trim();
-  if(!supaCfg.url||!supaCfg.key){toast('need both URL and key','warn');return false;}
-  LS.set('leak.supa_url',supaCfg.url);LS.set('leak.supa_key',supaCfg.key);
+  if(!supaCfg.key){toast('need the publishable key','warn');return false;}
+  LS.set('leak.supa_key',supaCfg.key);
   return true;
 }
 function SupabaseTransport(code){
@@ -788,9 +662,7 @@ function SupabaseTransport(code){
 }
 function chanFor(code,opts){
   try{ transport&&transport.close(); }catch(e){}
-  if(syncMode==='supabase') transport=SupabaseTransport(code);
-  else if(syncMode==='peer') transport=PeerJSTransport(code,opts||{});
-  else transport=LocalTransport(code);
+  transport=SupabaseTransport(code);
 }
 function commit(fn){ if(!room)return; fn(room); saveRoom(); renderAll(); }
 
@@ -858,7 +730,8 @@ function createRoom(){
   room={code:genCode(),hostId:myId,phase:'lobby',hideMin:10,totalMin:45,casinoMin:15,
     startedAt:0,hideEndsAt:0,gameEndsAt:0,winner:null,forceCasinoId:0,players:[],fx:[],log:[],seq:0};
   ui.hostSeen=Date.now(); // we are host, heartbeat present
-  room.players.push(newPlayer(name,false));
+  room.players.push(newPlayer(name,false));
+  if(!supaCfg.key){toast('set your Supabase key first','warn',5000);}
   chanFor(room.code,{host:true}); saveRoom(); ui.seenLog=new Set(); showScreen('lobby');
   toast('room created — share code <b>'+room.code+'</b>'+(storageAvailable?'':'<br><small>(storage blocked here: state lives in memory)</small>'),'gold',5000);
 }
@@ -882,25 +755,13 @@ function joinRoom(code){
     showScreen(room.phase==='lobby'?'lobby':'game');
     toast('joined room '+room.code,'good');
   };
-  // same-browser path: try local storage first (a tab may have the room in memory+LS)
-  if(syncMode==='local'){
-    const raw=LS.get(roomKey(code));
-    if(raw){
-      try{room=JSON.parse(raw);}catch(e){room=null;}
-      if(room){chanFor(code,{host:false});finish();return;}
-    }
-  }
-  // not in storage (or cross-device) → ask over the transport
   chanFor(code,{host:false});
   try{transport&&transport.ask(code);}catch(e){}
   const t0=now();
-  const timeout=(syncMode==='peer'||syncMode==='supabase')?10000:1400;
   const iv=setInterval(()=>{
     if(room&&room.code===code){clearInterval(iv);finish();}
-    else if(now()-t0>timeout){clearInterval(iv);
-      toast(syncMode==='peer'?'room not found on the P2P network — check the code and that the host has cross-device ON.'
-        :syncMode==='supabase'?'room not found — make sure the host created it with cross-device (Supabase) ON.'
-        :'room not found. create it first, then join with the code from another tab of the same browser.','warn',6000);}
+    else if(now()-t0>10000){clearInterval(iv);
+      toast('room not found - check the code and that the host created it','warn',6000);}
   },120);
 }
 const BOT_NAMES=['Mara','Jonas','Livia','Nino','Aylin','Reto','Sena','Kai'];
@@ -1525,28 +1386,9 @@ $('home-code').addEventListener('input',e=>e.target.value=e.target.value.toUpper
 $('home-code').addEventListener('keydown',e=>{if(e.key==='Enter')joinRoom($('home-code').value);});
 $('btn-create').onclick=()=>{ac();createRoom();};
 $('btn-join').onclick=()=>{ac();joinRoom($('home-code').value);};
-function reflectMode(){
-  $('mode-local').setAttribute('aria-pressed',String(syncMode==='local'));
-  $('mode-supabase').setAttribute('aria-pressed',String(syncMode==='supabase'));
-  $('mode-peer').setAttribute('aria-pressed',String(syncMode==='peer'));
-  const foot={
-    local:'same-browser mode · syncs between tabs of <b>this browser</b> (open a tab per player) · add bots to test solo · works on GitHub Pages · <button id="btn-how">how to play</button>',
-    supabase:'cross-device (Supabase) ★ recommended · free managed realtime server, works on every phone network · 200 players · needs a free Supabase project (tap to set URL+key) · <button id="btn-supa-set">set Supabase keys</button> · <button id="btn-how">how to play</button>',
-    peer:'cross-device (P2P) · free PeerJS WebRTC, no server · up to ~6 players · may fail on strict mobile networks (use Supabase instead) · works on GitHub Pages · <button id="btn-how">how to play</button>'
-  };
-  $('home-foot').innerHTML=foot[syncMode]||foot.local;
-  $('btn-how').onclick=()=>openOv('ov-how');
-  const setBtn=$('btn-supa-set'); if(setBtn)setBtn.onclick=()=>{if(promptSupabase())toast('Supabase keys saved','good');};
-}
-$('mode-local').onclick=()=>{syncMode='local';LS.set('leak.sync','local');reflectMode();};
-$('mode-supabase').onclick=()=>{
-  syncMode='supabase';LS.set('leak.sync','supabase');
-  if(!supaCfg.url||!supaCfg.key){ if(!promptSupabase()){toast('set your Supabase URL + key to use cross-device ★','warn',5000);} }
-  reflectMode();
-  toast('cross-device ★ on — the robust option. host creates, others join with the code from any device','silent',3500);
-};
-$('mode-peer').onclick=()=>{syncMode='peer';LS.set('leak.sync','peer');reflectMode();toast('P2P mode — may fail on mobile networks; use cross-device ★ if it does','silent',3500);};
-reflectMode();
+$('btn-how').onclick=()=>openOv('ov-how');
+$('btn-supa-set').onclick=()=>{if(promptSupabase())toast('Supabase key saved','good');};
+if(!supaCfg.key)setTimeout(()=>toast('tap "set Supabase key" once to enable cross-device','warn',6000),1200);
 $('btn-leave').onclick=()=>{room=null; try{transport&&transport.close();}catch(e){} transport=null;
   ui.seenLog=new Set(); ui.seenReveal=new Set(); ui.sheetOpen=false; ui.screamOpen=false;
   $('sheet').classList.remove('open'); showScreen('home');};
