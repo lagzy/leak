@@ -323,7 +323,8 @@ input,select{font-family:inherit;color:inherit}
     </div>
   </div>
   <div class="mode-row" id="mode-row">
-    <button class="mode-opt" id="mode-local" aria-pressed="true">same browser (tabs)</button>
+    <button class="mode-opt" id="mode-local" aria-pressed="true">same browser</button>
+    <button class="mode-opt" id="mode-supabase" aria-pressed="false">cross device ★</button>
     <button class="mode-opt" id="mode-peer" aria-pressed="false">cross device (P2P)</button>
   </div>
   <div class="foot" id="home-foot">
@@ -657,7 +658,8 @@ function saveRoom(){
    cost). Data flows P2P between browsers; signaling only finds peers.
    Honest limits handled below: symmetric NAT needs TURN (paid) → we detect
    failure and fall back; one peer supports ~5-10 connections → cap rooms. */
-let peerMode=LS.get('leak.peer')==='1'; // user choice: cross-device?
+let syncMode=LS.get('leak.sync')||'local'; // 'local' | 'peer' | 'supabase'
+const peerMode=()=>syncMode==='peer';
 function loadPeerJS(){return new Promise((res,rej)=>{
   if(window.Peer)return res(window.Peer);
   const sc=document.createElement('script');
@@ -741,9 +743,54 @@ function PeerJSTransport(code,opts){
     close(){ closed=true; try{conns.forEach(c=>c.close&&c.close());}catch(e){} try{peer&&peer.destroy&&peer.destroy();}catch(e){} }
   };
 }
+/* SupabaseTransport: robust cross-device sync via Supabase Realtime Broadcast
+   (websockets to a free managed server — NO NAT traversal needed, so it works
+   on every phone network where PeerJS P2P fails). Free tier: 200 concurrent
+   clients, no credit card. Requires a free Supabase project URL + publishable
+   key (stored in localStorage, NOT hardcoded in the repo).
+   Broadcast is pub/sub: every client publishes room snapshots on commit and
+   merges incoming ones (Phase 1 merge). Host drives bots + presence pings. */
+let supaCfg={url:LS.get('leak.supa_url')||'',key:LS.get('leak.supa_key')||''};
+function loadSupabase(){return new Promise((res,rej)=>{
+  if(window.supabase&&window.supabase.createClient)return res(window.supabase);
+  const sc=document.createElement('script');
+  sc.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+  sc.onload=()=>window.supabase&&window.supabase.createClient?res(window.supabase):rej(new Error('Supabase failed'));
+  sc.onerror=()=>rej(new Error('Supabase load failed'));
+  document.head.appendChild(sc);
+});}
+function promptSupabase(){
+  const u=prompt('Supabase project URL (https://xxxx.supabase.co):',supaCfg.url);
+  if(u===null)return false; supaCfg.url=(u||'').trim();
+  const k=prompt('Supabase publishable key (sb_publishable_...):',supaCfg.key);
+  if(k===null)return false; supaCfg.key=(k||'').trim();
+  if(!supaCfg.url||!supaCfg.key){toast('need both URL and key','warn');return false;}
+  LS.set('leak.supa_url',supaCfg.url);LS.set('leak.supa_key',supaCfg.key);
+  return true;
+}
+function SupabaseTransport(code){
+  const ch='leak-'+code;
+  let client=null,chan=null,ready=false;
+  loadSupabase().then(sb=>{
+    try{ client=sb.createClient(supaCfg.url,supaCfg.key,{realtime:{params:{eventsPerSecond:10}}}); }catch(e){ui.peerStatus='error';toast('Supabase init failed — check URL/key','warn',6000);return;}
+    chan=client.channel(ch);
+    chan.on('broadcast',{event:'room'},payload=>{ if(payload&&payload.room){ if(applyRoom(payload.room))renderAll(); } });
+    chan.on('broadcast',{event:'presence'},()=>{ ui.hostSeen=Date.now(); });
+    chan.on('broadcast',{event:'ask'},payload=>{ if(room&&room.code===code&&payload){ try{chan.send({type:'broadcast',event:'room',payload:{room}});}catch(_){} } });
+    chan.subscribe(st=>{ if(st==='SUBSCRIBED'){ready=true;ui.peerStatus='connected';} else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'){ui.peerStatus='error';toast('Supabase channel error — check your connection','warn',6000);} });
+  }).catch(e=>{ui.peerStatus='error';toast('could not load Supabase — try again or use same-browser mode','warn',6000);});
+  return {
+    broadcast(room){ if(ready&&chan){try{chan.send({type:'broadcast',event:'room',payload:{room}});}catch(e){}} },
+    ask(code){ if(ready&&chan){try{chan.send({type:'broadcast',event:'ask',payload:{code}});}catch(e){}} },
+    presence(){ if(ready&&chan){try{chan.send({type:'broadcast',event:'presence',payload:{}});}catch(e){}} },
+    close(){ try{chan&&client&&client.removeChannel(chan);}catch(e){} }
+  };
+}
 function chanFor(code,opts){
   try{ transport&&transport.close(); }catch(e){}
-  transport = peerMode ? PeerJSTransport(code,opts||{}) : LocalTransport(code);
+  if(syncMode==='supabase') transport=SupabaseTransport(code);
+  else if(syncMode==='peer') transport=PeerJSTransport(code,opts||{});
+  else transport=LocalTransport(code);
 }
 function commit(fn){ if(!room)return; fn(room); saveRoom(); renderAll(); }
 
@@ -836,7 +883,7 @@ function joinRoom(code){
     toast('joined room '+room.code,'good');
   };
   // same-browser path: try local storage first (a tab may have the room in memory+LS)
-  if(!peerMode){
+  if(syncMode==='local'){
     const raw=LS.get(roomKey(code));
     if(raw){
       try{room=JSON.parse(raw);}catch(e){room=null;}
@@ -847,11 +894,12 @@ function joinRoom(code){
   chanFor(code,{host:false});
   try{transport&&transport.ask(code);}catch(e){}
   const t0=now();
-  const timeout=peerMode?10000:1400; // P2P signaling needs more time than a local broadcast
+  const timeout=(syncMode==='peer'||syncMode==='supabase')?10000:1400;
   const iv=setInterval(()=>{
     if(room&&room.code===code){clearInterval(iv);finish();}
     else if(now()-t0>timeout){clearInterval(iv);
-      toast(peerMode?'room not found on the P2P network — check the code and that the host has cross-device ON.'
+      toast(syncMode==='peer'?'room not found on the P2P network — check the code and that the host has cross-device ON.'
+        :syncMode==='supabase'?'room not found — make sure the host created it with cross-device (Supabase) ON.'
         :'room not found. create it first, then join with the code from another tab of the same browser.','warn',6000);}
   },120);
 }
@@ -1392,7 +1440,7 @@ function tick(){
      ~2s so non-hosts know it's alive; if no ping arrives in ~7s, the oldest
      non-host alive player promotes itself and starts driving bots. */
   if(room.hostId===myId){
-    if(t-ui.hostHeart>2000){ui.hostHeart=t; try{transport&&transport.presence();}catch(e){}}
+    if(t-ui.hostHeart>2000){ui.hostHeart=t; try{transport&&transport.presence();}catch(e){} ui.peerStatus=ui.peerStatus||'open';}
   }else{
     if(ui.hostSeen && t-ui.hostSeen>7000 && room.phase!=='lobby' && room.phase!=='end'){
       const cand=room.players.filter(p=>!p.bot && p.id!==room.hostId && p.status==='alive')
@@ -1478,15 +1526,26 @@ $('home-code').addEventListener('keydown',e=>{if(e.key==='Enter')joinRoom($('hom
 $('btn-create').onclick=()=>{ac();createRoom();};
 $('btn-join').onclick=()=>{ac();joinRoom($('home-code').value);};
 function reflectMode(){
-  $('mode-local').setAttribute('aria-pressed',String(!peerMode));
-  $('mode-peer').setAttribute('aria-pressed',String(peerMode));
-  $('home-foot').innerHTML = peerMode
-    ? 'cross-device mode · free PeerJS WebRTC sync (no server) · up to ~6 players · symmetric-NAT may fail · works on GitHub Pages · <button id="btn-how">how to play</button>'
-    : 'prototype · syncs between tabs of <b>this browser</b> (open a tab per player) · add bots to test solo · works on GitHub Pages · <button id="btn-how">how to play</button>';
-  $('btn-how').onclick=()=>openOv('ov-how'); // re-bind after innerHTML swap
+  $('mode-local').setAttribute('aria-pressed',String(syncMode==='local'));
+  $('mode-supabase').setAttribute('aria-pressed',String(syncMode==='supabase'));
+  $('mode-peer').setAttribute('aria-pressed',String(syncMode==='peer'));
+  const foot={
+    local:'same-browser mode · syncs between tabs of <b>this browser</b> (open a tab per player) · add bots to test solo · works on GitHub Pages · <button id="btn-how">how to play</button>',
+    supabase:'cross-device (Supabase) ★ recommended · free managed realtime server, works on every phone network · 200 players · needs a free Supabase project (tap to set URL+key) · <button id="btn-supa-set">set Supabase keys</button> · <button id="btn-how">how to play</button>',
+    peer:'cross-device (P2P) · free PeerJS WebRTC, no server · up to ~6 players · may fail on strict mobile networks (use Supabase instead) · works on GitHub Pages · <button id="btn-how">how to play</button>'
+  };
+  $('home-foot').innerHTML=foot[syncMode]||foot.local;
+  $('btn-how').onclick=()=>openOv('ov-how');
+  const setBtn=$('btn-supa-set'); if(setBtn)setBtn.onclick=()=>{if(promptSupabase())toast('Supabase keys saved','good');};
 }
-$('mode-local').onclick=()=>{peerMode=false;LS.set('leak.peer','0');reflectMode();};
-$('mode-peer').onclick=()=>{peerMode=true;LS.set('leak.peer','1');reflectMode();toast('cross-device on — host creates, others join with the code from any device','silent',3500);};
+$('mode-local').onclick=()=>{syncMode='local';LS.set('leak.sync','local');reflectMode();};
+$('mode-supabase').onclick=()=>{
+  syncMode='supabase';LS.set('leak.sync','supabase');
+  if(!supaCfg.url||!supaCfg.key){ if(!promptSupabase()){toast('set your Supabase URL + key to use cross-device ★','warn',5000);} }
+  reflectMode();
+  toast('cross-device ★ on — the robust option. host creates, others join with the code from any device','silent',3500);
+};
+$('mode-peer').onclick=()=>{syncMode='peer';LS.set('leak.sync','peer');reflectMode();toast('P2P mode — may fail on mobile networks; use cross-device ★ if it does','silent',3500);};
 reflectMode();
 $('btn-leave').onclick=()=>{room=null; try{transport&&transport.close();}catch(e){} transport=null;
   ui.seenLog=new Set(); ui.seenReveal=new Set(); ui.sheetOpen=false; ui.screamOpen=false;
