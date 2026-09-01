@@ -509,15 +509,26 @@ const storageAvailable=(()=>{try{const s=safeRef('localStorage');if(!s)return fa
 /* ---------------- zone (geocoded via OSM Nominatim) ---------------- */
 const DEFAULT_CORNERS=[
  {lat:47.1179626,lng:8.3919364},
+ {lat:47.1161184,lng:8.3899000},
+ {lat:47.1140680,lng:8.3896612},
+ {lat:47.1161175,lng:8.3959608},
+];
+/* migration: shapes saved before corner 2 moved may still hold the OLD default
+   (marker 2 in the middle) and would silently override the new default. Drop
+   exactly those from saved state; genuinely custom shapes are kept. */
+const LEGACY_DEFAULT_CORNERS=[
+ {lat:47.1179626,lng:8.3919364},
  {lat:47.1161184,lng:8.3929389},
  {lat:47.1140680,lng:8.3896612},
  {lat:47.1161175,lng:8.3959608},
 ];
+const isLegacyDefault=pts=>Array.isArray(pts)&&pts.length===4&&pts.every((p,i)=>Math.abs(p.lat-LEGACY_DEFAULT_CORNERS[i].lat)<1e-9&&Math.abs(p.lng-LEGACY_DEFAULT_CORNERS[i].lng)<1e-9);
 /* corners are editable ("map edit" in the lobby): load the last saved shape,
    fall back to the default Root rectangle. */
 function loadCorners(){
   try{const raw=LS.get('leak.corners');
     if(raw){const arr=JSON.parse(raw);
+      if(isLegacyDefault(arr)){LS.del('leak.corners');return DEFAULT_CORNERS.map(c=>({lat:c.lat,lng:c.lng}));} // stale pre-move default
       if(Array.isArray(arr)&&arr.length===4&&arr.every(c=>isFinite(c.lat)&&isFinite(c.lng)))return arr.map(c=>({lat:c.lat,lng:c.lng}));}
   }catch(e){}
   return DEFAULT_CORNERS.map(c=>({lat:c.lat,lng:c.lng}));
@@ -1703,6 +1714,7 @@ showScreen('home');
     if(!r||!r.code||r.code!==code||!Array.isArray(r.players)){LS.del('leak.active');return;}
     if(!r.players.some(p=>p.id===myId)){LS.del('leak.active');LS.del(roomKey(code));return;} // not our seat
     room=r;
+    if(isLegacyDefault(r.zone)){r.zone=DEFAULT_CORNERS.map(c=>({lat:c.lat,lng:c.lng}));} // stale pre-move default
     if(Array.isArray(r.zone)&&r.zone.length===4)applyCorners(r.zone);
     ui.hostSeen=Date.now(); // host heartbeat present (we might be the host)
     ui.seenLog=new Set();
