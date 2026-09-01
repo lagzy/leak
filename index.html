@@ -630,7 +630,7 @@ function showKickedOverlay(){
   const ov=$('ov-reveal');ov.className='ov open kicked';
   $('reveal-word').textContent='kicked.';
   $('reveal-sub').innerHTML='you were kicked by the host. this room is closed for you now.';
-  const bt=$('btn-enter');bt.textContent='back to home';
+  const bt=$('btn-enter');bt.textContent='go back';
   bt.onclick=()=>{closeOv('ov-reveal');ui.kicked=false;showScreen('home');};
 }
 
@@ -1408,6 +1408,7 @@ function renderSheet(){
 /* ---------------- end / reveal ---------------- */
 function renderReveal(){
   const m=me();if(!m||!m.role)return;
+  if(ui.kicked)return; // never overwrite the kicked screen with a reveal
   const key='leak-reveal-'+room.code+':'+room.startedAt;
   // Phase 2 #14: guard with an in-memory set too, so the reveal shows exactly
   // once per game per tab even when storage is blocked (sandbox fallback).
