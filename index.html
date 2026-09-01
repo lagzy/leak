@@ -677,11 +677,19 @@ function SupabaseTransport(code){
          .metas on a v2 array silently found nothing, so presence-based room
          discovery never fired and a join only worked if a live host answered
          the ask. Handle both shapes defensively. */
+      /* Every member tracks its own room, so the state has one entry per
+         client. Each entry is a snapshot from a different moment; the freshest
+         (highest seq) wins the envelope fields and players union across all of
+         them. Do NOT return after the first apply — the first entry is often
+         our own older snapshot, and stopping there would shadow the newer
+         entries from other members (joiner never appears on the host). */
+      let changed=false;
       for(const key in st){
         const list=st[key]; if(!list)continue;
         const arr=Array.isArray(list)?list:(Array.isArray(list.metas)?list.metas:[list]);
-        for(const m of arr){ if(m&&m.room&&applyRoom(m.room)){renderAll();return;} }
+        for(const m of arr){ if(m&&m.room&&applyRoom(m.room))changed=true; }
       }
+      if(changed)renderAll();
     }catch(e){}
   }
   const trackRoom=r=>{ if(ready&&chan){try{chan.track({room:compactRoom(r)});}catch(e){}} };
@@ -689,9 +697,18 @@ function SupabaseTransport(code){
      stale state after a failed join. */
   function bindChan(){
     chan=client.channel(ch);
-    chan.on('broadcast',{event:'room'},payload=>{ if(payload&&payload.room){ if(applyRoom(payload.room))renderAll(); } });
+    /* realtime-js v2 delivers the send() envelope ({type,event,payload:{...}})
+       to broadcast callbacks, not the inner payload — unwrap it defensively,
+       falling back to the pre-envelope inline shape older bundles used. */
+    chan.on('broadcast',{event:'room'},payload=>{
+      const r=payload&&payload.payload&&payload.payload.room?payload.payload.room:(payload&&payload.room);
+      if(r){ if(applyRoom(r))renderAll(); }
+    });
     chan.on('broadcast',{event:'presence'},()=>{ ui.hostSeen=Date.now(); });
-    chan.on('broadcast',{event:'ask'},payload=>{ if(room&&room.code===code&&payload&&payload.code)send({type:'broadcast',event:'room',payload:{room}}); });
+    chan.on('broadcast',{event:'ask'},payload=>{
+      const c=payload&&payload.payload&&payload.payload.code?payload.payload.code:(payload&&payload.code);
+      if(room&&room.code===code&&c)send({type:'broadcast',event:'room',payload:{room}});
+    });
     ['sync','join','update'].forEach(ev=>chan.on('presence',{event:ev},syncRoom));
     return chan;
   }
