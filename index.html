@@ -646,20 +646,27 @@ function promptSupabase(){
 }
 function SupabaseTransport(code){
   const ch='leak-'+code;
-  let client=null,chan=null,ready=false;
+  let client=null,chan=null,ready=false,pendingRoom=null;
+  /* send() is safe before the channel is subscribed: messages are dropped
+     until SUBSCRIBED, then the pending room snapshot (if any) is flushed. */
+  const send=msg=>{ if(!ready||!chan)return false; try{chan.send(msg);return true;}catch(e){return false;} };
+  const flush=()=>{ if(ready&&pendingRoom){const r=pendingRoom;pendingRoom=null;send({type:'broadcast',event:'room',payload:{room:r}});} };
   loadSupabase().then(sb=>{
     try{ client=sb.createClient(supaCfg.url,supaCfg.key,{realtime:{params:{eventsPerSecond:10}}}); }catch(e){ui.peerStatus='error';toast('Supabase init failed — check URL/key','warn',6000);return;}
     chan=client.channel(ch);
     chan.on('broadcast',{event:'room'},payload=>{ if(payload&&payload.room){ if(applyRoom(payload.room))renderAll(); } });
     chan.on('broadcast',{event:'presence'},()=>{ ui.hostSeen=Date.now(); });
-    chan.on('broadcast',{event:'ask'},payload=>{ if(room&&room.code===code&&payload){ try{chan.send({type:'broadcast',event:'room',payload:{room}});}catch(_){} } });
-    chan.subscribe(st=>{ if(st==='SUBSCRIBED'){ready=true;ui.peerStatus='connected';} else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'){ui.peerStatus='error';toast('Supabase channel error — check your connection','warn',6000);} });
+    chan.on('broadcast',{event:'ask'},payload=>{ if(room&&room.code===code&&payload&&payload.code)send({type:'broadcast',event:'room',payload:{room}}); });
+    chan.subscribe(st=>{
+      if(st==='SUBSCRIBED'){ready=true;ui.peerStatus='connected';flush();}
+      else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'){ui.peerStatus='error';toast('Supabase channel error — check your connection','warn',6000);}
+    });
   }).catch(e=>{ui.peerStatus='error';toast('could not load Supabase — try again or use same-browser mode','warn',6000);});
   return {
-    broadcast(room){ if(ready&&chan){try{chan.send({type:'broadcast',event:'room',payload:{room}});}catch(e){}} },
-    ask(code){ if(ready&&chan){try{chan.send({type:'broadcast',event:'ask',payload:{code}});}catch(e){}} },
-    presence(){ if(ready&&chan){try{chan.send({type:'broadcast',event:'presence',payload:{}});}catch(e){}} },
-    close(){ try{chan&&client&&client.removeChannel(chan);}catch(e){} }
+    broadcast(room){ if(!send({type:'broadcast',event:'room',payload:{room}}))pendingRoom=room; },
+    ask(code){ send({type:'broadcast',event:'ask',payload:{code}}); },
+    presence(){ send({type:'broadcast',event:'presence',payload:{}}); },
+    close(){ pendingRoom=null; try{chan&&client&&client.removeChannel(chan);}catch(e){} }
   };
 }
 function chanFor(code,opts){
@@ -758,13 +765,17 @@ function joinRoom(code){
     toast('joined room '+room.code,'good');
   };
   chanFor(code,{host:false});
-  try{transport&&transport.ask(code);}catch(e){}
+  /* The transport connects asynchronously (CDN load + websocket), so the
+     ask must be retried until we're subscribed and a host answers — sending
+     it once at this point would always happen before ready. */
   const t0=now();
   const iv=setInterval(()=>{
     if(room&&room.code===code){clearInterval(iv);finish();}
-    else if(now()-t0>10000){clearInterval(iv);
+    else if(now()-t0>15000){clearInterval(iv);
+      try{transport&&transport.close();}catch(e){}
       toast('room not found - check the code and that the host created it','warn',6000);}
-  },120);
+    else try{transport&&transport.ask(code);}catch(e){}
+  },500);
 }
 const BOT_NAMES=['Mara','Jonas','Livia','Nino','Aylin','Reto','Sena','Kai'];
 function addBot(){
