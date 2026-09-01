@@ -83,13 +83,10 @@ input,select{font-family:inherit;color:inherit}
   letter-spacing:.3em;font-size:16px}
 .code-chip button{background:rgba(255,255,255,.16);border-radius:999px;padding:6px 12px;color:#fff;font-size:12px;font-weight:700;letter-spacing:.05em}
 .sec-title{font-size:12px;text-transform:uppercase;letter-spacing:.16em;color:var(--ink-soft);margin:22px 0 10px}
-#lobby-map{height:170px;border-radius:var(--r-lg);border:1px solid var(--line);box-shadow:var(--shadow);overflow:hidden;z-index:0}
-.corners{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
-.corner{font-size:11.5px;color:var(--ink-soft);background:var(--card);border:1px solid var(--line);
-  border-radius:8px;padding:7px 9px;display:flex;gap:6px;align-items:center}
-.corner b{color:var(--ink);font-weight:500}
-.corner .n{width:16px;height:16px;border-radius:4px;background:var(--ink);color:var(--paper);
-  font-size:10px;display:inline-flex;align-items:center;justify-content:center;flex:none;font-family:'JetBrains Mono',monospace}
+.zone-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:22px}
+.zone-head .sec-title{margin:0}
+#lobby-map{height:260px;border-radius:var(--r-lg);border:1px solid var(--line);box-shadow:var(--shadow);overflow:hidden;z-index:0}
+#edit-map{height:300px;border-radius:14px;border:1px solid var(--line);overflow:hidden;z-index:0}
 .plist{display:flex;flex-direction:column;gap:8px}
 .prow{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);
   border-radius:var(--r-md);padding:11px 13px;animation:fadeUp .35s both}
@@ -330,9 +327,11 @@ input,select{font-family:inherit;color:inherit}
     <div class="code-chip"><span id="lobby-code">----</span><button id="btn-copy" aria-label="copy room code">copy</button></div>
   </div>
   <div class="lob-scroll">
-    <div class="sec-title">play zone — Root, 6037</div>
+    <div class="zone-head">
+      <div class="sec-title">play zone — Root, 6037</div>
+      <button id="btn-mapedit" class="btn ghost small">map edit</button>
+    </div>
     <div id="lobby-map"></div>
-    <div class="corners" id="corner-list"></div>
     <div class="sec-title">settings <span id="set-lock" style="text-transform:none;letter-spacing:0"></span></div>
     <div class="settings" id="lobby-settings">
       <label>hide time<select id="sel-hide"><option value="5">5 min</option><option value="10" selected>10 min</option><option value="15">15 min</option></select></label>
@@ -344,7 +343,7 @@ input,select{font-family:inherit;color:inherit}
     <div style="height:10px"></div>
     <button id="btn-addbot" class="btn ghost" style="font-size:14px;padding:11px">＋ add test bot</button>
     <div class="lob-note" id="role-hint">tap a role chip to cycle hider → seeker → random</div>
-    <div class="lob-note">everyone starts at <b>Bahnhofstrasse 17</b> · roles are picked or random ·
+    <div class="lob-note">everyone starts at corner <b>1</b> (editable via map edit) · roles are picked or random ·
     nobody may leave the rectangle · breaking rules costs a ♥</div>
   </div>
   <div class="lob-actions">
@@ -414,6 +413,18 @@ input,select{font-family:inherit;color:inherit}
   <button class="btn ghost" id="btn-shift-cancel">cancel</button>
 </div></div>
 
+<div id="ov-mapedit" class="ov"><div class="panel">
+  <h2>map edit</h2>
+  <p class="sub">drag the 4 corners to reshape the play zone — the whole game runs inside that shape. corner <b>1</b> is the start point.</p>
+  <div id="edit-map"></div>
+  <div style="height:16px"></div>
+  <button class="btn" id="btn-mapedit-ok">save map</button>
+  <div style="height:8px"></div>
+  <button class="btn ghost" id="btn-mapedit-reset">↺ reset to default</button>
+  <div style="height:8px"></div>
+  <button class="btn ghost" id="btn-mapedit-cancel">cancel</button>
+</div></div>
+
 <div id="ov-confirm" class="ov"><div class="panel">
   <h2 id="cf-title"></h2>
   <p class="sub" id="cf-text"></p>
@@ -426,7 +437,7 @@ input,select{font-family:inherit;color:inherit}
   <h2>how to play</h2>
   <p class="sub">real-life hide &amp; seek around Root, with chaotic buffs.</p>
   <div class="how-list">
-    <div><b>1 · start</b>everyone meets at Bahnhofstrasse 17. pick hider / seeker / random.</div>
+    <div><b>1 · start</b>everyone meets at the start corner. pick hider / seeker / random.</div>
     <div><b>2 · hide</b>hiders get 10 minutes to hide inside the rectangle. seekers count down.</div>
     <div><b>3 · seek</b>seekers hunt. find a hider in real life, then tap <i>catch</i> on their name.</div>
     <div><b>4 · casino</b>every 15 minutes a casino opens: spin, get 2 buff offers, keep one. seeker buffs sabotage hiders (scream orders, radar circles, ringing phones). hider buffs fight back (slow-mo, decoys, 20 m shifts).</div>
@@ -496,14 +507,25 @@ const SS=makeStore(safeRef('sessionStorage'));
 const storageAvailable=(()=>{try{const s=safeRef('localStorage');if(!s)return false;s.getItem('x');return true;}catch(e){return false;}})();
 
 /* ---------------- zone (geocoded via OSM Nominatim) ---------------- */
-const CORNERS=[
- {name:'Bahnhofstrasse 17',lat:47.1179626,lng:8.3919364},
- {name:'Luzernerstrasse 2',lat:47.1161184,lng:8.3929389},
- {name:'Schulstrasse 4',   lat:47.1140680,lng:8.3896612},
- {name:'Oberwilstrasse 1', lat:47.1161175,lng:8.3959608},
+const DEFAULT_CORNERS=[
+ {lat:47.1179626,lng:8.3919364},
+ {lat:47.1161184,lng:8.3929389},
+ {lat:47.1140680,lng:8.3896612},
+ {lat:47.1161175,lng:8.3959608},
 ];
+/* corners are editable ("map edit" in the lobby): load the last saved shape,
+   fall back to the default Root rectangle. */
+function loadCorners(){
+  try{const raw=LS.get('leak.corners');
+    if(raw){const arr=JSON.parse(raw);
+      if(Array.isArray(arr)&&arr.length===4&&arr.every(c=>isFinite(c.lat)&&isFinite(c.lng)))return arr.map(c=>({lat:c.lat,lng:c.lng}));}
+  }catch(e){}
+  return DEFAULT_CORNERS.map(c=>({lat:c.lat,lng:c.lng}));
+}
+const CORNERS=loadCorners();
 const PADLAT=0.00025, PADLNG=0.00042; // ~25-28 m pad
 // ZONE_POLY: the actual 4-corner polygon shape (order matters for the draw + point-in-polygon).
+// ZONE_POLY/Z/START are mutable views kept in sync by applyCorners() when the map is edited.
 const ZONE_POLY=CORNERS.map(c=>[c.lat,c.lng]);
 const Z={
  minLat:Math.min(...CORNERS.map(c=>c.lat))-PADLAT,
@@ -512,9 +534,18 @@ const Z={
  maxLng:Math.max(...CORNERS.map(c=>c.lng))+PADLNG,
 };
 const START={lat:CORNERS[0].lat,lng:CORNERS[0].lng};
+/* applyCorners: move the zone to a new set of 4 points. Mutates everything in
+   place so every zone check (inZone, randInZone) and every drawing picks it up. */
+function applyCorners(pts){
+  if(!Array.isArray(pts)||pts.length!==4)return;
+  pts.forEach((p,i)=>{CORNERS[i].lat=p.lat;CORNERS[i].lng=p.lng;ZONE_POLY[i][0]=p.lat;ZONE_POLY[i][1]=p.lng;});
+  Z.minLat=Math.min(...CORNERS.map(c=>c.lat))-PADLAT; Z.maxLat=Math.max(...CORNERS.map(c=>c.lat))+PADLAT;
+  Z.minLng=Math.min(...CORNERS.map(c=>c.lng))-PADLNG; Z.maxLng=Math.max(...CORNERS.map(c=>c.lng))+PADLNG;
+  START.lat=CORNERS[0].lat;START.lng=CORNERS[0].lng;
+}
 // inZone: point-in-polygon test against the real 4-corner shape (bounding box Z is only for fitBounds/mask).
 // boundary tolerance: a point within ~3 m of any edge/vertex counts as inside, so players
-// standing exactly on a corner (e.g. START at Bahnhofstrasse 17) aren't flagged out-of-zone.
+// standing exactly on a corner (e.g. START at corner 1) aren't flagged out-of-zone.
 const _segDistM=(p,a,b)=>{ // approx metres from point p to segment a-b (equirectangular, fine at this scale)
   const toRad=x=>x*Math.PI/180,R=6371000,k=Math.cos(toRad(p.lat));
   const ax=(a.lng-p.lng)*k*R*0.5,ay=(a.lat-p.lat)*R*0.5,bx=(b.lng-p.lng)*k*R*0.5,by=(b.lat-p.lat)*R*0.5;
@@ -580,6 +611,9 @@ function mergeRoom(incoming){
     room.hideEndsAt=Math.max(room.hideEndsAt||0,incoming.hideEndsAt||0);
     room.gameEndsAt=Math.max(room.gameEndsAt||0,incoming.gameEndsAt||0);
     room.forceCasinoId=Math.max(room.forceCasinoId||0,incoming.forceCasinoId||0);
+    if(Array.isArray(incoming.zone)&&incoming.zone.length===4&&JSON.stringify(incoming.zone)!==JSON.stringify(room.zone||null)){
+      room.zone=incoming.zone.map(c=>({lat:c.lat,lng:c.lng}));applyCorners(room.zone);redrawZoneLayers();changed=true;
+    }
     if(room.hostId!==incoming.hostId){room.hostId=incoming.hostId;changed=true;}
     if(room.winner!==incoming.winner){room.winner=incoming.winner;changed=true;}
     room.seq=incoming.seq; changed=true;
@@ -607,7 +641,7 @@ function mergeRoom(incoming){
   if(room.log.length>40)room.log=room.log.slice(-40);
   return changed;
 }
-function applyRoom(incoming){ if(!room){room=incoming;return true;} return mergeRoom(incoming); }
+function applyRoom(incoming){ if(!room){room=incoming;if(Array.isArray(room.zone))applyCorners(room.zone);return true;} return mergeRoom(incoming); }
 /* the host can kick players (see renderLobby/renderSheet); the kicked player's
    device learns about it through the tombstone arriving on any merge and shows
    a full-screen kicked screen — same style as the hider/seeker reveal, red
@@ -700,7 +734,7 @@ function SupabaseTransport(code){
      cosmetic and arrive with the full-room broadcast/ask refresh). */
   const compactRoom=r=>({code:r.code,hostId:r.hostId,phase:r.phase,hideMin:r.hideMin,totalMin:r.totalMin,
     casinoMin:r.casinoMin,startedAt:r.startedAt,hideEndsAt:r.hideEndsAt,gameEndsAt:r.gameEndsAt,
-    winner:r.winner,forceCasinoId:r.forceCasinoId,seq:r.seq,players:r.players,removed:r.removed,log:[],fx:[]});
+    winner:r.winner,forceCasinoId:r.forceCasinoId,seq:r.seq,zone:r.zone,players:r.players,removed:r.removed,log:[],fx:[]});
   /* Presence-based room discovery: the host (and any room member) keeps the
      latest room in its realtime presence state, which the server caches per
      channel. A joiner reads it on subscribe — no live host answer needed. */
@@ -875,7 +909,7 @@ function createRoom(){
   const name=myName.trim(); if(!name){toast('enter your name first','warn');return;}
   LS.set('leak.name',name);
   room={code:genCode(),hostId:myId,phase:'lobby',hideMin:10,totalMin:45,casinoMin:15,
-    startedAt:0,hideEndsAt:0,gameEndsAt:0,winner:null,forceCasinoId:0,players:[],removed:[],fx:[],log:[],seq:0};
+    startedAt:0,hideEndsAt:0,gameEndsAt:0,winner:null,forceCasinoId:0,zone:CORNERS.map(c=>({lat:c.lat,lng:c.lng})),players:[],removed:[],fx:[],log:[],seq:0};
   ui.hostSeen=Date.now(); // we are host, heartbeat present
   room.players.push(newPlayer(name,false));
   LS.set('leak.active',room.code); // reload recovery: remember which room to restore
@@ -948,7 +982,7 @@ function startGame(){
     r.fx=[];r.log=[];
     r.startedAt=t;r.hideEndsAt=t+r.hideMin*60000;r.gameEndsAt=t+r.totalMin*60000;
     r.phase='hide';r.winner=null;r.forceCasinoId=0;
-    logEvent('🏁 game started at Bahnhofstrasse 17 — hiders, run!');
+    logEvent('🏁 game started — hiders, run!');
   });
   ui.seenLog=new Set(); flushLog();
 }
@@ -1175,20 +1209,72 @@ function showScreen(name){
 }
 
 /* ---------------- lobby render ---------------- */
-let lobbyMap=null;
+let lobbyMap=null,lobbyZoneLayers=[];
 function initLobbyMap(){
-  if(lobbyMap){lobbyMap.invalidateSize();return;}
+  if(lobbyMap){lobbyMap.invalidateSize();drawLobbyZone();return;}
   try{
     lobbyMap=L.map('lobby-map',{zoomControl:false,attributionControl:false,scrollWheelZoom:false,dragging:false});
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19}).addTo(lobbyMap);
-    L.polygon(ZONE_POLY,{color:'#fff',weight:2,dashArray:'6 6',fill:false}).addTo(lobbyMap);
-    L.marker([START.lat,START.lng],{icon:L.divIcon({className:'',html:'<div class="mk"><div class="d" style="background:#f0b429"></div><div class="lbl">start</div></div>',iconSize:[16,16],iconAnchor:[8,8]})}).addTo(lobbyMap);
-    lobbyMap.fitBounds([[Z.minLat,Z.minLng],[Z.maxLat,Z.maxLng]],{padding:[14,14]});
+    drawLobbyZone();
   }catch(e){}
-  const cl=$('corner-list');cl.innerHTML='';
-  CORNERS.forEach((c,i)=>{const d=document.createElement('div');d.className='corner';
-    d.innerHTML='<span class="n">'+(i+1)+'</span><span><b>'+c.name+'</b><br>6037 Root</span>';cl.appendChild(d);});
 }
+function drawLobbyZone(){
+  if(!lobbyMap)return;
+  lobbyZoneLayers.forEach(l=>{try{lobbyMap.removeLayer(l);}catch(e){}});lobbyZoneLayers=[];
+  lobbyZoneLayers.push(L.polygon(ZONE_POLY,{color:'#fff',weight:2,dashArray:'6 6',fill:false}).addTo(lobbyMap));
+  lobbyZoneLayers.push(L.marker([START.lat,START.lng],{icon:L.divIcon({className:'',html:'<div class="mk"><div class="d" style="background:#f0b429"></div><div class="lbl">start</div></div>',iconSize:[16,16],iconAnchor:[8,8]})}).addTo(lobbyMap));
+  lobbyMap.fitBounds([[Z.minLat,Z.minLng],[Z.maxLat,Z.maxLng]],{padding:[14,14]});
+}
+
+/* ---------------- map editor ("map edit" button in the lobby) ----------------
+   draggable corner markers reshape the zone; save applies it everywhere,
+   persists it to localStorage and (if in a room) broadcasts it to players. */
+let editMap=null,editPoly=null,editMarkers=[];
+function boundsOf(pts,pad){
+  const lats=pts.map(p=>p.lat),lngs=pts.map(p=>p.lng);
+  return [[Math.min(...lats)-pad.lat,Math.min(...lngs)-pad.lng],[Math.max(...lats)+pad.lat,Math.max(...lngs)+pad.lng]];
+}
+function openMapEdit(){
+  openOv('ov-mapedit');
+  setTimeout(()=>{ // wait for the overlay so the map container has its size
+    try{
+      if(!editMap){
+        editMap=L.map('edit-map',{zoomControl:true,attributionControl:false});
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19}).addTo(editMap);
+      }
+      if(!editMarkers.length){
+        editPoly=L.polygon(ZONE_POLY,{color:'#fff',weight:2,dashArray:'6 6',fill:true,fillOpacity:.08}).addTo(editMap);
+        CORNERS.forEach((c,i)=>{
+          const mk=L.marker([c.lat,c.lng],{draggable:true,autoPan:true,
+            icon:L.divIcon({className:'',html:'<div class="mk"><div class="d" style="background:#f0b429"></div><div class="lbl">'+(i+1)+'</div></div>',iconSize:[16,16],iconAnchor:[8,8]})}).addTo(editMap);
+          mk.on('drag',()=>{editPoly.setLatLngs(editMarkers.map(m=>m.getLatLng()));});
+          editMarkers.push(mk);
+        });
+      }
+      editMarkers.forEach((mk,i)=>mk.setLatLng([CORNERS[i].lat,CORNERS[i].lng]));
+      editPoly.setLatLngs(ZONE_POLY);
+      editMap.invalidateSize();
+      editMap.fitBounds(boundsOf(CORNERS,{lat:PADLAT,lng:PADLNG}),{padding:[20,20]});
+    }catch(e){}
+  },80);
+}
+$('btn-mapedit').onclick=openMapEdit;
+$('btn-mapedit-cancel').onclick=()=>closeOv('ov-mapedit');
+$('btn-mapedit-reset').onclick=()=>{
+  editMarkers.forEach((mk,i)=>mk.setLatLng([DEFAULT_CORNERS[i].lat,DEFAULT_CORNERS[i].lng]));
+  editPoly.setLatLngs(editMarkers.map(m=>m.getLatLng()));
+  editMap.fitBounds(boundsOf(DEFAULT_CORNERS,{lat:PADLAT,lng:PADLNG}),{padding:[20,20]});
+};
+$('btn-mapedit-ok').onclick=()=>{
+  if(!editMarkers.length){closeOv('ov-mapedit');return;}
+  const pts=editMarkers.map(m=>({lat:m.getLatLng().lat,lng:m.getLatLng().lng}));
+  applyCorners(pts);
+  LS.set('leak.corners',JSON.stringify(pts));
+  redrawZoneLayers();
+  if(room)commit(r=>{r.zone=pts.map(p=>({lat:p.lat,lng:p.lng}));});
+  closeOv('ov-mapedit');
+  toast('map updated — the zone now uses your corners','good');
+};
 function renderLobby(){
   if(!room||ui.screen!=='lobby')return;
   $('lobby-code').textContent=room.code;
@@ -1221,7 +1307,7 @@ function renderLobby(){
 function esc(s){return String(s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));}
 
 /* ---------------- game map ---------------- */
-let gMap=null,gStatic=false;const gLayers={};
+let gMap=null,gStatic=false;const gLayers={};let gZoneLayers=[];
 function initGameMap(){
   if(gMap){gMap.invalidateSize();return;}
   gMap=L.map('map',{zoomControl:false,attributionControl:true});
@@ -1239,13 +1325,20 @@ function initGameMap(){
 }
 function drawZoneStatic(){
   if(gStatic)return;gStatic=true;
+  gZoneLayers.forEach(l=>{try{gMap.removeLayer(l);}catch(e){}});gZoneLayers=[];
   const outer=[[Z.minLat-.02,Z.minLng-.03],[Z.minLat-.02,Z.maxLng+.03],[Z.maxLat+.02,Z.maxLng+.03],[Z.maxLat+.02,Z.minLng-.03]];
-  L.polygon([outer,ZONE_POLY],{color:'none',fillColor:'#000',fillOpacity:.42,interactive:false}).addTo(gMap);
-  L.polygon(ZONE_POLY,{color:'#fff',weight:2,dashArray:'7 7',fill:false,interactive:false}).addTo(gMap);
-  CORNERS.forEach(c=>{L.marker([c.lat,c.lng],{icon:L.divIcon({className:'',html:'<div class="corner-dot"></div>',iconSize:[11,11],iconAnchor:[5,5]}),interactive:true})
-    .addTo(gMap).bindTooltip(c.name+' · 6037 Root',{direction:'top',offset:[0,-6]});});
-  L.marker([START.lat,START.lng],{icon:L.divIcon({className:'',html:'<div style="font-size:19px;text-shadow:0 2px 4px #000">🏁</div>',iconSize:[20,20],iconAnchor:[10,10]})})
-    .addTo(gMap).bindTooltip('start · Bahnhofstrasse 17',{direction:'top'});
+  gZoneLayers.push(L.polygon([outer,ZONE_POLY],{color:'none',fillColor:'#000',fillOpacity:.42,interactive:false}).addTo(gMap));
+  gZoneLayers.push(L.polygon(ZONE_POLY,{color:'#fff',weight:2,dashArray:'7 7',fill:false,interactive:false}).addTo(gMap));
+  CORNERS.forEach((c,i)=>{gZoneLayers.push(L.marker([c.lat,c.lng],{icon:L.divIcon({className:'',html:'<div class="corner-dot"></div>',iconSize:[11,11],iconAnchor:[5,5]}),interactive:true})
+    .addTo(gMap).bindTooltip('corner '+(i+1)+' · 6037 Root',{direction:'top',offset:[0,-6]}));});
+  gZoneLayers.push(L.marker([START.lat,START.lng],{icon:L.divIcon({className:'',html:'<div style="font-size:19px;text-shadow:0 2px 4px #000">🏁</div>',iconSize:[20,20],iconAnchor:[10,10]})})
+    .addTo(gMap).bindTooltip('start · corner 1',{direction:'top'}));
+}
+/* redrawZoneLayers: called after the zone is edited so lobby + game maps
+   instantly reflect the new shape (also fires when a merge brings a new zone). */
+function redrawZoneLayers(){
+  if(lobbyMap)drawLobbyZone();
+  if(gMap){gStatic=false;drawZoneStatic();gMap.fitBounds([[Z.minLat,Z.minLng],[Z.maxLat,Z.maxLng]],{padding:[30,30]});}
 }
 function mkIcon(p,cls,color,label,isMe){
   return L.divIcon({className:'',iconSize:[16,16],iconAnchor:[8,8],
@@ -1610,6 +1703,7 @@ showScreen('home');
     if(!r||!r.code||r.code!==code||!Array.isArray(r.players)){LS.del('leak.active');return;}
     if(!r.players.some(p=>p.id===myId)){LS.del('leak.active');LS.del(roomKey(code));return;} // not our seat
     room=r;
+    if(Array.isArray(r.zone)&&r.zone.length===4)applyCorners(r.zone);
     ui.hostSeen=Date.now(); // host heartbeat present (we might be the host)
     ui.seenLog=new Set();
     chanFor(r.code);

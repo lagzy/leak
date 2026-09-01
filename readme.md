@@ -40,16 +40,9 @@ external dependencies (CDN only, no keys, no cost)
 
 no frameworks, no build step, no bundler. vanilla JS only.
 
-the play zone (hardcoded, geocoded from OSM Nominatim)
-
-rectangle corners, all 6037 Root, Switzerland:
-
-| # | address | lat | lng |
-|---|---|---|---|
-| 1 | Bahnhofstrasse 17 (default start point 🏁) | 47.1179626 | 8.3919364 |
-| 2 | Luzernerstrasse 2 | 47.1161184 | 8.3929389 |
-| 3 | Schulstrasse 4 | 47.1140680 | 8.3896612 |
-| 4 | Oberwilstrasse 1 | 47.1161175 | 8.3959608 |
+the play zone is a 4-corner rectangle around Root, 6037 — editable in the lobby
+via the "map edit" button (drag the corners; saved per device and synced to the
+room). default corners (geocoded via OSM Nominatim, corner 1 = start point):
 
 constants in code: CORNERS, bounding box Z (min/max lat/lng with ~25 m padding), START, helper inZone(p). the zone is drawn as a dashed white rectangle with a dark "outside" mask. players may not leave it — leaving triggers a banner and costs a heart after 20 s outside.
 
