@@ -71,6 +71,9 @@ input,select{font-family:inherit;color:inherit}
 .join-row .field{flex:1;text-transform:uppercase;letter-spacing:.28em;font-family:'JetBrains Mono',monospace}
 .foot{margin-top:18px;color:var(--ink-soft);font-size:12px;text-align:center;max-width:380px;line-height:1.6}
 .foot button{color:var(--ink);text-decoration:underline;text-underline-offset:3px;font-size:12px}
+#home-sync{font-weight:700}
+#home-sync.sync-on{color:var(--hider-dark)}
+#home-sync.sync-off{color:var(--seeker-dark)}
 
 /* ---------- lobby ---------- */
 #scr-lobby{padding:0}
@@ -319,7 +322,7 @@ input,select{font-family:inherit;color:inherit}
     </div>
   </div>
     <div class="foot" id="home-foot">
-    cross-device · syncs to any phone via Supabase · <button id="btn-supa-set">set Supabase key</button> · <button id="btn-how">how to play</button>
+    cross-device · sync: <span id="home-sync">connecting…</span> · <button id="btn-supa-set">set Supabase key</button> · <button id="btn-how">how to play</button>
   </div>
 </div>
 <!-- ============ LOBBY ============ -->
@@ -644,29 +647,64 @@ function promptSupabase(){
   LS.set('leak.supa_key',supaCfg.key);
   return true;
 }
+/* live sync status on the home screen — makes a dead Supabase connection
+   visible instead of a mystery "room not found" */
+function setPeerStatus(st){
+  ui.peerStatus=st;
+  const el=$('home-sync'); if(!el)return;
+  if(st==='connected'){el.textContent='on';el.className='sync-on';}
+  else if(st==='error'){el.textContent='off';el.className='sync-off';}
+  else{el.textContent='connecting…';el.className='';}
+}
 function SupabaseTransport(code){
   const ch='leak-'+code;
-  let client=null,chan=null,ready=false,pendingRoom=null;
+  let client=null,chan=null,ready=false,pendingRoom=null,retryT=null,attempts=0;
   /* send() is safe before the channel is subscribed: messages are dropped
      until SUBSCRIBED, then the pending room snapshot (if any) is flushed. */
   const send=msg=>{ if(!ready||!chan)return false; try{chan.send(msg);return true;}catch(e){return false;} };
   const flush=()=>{ if(ready&&pendingRoom){const r=pendingRoom;pendingRoom=null;send({type:'broadcast',event:'room',payload:{room:r}});} };
-  loadSupabase().then(sb=>{
-    try{ client=sb.createClient(supaCfg.url,supaCfg.key,{realtime:{params:{eventsPerSecond:10}}}); }catch(e){ui.peerStatus='error';toast('Supabase init failed — check URL/key','warn',6000);return;}
+  /* Bind all handlers to a fresh channel. Rebuilding per attempt avoids
+     stale state after a failed join. */
+  function bindChan(){
     chan=client.channel(ch);
     chan.on('broadcast',{event:'room'},payload=>{ if(payload&&payload.room){ if(applyRoom(payload.room))renderAll(); } });
     chan.on('broadcast',{event:'presence'},()=>{ ui.hostSeen=Date.now(); });
     chan.on('broadcast',{event:'ask'},payload=>{ if(room&&room.code===code&&payload&&payload.code)send({type:'broadcast',event:'room',payload:{room}}); });
-    chan.subscribe(st=>{
-      if(st==='SUBSCRIBED'){ready=true;ui.peerStatus='connected';flush();}
-      else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'){ui.peerStatus='error';toast('Supabase channel error — check your connection','warn',6000);}
-    });
-  }).catch(e=>{ui.peerStatus='error';toast('could not load Supabase — try again or use same-browser mode','warn',6000);});
+    return chan;
+  }
+  /* Subscribe with retries: mobile networks drop websockets, so one failed
+     subscribe must not kill the session. Back off and rebuild the channel
+     up to 5 times (~20 s), then surface a clear error. */
+  function trySubscribe(delay){
+    if(retryT)return;
+    const go=()=>{
+      retryT=null;
+      if(attempts++>=5){setPeerStatus('error');toast('Supabase unreachable — check your connection','warn',6000);return;}
+      setPeerStatus('connecting');
+      try{
+        bindChan().subscribe(st=>{
+          if(st==='SUBSCRIBED'){ready=true;attempts=0;setPeerStatus('connected');flush();}
+          else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'){
+            ready=false;
+            try{chan&&client.removeChannel(chan);}catch(e){}
+            chan=null;
+            trySubscribe(1500*Math.min(attempts,4));
+          }
+        },15000);
+      }catch(e){ trySubscribe(1500); }
+    };
+    if(delay)retryT=setTimeout(go,delay); else go();
+  }
+  setPeerStatus('connecting');
+  loadSupabase().then(sb=>{
+    try{ client=sb.createClient(supaCfg.url,supaCfg.key,{realtime:{params:{eventsPerSecond:10}}}); }catch(e){setPeerStatus('error');toast('Supabase init failed — check URL/key','warn',6000);return;}
+    trySubscribe(0);
+  }).catch(e=>{setPeerStatus('error');toast('could not load Supabase — try again','warn',6000);});
   return {
     broadcast(room){ if(!send({type:'broadcast',event:'room',payload:{room}}))pendingRoom=room; },
     ask(code){ send({type:'broadcast',event:'ask',payload:{code}}); },
     presence(){ send({type:'broadcast',event:'presence',payload:{}}); },
-    close(){ pendingRoom=null; try{chan&&client&&client.removeChannel(chan);}catch(e){} }
+    close(){ if(retryT){clearTimeout(retryT);retryT=null;} pendingRoom=null; try{chan&&client&&client.removeChannel(chan);}catch(e){} chan=null; }
   };
 }
 function chanFor(code,opts){
@@ -765,15 +803,16 @@ function joinRoom(code){
     toast('joined room '+room.code,'good');
   };
   chanFor(code,{host:false});
-  /* The transport connects asynchronously (CDN load + websocket), so the
-     ask must be retried until we're subscribed and a host answers — sending
-     it once at this point would always happen before ready. */
+  /* The transport connects asynchronously (CDN load + websocket retries),
+     so the ask is re-sent until we're subscribed and a host answers. */
   const t0=now();
   const iv=setInterval(()=>{
     if(room&&room.code===code){clearInterval(iv);finish();}
-    else if(now()-t0>15000){clearInterval(iv);
+    else if(now()-t0>30000){clearInterval(iv);
       try{transport&&transport.close();}catch(e){}
-      toast('room not found - check the code and that the host created it','warn',6000);}
+      toast(ui.peerStatus==='error'
+        ?'can\'t reach the sync server — check your connection'
+        :'room not found - check the code and that the host created it','warn',6000);}
     else try{transport&&transport.ask(code);}catch(e){}
   },500);
 }
