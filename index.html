@@ -740,7 +740,7 @@ let myId=LS.get('leak.id'); if(!myId){myId=uid();LS.set('leak.id',myId);}
 let myName=LS.get('leak.name')||'';
 let room=null, tickIv=null; // transport declared in the transport block
 let muted=LS.get('leak.muted')==='1';
-const ui={screen:'home',simMode:true,sheetOpen:false,screamOpen:false,lastCasinoWin:0,seenLog:new Set(),revealKey:'',lastPosWrite:0,zoneOutSince:0,lastZoneHit:0,botTick:0,lastMapUpd:0,seenReveal:new Set(),zoneViolations:0,hostHeart:0,hostSeen:0,buffWarned:new Set(),seenCasinoOnce:false,left:false};
+const ui={screen:'home',simMode:true,sheetOpen:false,screamOpen:false,lastCasinoWin:0,casDismissed:0,seenLog:new Set(),revealKey:'',lastPosWrite:0,zoneOutSince:0,lastZoneHit:0,botTick:0,lastMapUpd:0,seenReveal:new Set(),zoneViolations:0,hostHeart:0,hostSeen:0,buffWarned:new Set(),seenCasinoOnce:false,left:false};
 
 const me=()=>room?room.players.find(p=>p.id===myId):null;
 const aliveHiders=()=>room?room.players.filter(p=>p.role==='hider'&&p.status==='alive'):[];
@@ -1560,6 +1560,7 @@ function casCleanup(){
 function casClose(){
   casCleanup();
   closeOv('ov-casino');
+  ui.casDismissed=casinoWinIdx(); // don't auto-pop this window again (chip still works)
 }
 function openCasino(){
   if(!casinoOpenFor(me()))return;
@@ -2051,13 +2052,16 @@ function tick(){
     }
     const before=room.fx.length;room.fx=room.fx.filter(f=>f.until>t);if(room.fx.length!==before)dirty=true;
     const w=casinoWinIdx();
-    if(w!==ui.lastCasinoWin){ui.lastCasinoWin=w;
-      if(w>=1&&casinoOpenFor(me())&&!$('ov-casino').classList.contains('open')){
-        const first=!ui.seenCasinoOnce; ui.seenCasinoOnce=true;
-        toast(first?'🎰 casino time — pull the lever!':'🎰 casino time — grab a buff','gold',first?4500:3500);
-        sGold(); vib([40,40,40]);
-        openCasino(); // the machine appears on its own when the window hits
-      }}
+    if(w!==ui.lastCasinoWin){ui.lastCasinoWin=w;ui.casDismissed=0;} // fresh window — re-arm auto-open
+    /* auto-open checked every tick so the machine pops up the moment the window
+       is available — no chip tap needed. ✕/refund dismiss this window (chip
+       stays as the manual reopen). */
+    if(w>=1&&casinoOpenFor(me())&&!$('ov-casino').classList.contains('open')&&ui.casDismissed!==w){
+      const first=!ui.seenCasinoOnce; ui.seenCasinoOnce=true;
+      toast(first?'🎰 casino time — pull the lever!':'🎰 casino time — grab a buff','gold',first?4500:3500);
+      sGold(); vib([40,40,40]);
+      openCasino();
+    }
     const m=me();
     if(m&&m.ringUntil>t){if(!tick._ring){tick._ring=setInterval(sRing,650);vib([120,80,120,80,120]);
       toast('🔔 your phone is ringing! honor rule: you can\'t silence it','warn',6000);} }
