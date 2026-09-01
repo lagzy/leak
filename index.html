@@ -39,6 +39,10 @@ input,select{font-family:inherit;color:inherit}
   transition:opacity .45s cubic-bezier(.22,.9,.3,1),transform .45s cubic-bezier(.22,.9,.3,1);
   display:flex;flex-direction:column;overflow:hidden}
 .screen.active{opacity:1;pointer-events:auto;transform:translateY(0)}
+/* inactive screens must be fully inert: their hud pills re-enable pointer-events
+   (e.g. #btn-mute, the phase pill) and were swallowing clicks meant for the
+   lobby's ← and copy buttons. */
+.screen:not(.active),.screen:not(.active) *{pointer-events:none!important}
 
 /* ---------- home ---------- */
 #scr-home{align-items:center;justify-content:center;gap:0;padding:24px}
@@ -600,7 +604,7 @@ let myId=LS.get('leak.id'); if(!myId){myId=uid();LS.set('leak.id',myId);}
 let myName=LS.get('leak.name')||'';
 let room=null, tickIv=null; // transport declared in the transport block
 let muted=LS.get('leak.muted')==='1';
-const ui={screen:'home',simMode:true,sheetOpen:false,screamOpen:false,lastCasinoWin:0,seenLog:new Set(),revealKey:'',lastPosWrite:0,zoneOutSince:0,lastZoneHit:0,botTick:0,lastMapUpd:0,seenReveal:new Set(),zoneViolations:0,hostHeart:0,hostSeen:0,buffWarned:new Set(),seenCasinoOnce:false};
+const ui={screen:'home',simMode:true,sheetOpen:false,screamOpen:false,lastCasinoWin:0,seenLog:new Set(),revealKey:'',lastPosWrite:0,zoneOutSince:0,lastZoneHit:0,botTick:0,lastMapUpd:0,seenReveal:new Set(),zoneViolations:0,hostHeart:0,hostSeen:0,buffWarned:new Set(),seenCasinoOnce:false,left:false};
 
 const me=()=>room?room.players.find(p=>p.id===myId):null;
 const aliveHiders=()=>room?room.players.filter(p=>p.role==='hider'&&p.status==='alive'):[];
@@ -652,7 +656,11 @@ function mergeRoom(incoming){
   if(room.log.length>40)room.log=room.log.slice(-40);
   return changed;
 }
-function applyRoom(incoming){ if(!room){room=incoming;if(Array.isArray(room.zone))applyCorners(room.zone);return true;} return mergeRoom(incoming); }
+function applyRoom(incoming){
+  if(ui.left)return false; // we left the room — ignore our own broadcast echo / stale merges
+  if(!room){room=incoming;if(Array.isArray(room.zone))applyCorners(room.zone);return true;}
+  return mergeRoom(incoming);
+}
 /* the host can kick players (see renderLobby/renderSheet); the kicked player's
    device learns about it through the tombstone arriving on any merge and shows
    a full-screen kicked screen — same style as the hider/seeker reveal, red
@@ -661,7 +669,7 @@ function bootRoom(){
   if(room){LS.del(roomKey(room.code));LS.del('leak.active');}
   try{transport&&transport.close();}catch(e){}
   transport=null;room=null;
-  ui.seenLog=new Set();ui.seenReveal=new Set();ui.sheetOpen=false;ui.screamOpen=false;
+  ui.seenLog=new Set();ui.seenReveal=new Set();ui.sheetOpen=false;ui.screamOpen=false;ui.left=false;
   $('sheet').classList.remove('open');
   setPeerStatus('connecting');
   ui.kicked=true; // stop any running join poll (see joinRoom)
@@ -751,6 +759,7 @@ function SupabaseTransport(code){
      channel. A joiner reads it on subscribe — no live host answer needed. */
   function syncRoom(){
     if(!chan||!ready)return;
+    if(ui.left)return;
     try{
       const st=chan.presenceState();
       /* supabase-js v2: presenceState() maps each presence key to an ARRAY of
@@ -922,6 +931,7 @@ function createRoom(){
   room={code:genCode(),hostId:myId,phase:'lobby',hideMin:10,totalMin:45,casinoMin:15,
     startedAt:0,hideEndsAt:0,gameEndsAt:0,winner:null,forceCasinoId:0,zone:CORNERS.map(c=>({lat:c.lat,lng:c.lng})),players:[],removed:[],fx:[],log:[],seq:0};
   ui.hostSeen=Date.now(); // we are host, heartbeat present
+  ui.left=false; // fresh room — accept room traffic again
   room.players.push(newPlayer(name,false));
   LS.set('leak.active',room.code); // reload recovery: remember which room to restore
   if(!supaCfg.key){toast('set your Supabase key first','warn',5000);}
@@ -933,6 +943,7 @@ function joinRoom(code){
   code=(code||'').trim().toUpperCase(); if(code.length!==4){toast('code has 4 letters','warn');return;}
   LS.set('leak.name',name);
   ui.kicked=false; // a fresh join is a fresh attempt
+  ui.left=false;   // fresh join — accept room traffic again
   /* joining a different room while one is loaded (e.g. restored after a reload):
      drop the current room cleanly, else the old room shadows the incoming one. */
   if(room&&room.code!==code){
@@ -1316,6 +1327,8 @@ function renderLobby(){
   });
 }
 function esc(s){return String(s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));}
+const escN=esc; // name-safe alias — logEvent/toasts referenced escN but it was never defined,
+                // which threw in commit() and broke catches, heart loss, surrenders
 
 /* ---------------- game map ---------------- */
 let gMap=null,gStatic=false;const gLayers={};let gZoneLayers=[];
@@ -1667,16 +1680,23 @@ $('btn-how').onclick=()=>openOv('ov-how');
 $('btn-supa-set').onclick=()=>{if(promptSupabase())toast('Supabase key saved','good');};
 if(!supaCfg.key)setTimeout(()=>toast('tap "set Supabase key" once to enable cross-device','warn',6000),1200);
 $('btn-leave').onclick=()=>{
-  if(room){LS.del(roomKey(room.code));LS.del('leak.active');} // don't restore a room we left
+  if(room){
+    /* broadcast our departure as a sticky tombstone (same as a kick) so the
+       host and other players drop us from their roster and no stale snapshot
+       can resurrect us; we then ignore the echo on our own device. */
+    try{commit(r=>{r.removed=(r.removed||[]).concat(myId);r.players=r.players.filter(p=>p.id!==myId);});}catch(e){}
+    LS.del(roomKey(room.code));LS.del('leak.active'); // don't restore a room we left
+  }
+  ui.left=true; // ignore our own removal broadcast + any late merges
   room=null; try{transport&&transport.close();}catch(e){} transport=null; setPeerStatus('connecting');
   ui.seenLog=new Set(); ui.seenReveal=new Set(); ui.sheetOpen=false; ui.screamOpen=false;
   $('sheet').classList.remove('open'); showScreen('home');};
 $('btn-copy').onclick=()=>{
-  const c=room.code;
-  try{
-    if(navigator.clipboard)navigator.clipboard.writeText(c).then(()=>toast('code copied','silent'));
-    else toast('code: <b class="mono">'+c+'</b>','silent');
-  }catch(e){toast('code: <b class="mono">'+c+'</b>','silent');}
+  const c=room&&room.code||''; if(!c)return;
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(c).then(()=>toast('code copied','silent'))
+      .catch(()=>toast('code: <b class="mono">'+c+'</b>','silent'));
+  }else toast('code: <b class="mono">'+c+'</b>','silent');
 };
 $('sel-hide').onchange=e=>commit(r=>{r.hideMin=+e.target.value;});
 $('sel-total').onchange=e=>commit(r=>{r.totalMin=+e.target.value;});
@@ -1684,7 +1704,15 @@ $('btn-addbot').onclick=addBot;
 $('btn-start').onclick=()=>{ac();startGame();showScreen('game');};
 $('btn-mute').onclick=()=>{muted=!muted;LS.set('leak.muted',muted?'1':'0');$('btn-mute').textContent=muted?'🔕':'🔔';toast(muted?'sound off':'sound on (quiet)','silent');};
 $('chip-casino').onclick=openCasino;
-$('btn-end-home').onclick=()=>{closeOv('ov-end');if(room){LS.del(roomKey(room.code));LS.del('leak.active');}room=null;setPeerStatus('connecting');showScreen('home');};
+$('btn-end-home').onclick=()=>{
+  closeOv('ov-end');
+  if(room){
+    try{commit(r=>{r.removed=(r.removed||[]).concat(myId);r.players=r.players.filter(p=>p.id!==myId);});}catch(e){}
+    LS.del(roomKey(room.code));LS.del('leak.active');
+  }
+  ui.left=true; // leave the room for good (same as the lobby ← button)
+  room=null; try{transport&&transport.close();}catch(e){} transport=null; setPeerStatus('connecting');
+  showScreen('home');};
 $('btn-rematch').onclick=()=>{closeOv('ov-end');resetRoom();};
 $('dev-toggle').onclick=()=>$('dev').classList.toggle('open');
 $('dev-skip').onclick=()=>{if(room&&room.phase==='hide')commit(r=>{r.hideEndsAt=Date.now();});};
