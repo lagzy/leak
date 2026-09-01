@@ -89,7 +89,11 @@ input,select{font-family:inherit;color:inherit}
 .sec-title{font-size:12px;text-transform:uppercase;letter-spacing:.16em;color:var(--ink-soft);margin:22px 0 10px}
 .zone-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:22px}
 .zone-head .sec-title{margin:0}
+.lobby-map-wrap{position:relative}
 #lobby-map{height:260px;border-radius:var(--r-lg);border:1px solid var(--line);box-shadow:var(--shadow);overflow:hidden;z-index:0}
+#btn-mapedit{position:absolute;top:10px;right:10px;z-index:1000;width:34px;height:34px;padding:0;
+  font-size:15px;border-radius:50%;background:rgba(255,255,255,.94);color:var(--ink);border:1px solid rgba(20,21,24,.12);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:0 2px 10px rgba(20,21,24,.2)}
 #edit-map{height:300px;border-radius:14px;border:1px solid var(--line);overflow:hidden;z-index:0}
 .plist{display:flex;flex-direction:column;gap:8px}
 .prow{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);
@@ -208,24 +212,156 @@ input,select{font-family:inherit;color:inherit}
 #ov-reveal.kicked{background:radial-gradient(120% 120% at 50% 110%, #8e1111 0%, #0d0f10 62%)}
 #ov-reveal .mini{position:absolute;top:calc(20px + env(safe-area-inset-top));left:24px;color:rgba(255,255,255,.8);font-weight:700;font-size:20px;letter-spacing:-.04em}
 
-/* casino */
-.slot{display:flex;gap:10px;justify-content:center;margin:6px 0 20px}
-.reel{width:74px;height:88px;background:#141518;border-radius:16px;display:flex;align-items:center;justify-content:center;
-  font-size:40px;box-shadow:inset 0 4px 14px rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.08)}
-.reel.spin{animation:reelShake .1s infinite}
-@keyframes reelShake{0%{transform:translateY(-2px)}100%{transform:translateY(2px)}}
-.bcards{display:flex;gap:12px}
-.bcard{flex:1;border:1.5px solid var(--line);border-radius:18px;padding:16px 13px;text-align:center;cursor:pointer;
-  transition:transform .2s,border-color .2s,box-shadow .2s;background:#fafaf8;animation:flipIn .5s both}
-.bcard:nth-child(2){animation-delay:.12s}
-@keyframes flipIn{from{opacity:0;transform:rotateY(70deg)}to{opacity:1;transform:none}}
-.bcard:hover{transform:translateY(-4px)}
-.bcard.picked{border-color:var(--ink);box-shadow:0 0 0 3px rgba(20,21,24,.15);transform:translateY(-4px)}
-.bcard .ic{font-size:34px;margin-bottom:8px}
-.bcard .bn{font-weight:700;font-size:16px;letter-spacing:-.01em;margin-bottom:6px}
-.bcard .bd{font-size:11.5px;color:var(--ink-soft);line-height:1.5}
-.gold-title{color:var(--ink);display:flex;align-items:center;gap:8px}
-.gold-title span.badge{background:var(--gold);border-radius:8px;padding:3px 8px;font-size:11px;font-weight:700;color:#231a02}
+/* ---------- casino machine (ported from casino.html prototype) ---------- */
+.casino-ov{background:rgba(8,9,11,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);padding:0;
+  --red:#b02430;--red-deep:#8c1b25;--red-edge:#5f1016;
+  --steel-l:#e7e9ec;--steel-d:#9aa0a8;
+  --ease-out:cubic-bezier(.22,.9,.28,1);--ease-inout:cubic-bezier(.65,0,.35,1);--ease-snap:cubic-bezier(.3,1.1,.3,1)}
+#cas-close{position:absolute;top:calc(14px + env(safe-area-inset-top));right:16px;z-index:90;width:36px;height:36px;
+  border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;color:rgba(245,244,240,.55);
+  border:1px solid rgba(245,244,240,.15);background:rgba(245,244,240,.05);transition:color .25s,background .25s}
+#cas-close:hover{color:rgba(245,244,240,.9)}
+#cas-caption{position:absolute;top:calc(64px + env(safe-area-inset-top));left:0;right:0;text-align:center;z-index:55;
+  font-size:11px;font-weight:500;letter-spacing:.3em;text-transform:uppercase;color:rgba(245,244,240,.4);
+  opacity:0;transition:opacity .5s var(--ease-out)}
+#cas-caption.show{opacity:1}
+#cas-scene{display:flex;align-items:center;justify-content:center}
+#cas-machine{position:relative;width:300px;height:380px;perspective:900px;
+  opacity:0;transform:translateY(26px)}
+#cas-machine.in{opacity:1;transform:none;transition:opacity .55s var(--ease-out),transform .55s var(--ease-out)}
+#cas-machine.bye{opacity:0;transition:opacity .6s var(--ease-out)}
+#cas-shadow{position:absolute;left:50%;bottom:-34px;width:230px;height:26px;transform:translateX(-50%) scale(.7);
+  background:radial-gradient(50% 50% at 50% 50%,rgba(0,0,0,.55),transparent 70%);
+  filter:blur(7px);opacity:0;transition:opacity .6s,transform .6s var(--ease-out)}
+#cas-machine.in #cas-shadow{opacity:1;transform:translateX(-50%) scale(1)}
+/* body halves (one painted surface, split on crash) */
+.cas-half{position:absolute;inset:0;border-radius:26px;
+  background:linear-gradient(180deg,#c22a36 0%,var(--red) 30%,var(--red-deep) 100%);
+  border:1px solid var(--red-edge);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14), inset 0 -10px 24px rgba(0,0,0,.28)}
+.cas-half.top{clip-path:inset(0 0 calc(100% - 224px) 0);border-radius:26px 26px 0 0}
+.cas-half.bottom{clip-path:inset(224px 0 0 0);border-radius:0 0 26px 26px}
+.cas-half.top:after{content:'';position:absolute;left:0;right:0;bottom:0;height:1px;background:rgba(0,0,0,.28)}
+.cas-half.top:before{content:'';position:absolute;left:0;right:0;top:223px;height:1px;background:rgba(255,255,255,.06)}
+#cas-machine.open .cas-half{transition:transform .7s var(--ease-inout),opacity .7s var(--ease-inout)}
+#cas-machine.open .cas-half.top{transform:translateY(-46vh) rotateX(22deg);opacity:0}
+#cas-machine.open .cas-half.bottom{transform:translateY(46vh) rotateX(-16deg);opacity:0}
+.brand{position:absolute;top:21px;left:24px;font-size:12px;font-weight:700;letter-spacing:.14em;
+  color:rgba(255,255,255,.5)}
+#cas-dot{position:absolute;top:24px;right:24px;width:6px;height:6px;border-radius:50%;
+  background:rgba(255,255,255,.22);transition:background .25s}
+#cas-dot.err{background:#ff5148}
+.mouth{position:absolute;left:50%;bottom:38px;width:140px;height:9px;transform:translateX(-50%);
+  border-radius:99px;background:#31070c;box-shadow:inset 0 2px 5px rgba(0,0,0,.8),0 1px 0 rgba(255,255,255,.07)}
+#cas-crack{position:absolute;left:10px;right:10px;top:223px;height:1px;background:#060607;
+  transform:scaleX(0);opacity:0;z-index:5}
+#cas-crack.on{opacity:1;transform:scaleX(1);transition:transform .22s cubic-bezier(.7,0,.3,1)}
+#cas-machine.open #cas-crack{opacity:0;transition:opacity .4s .15s}
+/* reel window */
+.cas-window{position:absolute;top:46px;left:30px;right:30px;height:152px;z-index:4;
+  background:#101013;border-radius:16px;padding:12px;display:flex;gap:10px;
+  border:1px solid rgba(255,255,255,.055);box-shadow:inset 0 3px 14px rgba(0,0,0,.55);
+  transition:background .5s,border-color .5s,box-shadow .5s}
+.cas-window.bare{background:transparent;border-color:transparent;box-shadow:none}
+.cas-reel{flex:1;position:relative;height:128px;border-radius:10px;overflow:hidden;
+  background:var(--paper);transition:border-radius .5s,opacity .4s var(--ease-out)}
+.cas-win-view{position:absolute;inset:0;overflow:hidden}
+.cas-strip{position:absolute;left:0;right:0;top:0;will-change:transform}
+.cas-cell{height:92px;display:flex;align-items:center;justify-content:center;color:var(--ink)}
+.cas-cell svg{width:42px;height:42px}
+.cas-win-shade{position:absolute;inset:0;pointer-events:none;border-radius:10px;
+  background:linear-gradient(180deg,rgba(0,0,0,.22),transparent 22%,transparent 78%,rgba(0,0,0,.22));
+  opacity:1;transition:opacity .5s}
+.cas-window.bare .cas-win-shade{opacity:0}
+/* lever: fake-3d pull toward the camera (shaft scaleY = cos, ball scales uniformly) */
+.cas-lever{position:absolute;right:-44px;top:66px;width:46px;height:212px;z-index:3;
+  transition:opacity .5s,transform .7s var(--ease-inout)}
+#cas-machine.open .cas-lever{opacity:0;transform:translateY(30vh)}
+.cas-bracket{position:absolute;left:11px;top:158px;width:24px;height:24px;border-radius:7px;
+  background:linear-gradient(180deg,#3d4046,#202226);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 3px 8px rgba(0,0,0,.4)}
+.cas-arm{position:absolute;left:14px;top:44px;width:18px;height:126px;
+  transform-origin:50% 97%;transform:scaleY(1)}
+.cas-arm.spring{transition:transform .55s var(--ease-snap)}
+.cas-shaft{position:absolute;left:5px;top:10px;width:8px;height:118px;border-radius:99px;
+  background:linear-gradient(90deg,var(--steel-d),var(--steel-l) 45%,#7f858e);
+  box-shadow:2px 3px 7px rgba(0,0,0,.45)}
+.cas-knob{position:absolute;left:3px;top:18px;width:40px;height:40px;border-radius:50%;cursor:grab;touch-action:none;
+  background:radial-gradient(circle at 35% 28%,#d8494d,var(--red) 55%,#69121a);
+  box-shadow:0 6px 14px rgba(0,0,0,.5),inset 0 -4px 9px rgba(0,0,0,.35);
+  transform-origin:50% 50%}
+.cas-knob:active{cursor:grabbing}
+.cas-knob.spring{transition:transform .55s var(--ease-snap)}
+#cas-machine.attract .cas-arm{animation:casArmIdle 2.6s ease-in-out infinite}
+@keyframes casArmIdle{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.96)}}
+#cas-machine.attract .cas-knob{animation:casKnobIdle 2.6s ease-in-out infinite}
+@keyframes casKnobIdle{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(5px) scale(1.06)}}
+.cas-hit{position:absolute;left:-16px;top:-40px;width:70px;height:230px;cursor:grab;touch-action:none}
+/* first-time gesture hint: a soft chevron tracing the pull path down from the knob */
+.cas-hint{position:absolute;left:1px;top:16px;width:44px;height:44px;display:flex;
+  align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .3s}
+#cas-machine.attract .cas-hint{opacity:1}
+.cas-hint svg{width:22px;height:22px;color:rgba(245,244,240,.9);filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));
+  animation:casHintSwipe 1.9s var(--ease-out) infinite}
+@keyframes casHintSwipe{0%{transform:translateY(-16px);opacity:0}
+  30%{opacity:1}75%{opacity:1}100%{transform:translateY(28px);opacity:0}}
+/* cards */
+#cas-cards{position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;gap:16px;
+  pointer-events:none;padding:0 20px}
+#cas-cards.on{pointer-events:auto}
+.mcard{width:180px;height:248px;background:var(--paper);border-radius:16px;position:relative;
+  border:1px solid rgba(0,0,0,.05);box-shadow:0 24px 60px rgba(0,0,0,.5);
+  transform-origin:top left;cursor:pointer}
+.mcard.settled{transition:transform .3s var(--ease-out),box-shadow .3s,opacity .45s var(--ease-out),border-color .3s}
+.mcard.settled:hover{transform:translateY(-4px)}
+.c-big{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--ink);
+  transition:opacity .35s,transform .35s var(--ease-out)}
+.c-big svg{width:42px;height:42px}
+.mcard.unfold .c-big{opacity:0;transform:scale(.55)}
+.c-main{position:absolute;inset:0;padding:26px 22px;display:flex;flex-direction:column;align-items:center;
+  text-align:center;opacity:0;transition:opacity .45s .12s}
+.mcard.unfold .c-main{opacity:1}
+.c-main svg{width:24px;height:24px;color:var(--ink)}
+.c-name{margin-top:12px;font-size:19px;font-weight:700;letter-spacing:-.01em;color:var(--ink)}
+.c-sep{width:22px;height:1px;background:rgba(23,24,28,.18);margin:11px 0 10px}
+.c-desc{font-size:11.5px;line-height:1.55;color:var(--ink-soft)}
+.c-tag{margin-top:auto;font-size:9px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:rgba(23,24,28,.4)}
+.mcard.picked{border-color:var(--ink);transform:translateY(-6px)}
+.mcard.discard{opacity:0;transform:translateY(14px) scale(.97);pointer-events:none}
+.mcard.sent{opacity:0;transform:scale(.85);pointer-events:none}
+#cas-cards.out .mcard{opacity:0;transform:translateY(10px);transition:opacity .4s var(--ease-out),transform .4s var(--ease-out)}
+/* target picker: exit is a container-level opacity fade, chips never move */
+#cas-targets{position:absolute;left:0;right:0;bottom:calc(96px + env(safe-area-inset-bottom));z-index:40;
+  display:flex;justify-content:center;gap:22px;pointer-events:none}
+#cas-targets.on{pointer-events:auto}
+.chip{display:flex;flex-direction:column;align-items:center;gap:7px;
+  opacity:0;transform:translateY(14px);
+  transition:opacity .45s var(--ease-out),transform .45s var(--ease-out)}
+.chip.in{opacity:1;transform:none}
+.chip .av{position:relative;width:48px;height:48px;border-radius:50%;
+  border:1px solid rgba(245,244,240,.25);display:flex;align-items:center;justify-content:center;
+  font-size:16px;font-weight:700;color:rgba(245,244,240,.85);
+  transition:background .25s,color .25s,border-color .25s,transform .2s var(--ease-out)}
+.chip:hover .av{transform:translateY(-2px);border-color:rgba(245,244,240,.5)}
+.chip .cn{font-size:11px;font-weight:500;color:rgba(245,244,240,.7)}
+.chip .cr{font-size:8.5px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:rgba(245,244,240,.32)}
+.chip.off{opacity:0;pointer-events:none}
+.chip.hit{pointer-events:none}
+.chip.hit .av{background:var(--paper);color:var(--ink);border-color:var(--paper)}
+.chip.hit .av:after{content:'';position:absolute;inset:-1px;border-radius:50%;
+  border:1px solid var(--paper);animation:casRing .7s var(--ease-out) forwards}
+@keyframes casRing{from{transform:scale(1);opacity:.8}to{transform:scale(2.1);opacity:0}}
+.chip.hit .cn{color:var(--paper)}
+/* flying token */
+#cas-token{position:absolute;left:0;top:0;width:48px;height:48px;border-radius:50%;z-index:80;
+  background:var(--paper);color:var(--ink);display:flex;align-items:center;justify-content:center;
+  box-shadow:0 16px 40px rgba(0,0,0,.55);pointer-events:none;will-change:transform}
+#cas-token svg{width:22px;height:22px}
+@media (max-width:390px){
+  #cas-scene{transform:scale(.86)}
+  .mcard{width:158px;height:230px}
+  #cas-targets{gap:14px}
+}
 
 /* scream */
 #ov-scream .panel{background:#141518;color:#fff;text-align:center;border:1px solid rgba(255,77,42,.5)}
@@ -297,8 +433,8 @@ input,select{font-family:inherit;color:inherit}
 .how-list b{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-soft);margin-bottom:1px}
 ::-webkit-scrollbar{width:0;height:0}
 @media (prefers-reduced-motion:reduce){
-  .hud-phase .dot,.fake-dot,#chip-casino,.casinoPulse,.reel.spin,
-  .toast,.panel,.prow,.bcard,.dock-card,.buff-chip{animation:none!important}
+  .hud-phase .dot,.fake-dot,#chip-casino,.casinoPulse,
+  .toast,.panel,.prow,.dock-card,.buff-chip{animation:none!important}
   .screen,.ov{transition:opacity .15s linear!important;transform:none!important}
   *{scroll-behavior:auto!important}
 }
@@ -331,16 +467,16 @@ input,select{font-family:inherit;color:inherit}
     <div class="code-chip"><span id="lobby-code">----</span><button id="btn-copy" aria-label="copy room code">copy</button></div>
   </div>
   <div class="lob-scroll">
-    <div class="zone-head">
-      <div class="sec-title">play zone — Root, 6037</div>
-      <button id="btn-mapedit" class="btn ghost small">map edit</button>
+    <div class="sec-title">play zone — Root, 6037</div>
+    <div class="lobby-map-wrap">
+      <div id="lobby-map"></div>
+      <button id="btn-mapedit" class="btn" aria-label="edit play zone map"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>
     </div>
-    <div id="lobby-map"></div>
     <div class="sec-title">settings <span id="set-lock" style="text-transform:none;letter-spacing:0"></span></div>
     <div class="settings" id="lobby-settings">
       <label>hide time<select id="sel-hide"><option value="5">5 min</option><option value="10" selected>10 min</option><option value="15">15 min</option></select></label>
       <label>game length<select id="sel-total"><option value="30">30 min</option><option value="45" selected>45 min</option><option value="60">60 min</option></select></label>
-      <label>casino<select disabled style="opacity:.6"><option>every 15 min</option></select></label>
+      <label>casino<select id="sel-casino"><option value="10">10 min</option><option value="12" selected>12 min</option><option value="15">15 min</option><option value="20">20 min</option><option value="30">30 min</option></select></label>
     </div>
     <div class="sec-title">players <span id="pcount" style="text-transform:none;letter-spacing:0"></span></div>
     <div class="plist" id="lobby-players"></div>
@@ -382,13 +518,13 @@ input,select{font-family:inherit;color:inherit}
   <button class="btn" id="btn-enter">enter the field</button>
 </div>
 
-<div id="ov-casino" class="ov"><div class="panel">
-  <h2 class="gold-title">casino <span class="badge">every 15 min</span></h2>
-  <p class="sub">spin, then pick <b>one</b> of the two buffs.</p>
-  <div class="slot"><div class="reel" id="r0">🍒</div><div class="reel" id="r1">🔔</div><div class="reel" id="r2">⭐</div></div>
-  <button class="btn" id="btn-spin" style="background:var(--gold);color:#231a02">🎰 pull the lever</button>
-  <div class="bcards" id="casino-cards" style="display:none;margin-top:16px"></div>
-</div></div>
+<div id="ov-casino" class="ov casino-ov">
+  <button id="cas-close" aria-label="close casino">✕</button>
+  <div id="cas-caption"></div>
+  <div id="cas-scene"><div id="cas-stage"></div></div>
+  <div id="cas-cards"></div>
+  <div id="cas-targets"></div>
+</div>
 
 <div id="ov-scream" class="ov"><div class="panel">
   <h2 style="color:var(--seeker)">🎤 scream order!</h2>
@@ -444,7 +580,7 @@ input,select{font-family:inherit;color:inherit}
     <div><b>1 · start</b>everyone meets at the start corner. pick hider / seeker / random.</div>
     <div><b>2 · hide</b>hiders get 10 minutes to hide inside the rectangle. seekers count down.</div>
     <div><b>3 · seek</b>seekers hunt. find a hider in real life, then tap <i>catch</i> on their name.</div>
-    <div><b>4 · casino</b>every 15 minutes a casino opens: spin, get 2 buff offers, keep one. seeker buffs sabotage hiders (scream orders, radar circles, ringing phones). hider buffs fight back (slow-mo, decoys, 20 m shifts).</div>
+    <div><b>4 · casino</b>every 12 minutes (host-set) a casino opens: spin, get 2 buff offers, keep one. seeker buffs sabotage hiders (scream orders, radar circles, ringing phones). hider buffs fight back (slow-mo, decoys, 20 m shifts).</div>
     <div><b>5 · hearts</b>break a rule (leave the zone, ignore a scream, get reported) → lose 1 of 3 ♥. zero hearts = you lose automatically.</div>
     <div><b>6 · win</b>seekers win by catching every hider before time runs out. hiders win by surviving.</div>
   </div>
@@ -928,7 +1064,7 @@ function newPlayer(name,bot){
 function createRoom(){
   const name=myName.trim(); if(!name){toast('enter your name first','warn');return;}
   LS.set('leak.name',name);
-  room={code:genCode(),hostId:myId,phase:'lobby',hideMin:10,totalMin:45,casinoMin:15,
+  room={code:genCode(),hostId:myId,phase:'lobby',hideMin:10,totalMin:45,casinoMin:12,
     startedAt:0,hideEndsAt:0,gameEndsAt:0,winner:null,forceCasinoId:0,zone:CORNERS.map(c=>({lat:c.lat,lng:c.lng})),players:[],removed:[],fx:[],log:[],seq:0};
   ui.hostSeen=Date.now(); // we are host, heartbeat present
   ui.left=false; // fresh room — accept room traffic again
@@ -1026,47 +1162,43 @@ function loseHeart(pid,reason){
   if(pid===myId){ sHeart(); $('hud-hearts').classList.add('shake'); setTimeout(()=>$('hud-hearts').classList.remove('shake'),600); }
 }
 
-/* ---------------- buff application ---------------- */
-function pickBuff(b){
-  const m=me(); if(!m)return;
+/* ---------------- buff application (the casino machine picks the target) ---------------- */
+function casSpend(){ // mark this casino window as used
   commit(r=>{
     const p=r.players.find(x=>x.id===myId);
     if(r.forceCasinoId&&p.casinoForce!==r.forceCasinoId)p.casinoForce=r.forceCasinoId;
     else p.casinoDone=casinoWinIdx();
   });
-  applyBuff(b); closeOv('ov-casino'); renderAll();
 }
-function applyBuff(b){
+function casRefund(){ // nothing to send it to — restore the window
+  commit(r=>{const p=me();if(r.forceCasinoId)p.casinoForce=0;else p.casinoDone=0;});
+}
+function casApply(bf,tgt){
   const t=now();
   if(me().role==='seeker'){
-    const targets=aliveHiders().filter(p=>!(p.ghostUntil>t));
-    if(!targets.length){ commit(r=>{const p=me();if(r.forceCasinoId)p.casinoForce=0;else p.casinoDone=0;}); toast('all hiders are ghosted — spin refunded','warn'); return; }
-    const tgt=targets[Math.floor(Math.random()*targets.length)];
-    if(b.id==='scream'){
+    if(bf.id==='scream'){
       if(tgt.bot){ commit(()=>{logEvent('😱 a hider screamed their lungs out');}); toast('🎤 '+tgt.name+' screamed!','good'); }
       else commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.pendingTask={byId:myId,deadline:now()+30000,holdMs:4000,dbMin:65};logEvent('🎤 a scream order was played');});
-    }else if(b.id==='radar'){
+    }else if(bf.id==='radar'){
       const jackpot=Math.random()<0.10;
       const radius=jackpot?8+Math.random()*7:80+Math.random()*340;
       const center=tgt.hidePos||tgt.pos||randInZone();
       commit(r=>{r.fx.push({id:uid(),kind:'circle',forId:myId,center,radius,until:now()+90000,label:jackpot?'radar · PINPOINT':'radar'});logEvent('📡 radar sweep activated');});
       toast(jackpot?'📡 jackpot — ~10 m pinpoint!':'📡 radar circle on your map ('+Math.round(radius)+' m)', 'gold',5000);
-    }else if(b.id==='ring'){
+    }else if(bf.id==='ring'){
       commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.ringUntil=now()+10000;logEvent('🔔 someone\'s phone is ringing…');});
       toast('🔔 '+escN(tgt.name)+"'s phone is ringing",'good');
     }
   }else{
-    if(b.id==='slow'){
-      const sk=aliveSeekers(); if(!sk.length){commit(r=>{me().casinoDone=0;});toast('no seekers to slow — spin refunded','warn');return;}
-      const tgt=sk[Math.floor(Math.random()*sk.length)];
+    if(bf.id==='slow'){
       commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.slowUntil=now()+90000;logEvent('🐌 slow-mo was played on a seeker');});
       toast('🐌 '+tgt.name+' may only walk 3 km/h','good');
-    }else if(b.id==='decoy'){
+    }else if(bf.id==='decoy'){
       commit(r=>{r.fx.push({id:uid(),kind:'fake',forId:'seekers',center:randInZone(),until:now()+60000});logEvent('👻 a decoy blip appeared');});
       toast('👻 fake hider planted on seeker maps','good');
-    }else if(b.id==='shift'){
+    }else if(bf.id==='shift'){
       commit(r=>{me().shiftReady=true;}); toast('📍 shift ready — tap it in your buff bar','good');
-    }else if(b.id==='ghost'){
+    }else if(bf.id==='ghost'){
       commit(r=>{me().ghostUntil=now()+120000;}); toast('🌫️ you are ghosted for 120 s','good');
     }
   }
@@ -1105,35 +1237,344 @@ function askConfirm(title,text,ok,danger,onOk){
   okB.onclick=()=>{closeOv('ov-confirm');onOk();};
 }
 
-/* ---------------- casino UI ---------------- */
-const SYMS=['🍒','🔔','⭐','💧','7️⃣','🍋'];
+/* ---------------- casino machine (ported from casino.html prototype) ---------------- */
+const rand=(a,b)=>a+Math.random()*(b-a);
+/* buff id → monochrome icon name used on the reels/cards */
+const CAS_ICON={scream:'mic',radar:'radar',ring:'bell',slow:'slow',decoy:'decoy',shift:'pin',ghost:'mist'};
+const CAS_SYM=['seven','bar','diamond','dot','tri','mic','radar','bell','slow','decoy','pin','mist'];
+function casIco(n,s=42){
+  const P={
+    seven:'<text x="12" y="17" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-weight="700" font-size="16" fill="currentColor" stroke="none">7</text>',
+    bar:'<rect x="5" y="10.5" width="14" height="3.4" rx="1.7"/>',
+    diamond:'<rect x="7.2" y="7.2" width="9.6" height="9.6" rx="1.6" transform="rotate(45 12 12)"/>',
+    dot:'<circle cx="12" cy="12" r="4.6"/>',
+    tri:'<path d="M12 6.2 17.8 16.4H6.2z"/>',
+    mic:'<rect x="9.2" y="3.4" width="5.6" height="9.2" rx="2.8"/><path d="M6.4 11.2a5.6 5.6 0 0 0 11.2 0M12 16.8v3.4M9 20.2h6"/>',
+    radar:'<circle cx="12" cy="14.6" r="1.5" fill="currentColor" stroke="none"/><path d="M7.9 10.6a5.8 5.8 0 0 1 8.2 0M5.2 7.7a9.7 9.7 0 0 1 13.6 0"/>',
+    bell:'<path d="M6.6 16.6v-5.4a5.4 5.4 0 0 1 10.8 0v5.4l1.7 2.2H4.9zM10.3 21a1.9 1.9 0 0 0 3.4 0"/>',
+    slow:'<path d="M4.6 15.6a7.4 7.4 0 0 1 14.8 0M12 15.6 15.8 9"/><circle cx="12" cy="15.6" r="1.3" fill="currentColor" stroke="none"/>',
+    decoy:'<path d="M7.2 19.6v-7.4a4.8 4.8 0 0 1 9.6 0v7.4l-1.9-1.5-1.6 1.5-1.3-1.5-1.3 1.5-1.6-1.5z"/><circle cx="10.4" cy="11.4" r=".9" fill="currentColor" stroke="none"/><circle cx="13.6" cy="11.4" r=".9" fill="currentColor" stroke="none"/>',
+    pin:'<path d="M12 20.6s-5.8-5.2-5.8-9.4a5.8 5.8 0 0 1 11.6 0c0 4.2-5.8 9.4-5.8 9.4z"/><circle cx="12" cy="11" r="2"/>',
+    mist:'<path d="M5 9.4h9.6M8 12.6h11M6.4 15.8h8.2"/>'
+  };
+  return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${P[n]}</svg>`;
+}
+/* dry machine sounds (respect the global muted toggle) */
+function hiss(d,g,fc,delay=0){if(muted)return;const c=ac();if(!c)return;
+  const t=c.currentTime+delay,n=Math.floor(c.sampleRate*d),buf=c.createBuffer(1,n,c.sampleRate),ch=buf.getChannelData(0);
+  for(let i=0;i<n;i++)ch[i]=(Math.random()*2-1)*(1-i/n);
+  const s=c.createBufferSource();s.buffer=buf;
+  const f=c.createBiquadFilter();f.type='lowpass';f.frequency.value=fc;
+  const v=c.createGain();v.gain.setValueAtTime(g,t);v.gain.exponentialRampToValueAtTime(.0001,t+d);
+  s.connect(f);f.connect(v);v.connect(c.destination);s.start(t);}
+const casSIn   =()=>{tone(523,.09,'sine',.03);tone(659,.12,'sine',.026,.09);};
+const casSGrab =()=>tone(1900,.02,'square',.012);
+const casSTick =()=>tone(rand(900,1050),.02,'square',.01);
+const casSThud =()=>{tone(140,.1,'sine',.05);hiss(.06,.02,600,.005);};
+const casSCrack=()=>hiss(.05,.05,3200);
+const casSPart =()=>hiss(.3,.022,420);
+const casSCard =()=>{tone(659,.14,'sine',.03);tone(988,.18,'sine',.02,.1);};
+const casSPick =()=>{tone(784,.1,'sine',.03);tone(1046,.16,'sine',.026,.09);};
+const casSSend =()=>hiss(.45,.03,1400);
+const casSHit  =()=>{tone(392,.09,'sine',.035);tone(587,.14,'sine',.03,.08);};
+/* machine state */
+const casReels=[{pos:0,vel:0,mode:'idle'},{pos:0,vel:0,mode:'idle'}];
+let casState='idle',casMachine=null,casReelEls=[],casStrips=[],casArm=null,casHit=null,casKnob=null;
+let casTargets=[0,0],casDoneCount=0,casRafId=null,casSpinCards=[null,null],casPickedEl=null,casPicked=null;
+let casPulling=false,casY0=0,casPull=0;
+const CAS_CELL=92,CAS_N=CAS_SYM.length,CAS_SET=CAS_N*CAS_CELL,CAS_WINH=128,CAS_BASE=(CAS_WINH-CAS_CELL)/2-2*CAS_SET;
+const CAS_KNOB_L=128,CAS_MAXANG=138;
+function casCaption(t){const c=$('cas-caption');if(!t){c.classList.remove('show');return;}c.textContent=t;c.classList.add('show');}
+function casBuild(){
+  const stage=$('cas-stage');
+  stage.innerHTML=`
+  <div id="cas-machine">
+    <div class="cas-half top"><span class="brand">leak</span><span id="cas-dot"></span></div>
+    <div class="cas-half bottom"><div class="mouth"></div></div>
+    <div id="cas-crack"></div>
+    <div class="cas-window" id="cas-window">
+      <div class="cas-reel" id="cas-r0"><div class="cas-win-view"><div class="cas-strip"></div></div><div class="cas-win-shade"></div></div>
+      <div class="cas-reel" id="cas-r1"><div class="cas-win-view"><div class="cas-strip"></div></div><div class="cas-win-shade"></div></div>
+    </div>
+    <div class="cas-lever" id="cas-lever">
+      <div class="cas-bracket"></div>
+      <div class="cas-arm" id="cas-arm"><div class="cas-shaft"></div></div>
+      <div class="cas-knob" id="cas-knob"></div>
+      <div class="cas-hit" id="cas-hit"></div>
+    </div>
+    <div id="cas-shadow"></div>
+  </div>`;
+  casMachine=$('cas-machine');
+  casReelEls=[$('cas-r0'),$('cas-r1')];
+  casStrips=casReelEls.map(r=>r.querySelector('.cas-strip'));
+  casArm=$('cas-arm');casHit=$('cas-hit');casKnob=$('cas-knob');
+  casStrips.forEach(s=>{
+    let h='';for(let c=0;c<5;c++)for(let i=0;i<CAS_N;i++)h+=`<div class="cas-cell">${casIco(CAS_SYM[i])}</div>`;
+    s.innerHTML=h;
+  });
+  casReels.forEach((r,i)=>{r.strip=casStrips[i];r.el=casReelEls[i];
+    r.pos=(Math.floor(rand(0,CAS_N))*CAS_CELL)%CAS_SET;r.mode='idle';r.lastCell=-1;casPaint(r);});
+  /* first-time tutorial: show the swipe-down gesture until the player pulls once */
+  if(LS.get('leak.cas_hint')!=='1'){
+    const h=document.createElement('div');h.className='cas-hint';
+    h.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
+    $('cas-lever').appendChild(h);
+  }
+  casBindLever();
+}
+function casPaint(r){r.strip.style.transform=`translateY(${CAS_BASE-r.pos}px)`;}
+function casBackOut(k){const s=1.1,p=k-1;return 1+(s+1)*p*p*p+s*p*p;}
+function casLoop(t){
+  casReels.forEach((r,i)=>{
+    if(r.mode==='spin'){
+      r.vel=Math.min(46,r.vel+2.2);
+      r.pos+=r.vel;
+      const cell=Math.floor(r.pos/CAS_CELL);
+      if(cell!==r.lastCell){r.lastCell=cell;}
+      if(t>=r.stopAt){
+        r.mode='stop';r.t0=t;r.from=r.pos;r.dur=700;
+        const m=(casTargets[i]*CAS_CELL)%CAS_SET,base=r.pos+CAS_SET*1.15;
+        r.to=base+(((m-base)%CAS_SET)+CAS_SET)%CAS_SET;
+      }
+    }else if(r.mode==='stop'){
+      const k=Math.min(1,(t-r.t0)/r.dur);
+      r.pos=r.from+(r.to-r.from)*casBackOut(k);
+      const cell=Math.floor(r.pos/CAS_CELL);
+      if(cell!==r.lastCell){r.lastCell=cell;if(k<.85)casSTick();}
+      if(k>=1){r.pos=r.to;r.mode='done';casDoneCount++;casSThud();vib(24);}
+    }
+    if(r.mode==='spin'){if(r.strip._b!=='b'){r.strip._b='b';r.strip.style.filter='blur(2px)';}}
+    else if(r.strip._b!=='n'){r.strip._b='n';r.strip.style.filter='none';}
+    r.pos=((r.pos%CAS_SET)+CAS_SET)%CAS_SET;
+    casPaint(r);
+  });
+  if(casDoneCount>=2){casOnSpinEnd();return;}
+  casRafId=requestAnimationFrame(casLoop);
+}
+function casStartSpin(){
+  LS.set('leak.cas_hint','1'); // gesture learned — never show the tutorial again
+  casState='spin';casCaption('');
+  casMachine.classList.remove('attract');
+  const pool=BUFFS[me().role].slice();
+  const a=pool.splice(Math.floor(Math.random()*pool.length),1)[0];
+  const b=pool.splice(Math.floor(Math.random()*pool.length),1)[0];
+  casSpinCards=[a,b];
+  casTargets=[CAS_SYM.indexOf(CAS_ICON[a.id]),CAS_SYM.indexOf(CAS_ICON[b.id])];
+  casDoneCount=0;
+  const t0=performance.now();
+  casReels[0].mode='spin';casReels[0].vel=5;casReels[0].stopAt=t0+1500;
+  casReels[1].mode='spin';casReels[1].vel=3;casReels[1].stopAt=t0+2250;
+  hiss(.4,.012,900);
+  casRafId=requestAnimationFrame(casLoop);
+}
+function casOnSpinEnd(){
+  casState='cracked';
+  setTimeout(()=>{
+    $('cas-crack').classList.add('on');
+    $('cas-dot').classList.add('err');
+    casSCrack();vib(30);
+    setTimeout(casOpenMachine,300);
+  },420);
+}
+function casOpenMachine(){
+  casMachine.classList.add('open');
+  casSPart();
+  setTimeout(()=>{
+    $('cas-window').classList.add('bare');
+    casReelEls.forEach(r=>r.style.borderRadius='14px');
+    setTimeout(casMorphToCards,300);
+  },560);
+}
+function casMorphToCards(){
+  casState='cards';
+  const box=$('cas-cards');box.innerHTML='';box.classList.remove('out');
+  const from=casReelEls.map(el=>el.getBoundingClientRect());
+  casSpinCards.forEach((bf,i)=>{
+    const el=document.createElement('div');
+    el.className='mcard';
+    el.innerHTML=`<div class="c-big">${casIco(CAS_ICON[bf.id],42)}</div>
+      <div class="c-main">${casIco(CAS_ICON[bf.id],24)}
+        <div class="c-name">${bf.name}</div><div class="c-sep"></div>
+        <div class="c-desc">${bf.desc}</div>
+        <div class="c-tag">${me().role} buff</div></div>`;
+    el.addEventListener('click',()=>casPickCard(el,bf));
+    box.appendChild(el);
+  });
+  const to=[...box.children].map(el=>el.getBoundingClientRect());
+  [...box.children].forEach((el,i)=>{
+    const a=from[i],b=to[i];
+    el.style.transform=`translate(${a.left-b.left}px,${a.top-b.top}px) scale(${a.width/b.width},${a.height/b.height})`;
+  });
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    [...box.children].forEach((el,i)=>{
+      el.style.transition=`transform .66s cubic-bezier(.3,.86,.22,1) ${i*80}ms`;
+      el.style.transform='';
+    });
+    setTimeout(()=>casReelEls.forEach(r=>r.style.opacity='0'),280);
+    setTimeout(()=>{
+      [...box.children].forEach(el=>{el.classList.add('settled');el.style.transition='';el.classList.add('unfold');});
+      box.classList.add('on');
+      casCaption('choose one buff');
+      casState='choose';
+      casSCard();
+    },720);
+  }));
+}
+function casPickCard(el,bf){
+  if(casState!=='choose')return;
+  casState='target';casSPick();vib(20);
+  casPickedEl=el;casPicked=bf;
+  el.parentElement.querySelectorAll('.mcard').forEach(o=>{if(o!==el)o.classList.add('discard');});
+  el.classList.add('picked');
+  casCaption('send '+bf.name+' to whom?');
+  setTimeout(()=>casShowTargets(bf),350);
+}
+function casTargetList(bf){
+  const t=now();
+  if(me().role==='seeker')return aliveHiders().filter(p=>!(p.ghostUntil>t));
+  if(bf.id==='slow')return aliveSeekers();
+  return null; // self / global buffs — handled by the picker
+}
+function casShowTargets(bf){
+  const box=$('cas-targets');box.innerHTML='';box.style.cssText='';
+  let list;
+  if(bf.id==='shift'||bf.id==='ghost')list=[{name:'you',role:me().role,self:true}];
+  else if(bf.id==='decoy')list=[{name:'all seekers',role:'seekers',global:true}];
+  else list=casTargetList(bf);
+  if(!list||!list.length){ // nothing to send it to — refund the spin
+    casRefund();
+    toast(me().role==='seeker'?'all hiders are ghosted — spin refunded':'no seekers to slow — spin refunded','warn');
+    setTimeout(casClose,900);
+    return;
+  }
+  list.forEach((p,i)=>{
+    const c=document.createElement('button');
+    c.className='chip';
+    const av=p.global?'👥':(p.name?p.name[0].toUpperCase():'?');
+    c.innerHTML=`<span class="av">${av}</span>
+      <span class="cn">${esc(p.name)}</span><span class="cr">${p.self?me().role:p.global?'all':(p.role||'')}</span>`;
+    c.style.transitionDelay=(i*70)+'ms';
+    c.addEventListener('click',()=>casSendBuff(p,c));
+    box.appendChild(c);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>c.classList.add('in')));
+    setTimeout(()=>{c.style.transitionDelay='0ms';},600+i*70);
+  });
+  box.classList.add('on');
+}
+function casSendBuff(player,chipEl){
+  if(casState!=='target')return;
+  casState='sending';
+  const bf=casPicked,cardEl=casPickedEl;
+  casSSend();vib(30);
+  const cr=cardEl.getBoundingClientRect();
+  const ar=chipEl.querySelector('.av').getBoundingClientRect();
+  const token=document.createElement('div');
+  token.id='cas-token';token.innerHTML=casIco(CAS_ICON[bf.id],22);
+  $('ov-casino').appendChild(token);
+  const p0={x:cr.left+cr.width/2,y:cr.top+cr.height/2};
+  const p2={x:ar.left+ar.width/2,y:ar.top+ar.height/2};
+  token.style.transform=`translate(${p0.x-24}px,${p0.y-24}px)`;
+  cardEl.classList.add('sent');
+  $('cas-targets').querySelectorAll('.chip').forEach(c=>{if(c!==chipEl)c.classList.add('off');});
+  $('cas-cards').classList.remove('on');
+  const p1={x:(p0.x+p2.x)/2,y:Math.min(p0.y,p2.y)-90};
+  const dur=680,t0=performance.now();
+  (function fly(t){
+    const k=Math.min(1,(t-t0)/dur);
+    const e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+    const x=(1-e)*(1-e)*p0.x+2*(1-e)*e*p1.x+e*e*p2.x;
+    const y=(1-e)*(1-e)*p0.y+2*(1-e)*e*p1.y+e*e*p2.y;
+    token.style.transform=`translate(${x-24}px,${y-24}px) scale(${1-0.3*e})`;
+    if(k<1)requestAnimationFrame(fly);
+    else arrive();
+  })(t0);
+  function arrive(){
+    token.style.transition='transform .18s var(--ease-out),opacity .18s';
+    token.style.transform=`translate(${p2.x-24}px,${p2.y-24}px) scale(.2)`;
+    token.style.opacity='0';
+    chipEl.classList.add('hit');
+    casSHit();vib([30,40,30]);
+    casCaption(bf.name+' → '+player.name);
+    /* the token landed — spend the window, apply the buff, fade everything out in place */
+    casSpend();
+    casApply(bf,player);
+    setTimeout(()=>{
+      token.remove();
+      $('cas-cards').classList.add('out');
+      if(casMachine)casMachine.classList.add('bye');
+      const tg=$('cas-targets');
+      tg.classList.remove('on');
+      tg.style.transition='opacity .5s var(--ease-out)';
+      requestAnimationFrame(()=>{tg.style.opacity='0';});
+      casCaption('');
+      setTimeout(casClose,620);
+    },1100);
+  }
+}
+/* lever: fake-3d swipe-down, toward the camera */
+function casSetPull(p){
+  casPull=p;
+  const a=p*CAS_MAXANG*Math.PI/180;
+  const c=Math.cos(a);
+  casArm.style.transform=`scaleY(${c.toFixed(4)})`;
+  const s=1+0.45*Math.sin(Math.PI*Math.min(1,Math.max(0,p)));
+  casKnob.style.transform=`translateY(${(CAS_KNOB_L*(1-c)).toFixed(1)}px) scale(${s.toFixed(4)})`;
+}
+function casBindLever(){
+  casHit.addEventListener('pointerdown',e=>{
+    if(casState!=='attract')return;
+    casPulling=true;casY0=e.clientY;casMachine.classList.remove('attract');
+    casArm.classList.remove('spring');casKnob.classList.remove('spring');
+    casHit.setPointerCapture(e.pointerId);casSGrab();
+  });
+  casHit.addEventListener('pointermove',e=>{
+    if(!casPulling)return;
+    casSetPull(Math.max(0,Math.min(1,(e.clientY-casY0)/150)));
+  });
+  const release=()=>{
+    if(!casPulling)return;casPulling=false;
+    casArm.classList.add('spring');casKnob.classList.add('spring');
+    if(casPull>0.6){casSetPull(1);setTimeout(()=>casSetPull(0),300);setTimeout(casStartSpin,160);}
+    else casSetPull(0);
+  };
+  casHit.addEventListener('pointerup',release);
+  casHit.addEventListener('pointercancel',release);
+}
+function casAutoPull(){
+  if(casState!=='attract')return;
+  casMachine.classList.remove('attract');
+  casArm.classList.add('spring');casKnob.classList.add('spring');
+  casSetPull(1);
+  setTimeout(()=>casSetPull(0),320);
+  setTimeout(casStartSpin,200);
+  casSGrab();
+}
+/* open / close / reset */
+function casCleanup(){
+  if(casRafId!=null)cancelAnimationFrame(casRafId);casRafId=null;
+  const tk=$('cas-token');if(tk)tk.remove();
+  $('cas-stage').innerHTML='';
+  $('cas-cards').innerHTML='';$('cas-targets').innerHTML='';
+  casMachine=null;casState='idle';
+}
+function casClose(){
+  casCleanup();
+  closeOv('ov-casino');
+}
 function openCasino(){
   if(!casinoOpenFor(me()))return;
   openOv('ov-casino');
-  $('btn-spin').style.display='flex'; $('casino-cards').style.display='none';
-  $('btn-spin').disabled=false; sGold();
+  casCaption('');
+  setTimeout(()=>{
+    casBuild();
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      casMachine.classList.add('in');casSIn();
+      setTimeout(()=>{casMachine.classList.add('attract');casState='attract';casCaption('swipe the lever down');},600);
+    }));
+  },60);
 }
-$('btn-spin').onclick=()=>{
-  $('btn-spin').disabled=true;
-  const reels=[$('r0'),$('r1'),$('r2')]; reels.forEach(r=>r.classList.add('spin'));
-  const iv=setInterval(()=>{reels.forEach(r=>r.textContent=SYMS[Math.floor(Math.random()*SYMS.length)]);tone(1200+Math.random()*600,.03,'square',.015);},80);
-  setTimeout(()=>{clearInterval(iv);reels.forEach(r=>r.classList.remove('spin'));
-    reels.forEach(r=>r.textContent='💧');
-    const pool=BUFFS[me().role].slice();
-    const a=pool.splice(Math.floor(Math.random()*pool.length),1)[0];
-    const b=pool.splice(Math.floor(Math.random()*pool.length),1)[0];
-    $('btn-spin').style.display='none';
-    const box=$('casino-cards');box.style.display='flex';box.innerHTML='';
-    [a,b].forEach(bf=>{
-      const el=document.createElement('div');el.className='bcard';
-      el.innerHTML='<div class="ic">'+bf.icon+'</div><div class="bn">'+bf.name+'</div><div class="bd">'+bf.desc+'</div>';
-      el.onclick=()=>{el.classList.add('picked');el.parentElement.querySelectorAll('.bcard').forEach(o=>o.style.pointerEvents='none');
-        setTimeout(()=>pickBuff(bf),380);};
-      box.appendChild(el);
-    });
-    sGold();
-  },1500);
-};
+$('cas-close').onclick=()=>{ if(casState!=='sending')casClose(); };
+window.addEventListener('keydown',e=>{if(e.code==='Space'&&$('ov-casino').classList.contains('open')){e.preventDefault();casAutoPull();}});
 
 /* ---------------- scream task ---------------- */
 let micAnalyser=null,micData=null,micReady=false,micDenied=false,scIv=null;
@@ -1302,8 +1743,8 @@ function renderLobby(){
   $('lobby-code').textContent=room.code;
   const isHost=room.hostId===myId;
   $('set-lock').textContent=isHost?'(you are host)':'(host decides)';
-  $('sel-hide').value=room.hideMin;$('sel-total').value=room.totalMin;
-  $('sel-hide').disabled=!isHost;$('sel-total').disabled=!isHost;
+  $('sel-hide').value=room.hideMin;$('sel-total').value=room.totalMin;$('sel-casino').value=room.casinoMin;
+  $('sel-hide').disabled=!isHost;$('sel-total').disabled=!isHost;$('sel-casino').disabled=!isHost;
   $('btn-addbot').style.display=isHost?'flex':'none';
   $('btn-start').style.display=isHost?'flex':'none';
   $('pcount').textContent='('+room.players.length+')';
@@ -1611,10 +2052,11 @@ function tick(){
     const before=room.fx.length;room.fx=room.fx.filter(f=>f.until>t);if(room.fx.length!==before)dirty=true;
     const w=casinoWinIdx();
     if(w!==ui.lastCasinoWin){ui.lastCasinoWin=w;
-      if(w>=1&&casinoOpenFor(me())){
+      if(w>=1&&casinoOpenFor(me())&&!$('ov-casino').classList.contains('open')){
         const first=!ui.seenCasinoOnce; ui.seenCasinoOnce=true;
-        toast(first?'🎰 casino open — tap the gold chip to spin & grab a buff':'🎰 casino opened — grab a buff','gold',first?5500:4000);
+        toast(first?'🎰 casino time — pull the lever!':'🎰 casino time — grab a buff','gold',first?4500:3500);
         sGold(); vib([40,40,40]);
+        openCasino(); // the machine appears on its own when the window hits
       }}
     const m=me();
     if(m&&m.ringUntil>t){if(!tick._ring){tick._ring=setInterval(sRing,650);vib([120,80,120,80,120]);
@@ -1697,9 +2139,9 @@ $('btn-copy').onclick=()=>{
     navigator.clipboard.writeText(c).then(()=>toast('code copied','silent'))
       .catch(()=>toast('code: <b class="mono">'+c+'</b>','silent'));
   }else toast('code: <b class="mono">'+c+'</b>','silent');
-};
-$('sel-hide').onchange=e=>commit(r=>{r.hideMin=+e.target.value;});
-$('sel-total').onchange=e=>commit(r=>{r.totalMin=+e.target.value;});
+};  $('sel-hide').onchange=e=>commit(r=>{r.hideMin=+e.target.value;});
+  $('sel-total').onchange=e=>commit(r=>{r.totalMin=+e.target.value;});
+  $('sel-casino').onchange=e=>commit(r=>{r.casinoMin=+e.target.value;});
 $('btn-addbot').onclick=addBot;
 $('btn-start').onclick=()=>{ac();startGame();showScreen('game');};
 $('btn-mute').onclick=()=>{muted=!muted;LS.set('leak.muted',muted?'1':'0');$('btn-mute').textContent=muted?'🔕':'🔔';toast(muted?'sound off':'sound on (quiet)','silent');};

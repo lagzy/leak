@@ -12,7 +12,7 @@ everyone starts at one meeting point.
 players become hiders or seekers (chosen or random).
 hiders get 10 minutes (configurable) to hide inside a fixed rectangle zone.
 then seekers are released and hunt. catching a hider happens in real life, then the seeker taps catch in the app.
-every 15 minutes a casino opens: spin → get 2 random buff offers → keep one. buffs sabotage the other side (scream orders, radar circles, ringing phones, slow-mo, decoys, …).
+every 12 minutes (host-set) a casino opens: spin → get 2 random buff offers → keep one. buffs sabotage the other side (scream orders, radar circles, ringing phones, slow-mo, decoys, …).
 3 hearts per player. breaking rules (leaving the zone, ignoring a scream order, being reported) costs a heart. 0 hearts = automatic loss.
 seekers win by catching all hiders before time runs out. hiders win by surviving.
 
@@ -61,7 +61,7 @@ hide → seek when now >= hideEndsAt
 seek → end (seekers win) when no alive hiders remain
 seek → end (hiders win) when now >= gameEndsAt
 
-defaults: hide 10 min, total 45 min, casino every 15 min (lobby selects for hide/total).
+defaults: hide 10 min, total 45 min, casino every 12 min (lobby selects for all three; host-only).
 
 round sequence details
 
@@ -107,7 +107,7 @@ js
   code: 'ABCD',            // 4-char room code
   hostId: '…',             // player id of host
   phase: 'lobby|hide|seek|end',
-  hideMin: 10, totalMin: 45, casinoMin: 15,
+  hideMin: 10, totalMin: 45, casinoMin: 12,
   startedAt, hideEndsAt, gameEndsAt,   // epoch ms
   winner: null | 'hiders' | 'seekers',
   forceCasinoId: 0,        // dev tool: non-zero opens casino for everyone once
