@@ -204,6 +204,7 @@ input,select{font-family:inherit;color:inherit}
 @keyframes revealIn{from{opacity:0;transform:scale(.7);filter:blur(8px)}to{opacity:1;transform:none;filter:none}}
 #ov-reveal.hider{background:radial-gradient(120% 120% at 50% 110%, #0e6e50 0%, #0d0f10 62%)}
 #ov-reveal.seeker{background:radial-gradient(120% 120% at 50% 110%, #a52c12 0%, #0d0f10 62%)}
+#ov-reveal.kicked{background:radial-gradient(120% 120% at 50% 110%, #8e1111 0%, #0d0f10 62%)}
 #ov-reveal .mini{position:absolute;top:calc(20px + env(safe-area-inset-top));left:24px;color:rgba(255,255,255,.8);font-weight:700;font-size:20px;letter-spacing:-.04em}
 
 /* casino */
@@ -608,22 +609,29 @@ function mergeRoom(incoming){
 }
 function applyRoom(incoming){ if(!room){room=incoming;return true;} return mergeRoom(incoming); }
 /* the host can kick players (see renderLobby/renderSheet); the kicked player's
-   device learns about it through the tombstone arriving on any merge, boots to
-   the home screen and clears its saved room so a reload can't restore it. */
-function bootRoom(reason){
+   device learns about it through the tombstone arriving on any merge and shows
+   a full-screen kicked screen — same style as the hider/seeker reveal, red
+   glow — then clears its saved room so a reload can't restore it. */
+function bootRoom(){
   if(room){LS.del(roomKey(room.code));LS.del('leak.active');}
   try{transport&&transport.close();}catch(e){}
   transport=null;room=null;
   ui.seenLog=new Set();ui.seenReveal=new Set();ui.sheetOpen=false;ui.screamOpen=false;
   $('sheet').classList.remove('open');
   setPeerStatus('connecting');
-  showScreen('home');
   ui.kicked=true; // stop any running join poll (see joinRoom)
-  toast(reason,'warn',5000);
+  showKickedOverlay();
 }
 function checkRemoved(){
-  if(room&&room.removed&&room.removed.indexOf(myId)>=0){bootRoom('the host removed you from the room');return true;}
+  if(room&&room.removed&&room.removed.indexOf(myId)>=0){bootRoom();return true;}
   return false;
+}
+function showKickedOverlay(){
+  const ov=$('ov-reveal');ov.className='ov open kicked';
+  $('reveal-word').textContent='kicked.';
+  $('reveal-sub').innerHTML='you were kicked by the host. this room is closed for you now.';
+  const bt=$('btn-enter');bt.textContent='back to home';
+  bt.onclick=()=>{closeOv('ov-reveal');ui.kicked=false;showScreen('home');};
 }
 
 /* ---------------- transport abstraction (Phase 3 #18) ----------------
@@ -1410,6 +1418,8 @@ function renderReveal(){
   $('reveal-sub').innerHTML=m.role==='hider'
     ?'you have <b>'+room.hideMin+' minutes</b> to vanish inside the rectangle. set your hiding spot, stay silent, survive until the end.'
     :'hiders get <b>'+room.hideMin+' minutes</b> of head start. then you hunt. find them in real life, tap catch. use casino buffs to flush them out.';
+  /* reset what the kicked screen may have changed (text + button behavior) */
+  const bt=$('btn-enter');bt.textContent='enter the field';bt.onclick=()=>closeOv('ov-reveal');
 }
 function renderEnd(){
   if(room.phase!=='end'){closeOv('ov-end');return;}
