@@ -570,6 +570,7 @@ const roomKey=c=>'leak-room-'+c;
    (phase, timestamps, hostId, winner) follow the higher room seq. */
 function mergeRoom(incoming){
   if(!room||!incoming||incoming.code!==room.code){return false;}
+  if(!room.removed)room.removed=[]; // legacy saved rooms
   let changed=false;
   if((incoming.seq||0)>=(room.seq||0)){
     if(room.phase!==incoming.phase){room.phase=incoming.phase;changed=true;}
@@ -587,6 +588,15 @@ function mergeRoom(incoming){
     if(!cur){byId.set(ip.id,ip);changed=true;}
     else if((ip.seq||0)>=(cur.seq||0)){byId.set(ip.id,ip);changed=true;}});
   room.players=[...byId.values()];
+  /* removals: the host can kick players; tombstones are sticky, so a kicked
+     player's stale snapshot (or a rejoin) can't resurrect them — every merge
+     filters the roster against the accumulated removed ids. */
+  (incoming.removed||[]).forEach(id=>{ if(id&&room.removed.indexOf(id)<0)room.removed.push(id); });
+  if(room.removed.length){
+    const before=room.players.length;
+    room.players=room.players.filter(p=>room.removed.indexOf(p.id)<0);
+    if(room.players.length!==before)changed=true;
+  }
   const fxById=new Map(room.fx.map(f=>[f.id,f]));
   incoming.fx.forEach(ifx=>{const cur=fxById.get(ifx.id);
     if(!cur||(ifx.until||0)>(cur.until||0))fxById.set(ifx.id,ifx);});
@@ -597,6 +607,24 @@ function mergeRoom(incoming){
   return changed;
 }
 function applyRoom(incoming){ if(!room){room=incoming;return true;} return mergeRoom(incoming); }
+/* the host can kick players (see renderLobby/renderSheet); the kicked player's
+   device learns about it through the tombstone arriving on any merge, boots to
+   the home screen and clears its saved room so a reload can't restore it. */
+function bootRoom(reason){
+  if(room){LS.del(roomKey(room.code));LS.del('leak.active');}
+  try{transport&&transport.close();}catch(e){}
+  transport=null;room=null;
+  ui.seenLog=new Set();ui.seenReveal=new Set();ui.sheetOpen=false;ui.screamOpen=false;
+  $('sheet').classList.remove('open');
+  setPeerStatus('connecting');
+  showScreen('home');
+  ui.kicked=true; // stop any running join poll (see joinRoom)
+  toast(reason,'warn',5000);
+}
+function checkRemoved(){
+  if(room&&room.removed&&room.removed.indexOf(myId)>=0){bootRoom('the host removed you from the room');return true;}
+  return false;
+}
 
 /* ---------------- transport abstraction (Phase 3 #18) ----------------
    A Transport owns how room state and presence travel between clients.
@@ -664,7 +692,7 @@ function SupabaseTransport(code){
      cosmetic and arrive with the full-room broadcast/ask refresh). */
   const compactRoom=r=>({code:r.code,hostId:r.hostId,phase:r.phase,hideMin:r.hideMin,totalMin:r.totalMin,
     casinoMin:r.casinoMin,startedAt:r.startedAt,hideEndsAt:r.hideEndsAt,gameEndsAt:r.gameEndsAt,
-    winner:r.winner,forceCasinoId:r.forceCasinoId,seq:r.seq,players:r.players,log:[],fx:[]});
+    winner:r.winner,forceCasinoId:r.forceCasinoId,seq:r.seq,players:r.players,removed:r.removed,log:[],fx:[]});
   /* Presence-based room discovery: the host (and any room member) keeps the
      latest room in its realtime presence state, which the server caches per
      channel. A joiner reads it on subscribe — no live host answer needed. */
@@ -690,6 +718,7 @@ function SupabaseTransport(code){
         for(const m of arr){ if(m&&m.room&&applyRoom(m.room))changed=true; }
       }
       if(changed)renderAll();
+      checkRemoved();
     }catch(e){}
   }
   const trackRoom=r=>{ if(ready&&chan){try{chan.track({room:compactRoom(r)});}catch(e){}} };
@@ -702,7 +731,7 @@ function SupabaseTransport(code){
        falling back to the pre-envelope inline shape older bundles used. */
     chan.on('broadcast',{event:'room'},payload=>{
       const r=payload&&payload.payload&&payload.payload.room?payload.payload.room:(payload&&payload.room);
-      if(r){ if(applyRoom(r))renderAll(); }
+      if(r){ if(applyRoom(r))renderAll(); checkRemoved(); }
     });
     chan.on('broadcast',{event:'presence'},()=>{ ui.hostSeen=Date.now(); });
     chan.on('broadcast',{event:'ask'},payload=>{
@@ -838,7 +867,7 @@ function createRoom(){
   const name=myName.trim(); if(!name){toast('enter your name first','warn');return;}
   LS.set('leak.name',name);
   room={code:genCode(),hostId:myId,phase:'lobby',hideMin:10,totalMin:45,casinoMin:15,
-    startedAt:0,hideEndsAt:0,gameEndsAt:0,winner:null,forceCasinoId:0,players:[],fx:[],log:[],seq:0};
+    startedAt:0,hideEndsAt:0,gameEndsAt:0,winner:null,forceCasinoId:0,players:[],removed:[],fx:[],log:[],seq:0};
   ui.hostSeen=Date.now(); // we are host, heartbeat present
   room.players.push(newPlayer(name,false));
   LS.set('leak.active',room.code); // reload recovery: remember which room to restore
@@ -850,6 +879,7 @@ function joinRoom(code){
   const name=myName.trim(); if(!name){toast('enter your name first','warn');return;}
   code=(code||'').trim().toUpperCase(); if(code.length!==4){toast('code has 4 letters','warn');return;}
   LS.set('leak.name',name);
+  ui.kicked=false; // a fresh join is a fresh attempt
   /* joining a different room while one is loaded (e.g. restored after a reload):
      drop the current room cleanly, else the old room shadows the incoming one. */
   if(room&&room.code!==code){
@@ -880,7 +910,8 @@ function joinRoom(code){
      so the ask is re-sent until we're subscribed and a host answers. */
   const t0=now();
   const iv=setInterval(()=>{
-    if(room&&room.code===code){clearInterval(iv);finish();}
+    if(ui.kicked){clearInterval(iv);return;}
+    if(room&&room.code===code){clearInterval(iv);if(checkRemoved())return;finish();}
     else if(now()-t0>30000){clearInterval(iv);
       try{transport&&transport.close();}catch(e){}
       const wasOn=ui.peerStatus==='connected';
@@ -1174,8 +1205,8 @@ function renderLobby(){
       q.roleChoice=q.roleChoice==='hider'?'seeker':q.roleChoice==='seeker'?'random':'hider';});
     else{chip.style.pointerEvents='none';}
     row.appendChild(chip);
-    if(isHost&&p.bot){const rm=document.createElement('button');rm.className='icon-btn';rm.textContent='✕';
-      rm.onclick=()=>commit(r=>{r.players=r.players.filter(x=>x.id!==p.id);});row.appendChild(rm);}
+    if(isHost&&p.id!==myId){const rm=document.createElement('button');rm.className='icon-btn';rm.setAttribute('aria-label','remove '+p.name+' from the room');rm.textContent='✕';
+      rm.onclick=()=>commit(r=>{r.removed=(r.removed||[]).concat(p.id);r.players=r.players.filter(x=>x.id!==p.id);});row.appendChild(rm);}
     box.appendChild(row);
   });
 }
@@ -1358,6 +1389,10 @@ function renderSheet(){
       const b=document.createElement('button');b.className='sbtn warn';b.textContent='⚠ report';b.onclick=()=>{closeSheet();doReport(p.id);};row.appendChild(b);}
     if(p.id===myId&&m.role==='hider'&&m.status==='alive'&&room.phase!=='end'&&room.phase!=='lobby'){
       const b=document.createElement('button');b.className='sbtn quit';b.textContent='give up';b.onclick=()=>{closeSheet();surrender();};row.appendChild(b);}
+    if(room.hostId===myId&&p.id!==myId){
+      const b=document.createElement('button');b.className='sbtn warn';b.textContent='✕';b.title='remove '+p.name+' from the room';
+      b.onclick=()=>{closeSheet();commit(r=>{r.removed=(r.removed||[]).concat(p.id);r.players=r.players.filter(x=>x.id!==p.id);});};
+      row.appendChild(b);}
     box.appendChild(row);
   });
 }
