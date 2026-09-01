@@ -42,11 +42,8 @@ input,select{font-family:inherit;color:inherit}
 
 /* ---------- home ---------- */
 #scr-home{align-items:center;justify-content:center;gap:0;padding:24px}
-.logo{font-weight:700;font-size:clamp(64px,17vw,110px);letter-spacing:-.05em;line-height:1;display:flex;align-items:baseline}
-.logo .drop{width:.16em;height:.16em;border-radius:50%;background:var(--seeker);margin-left:.08em;
-  animation:drip 2.6s ease-in-out infinite}
-@keyframes drip{0%,100%{transform:translateY(0) scale(1);opacity:1}50%{transform:translateY(.18em) scale(.86);opacity:.55}}
-.tag{color:var(--ink-soft);margin:10px 0 34px;font-size:15px;letter-spacing:.02em}
+.logo{font-weight:700;font-size:clamp(64px,17vw,110px);letter-spacing:-.05em;line-height:1;display:flex;align-items:baseline;margin-bottom:44px}
+.logo .drop{width:.16em;height:.16em;border-radius:50%;background:var(--seeker);margin-left:.08em}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
   box-shadow:var(--shadow);padding:22px;width:min(400px,100%);animation:fadeUp .6s .1s both}
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
@@ -298,7 +295,7 @@ input,select{font-family:inherit;color:inherit}
 .how-list b{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-soft);margin-bottom:1px}
 ::-webkit-scrollbar{width:0;height:0}
 @media (prefers-reduced-motion:reduce){
-  .logo .drop,.hud-phase .dot,.fake-dot,#chip-casino,.casinoPulse,.reel.spin,
+  .hud-phase .dot,.fake-dot,#chip-casino,.casinoPulse,.reel.spin,
   .toast,.panel,.prow,.bcard,.dock-card,.buff-chip{animation:none!important}
   .screen,.ov{transition:opacity .15s linear!important;transform:none!important}
   *{scroll-behavior:auto!important}
@@ -310,7 +307,6 @@ input,select{font-family:inherit;color:inherit}
 <!-- ============ HOME ============ -->
 <div id="scr-home" class="screen active">
   <div class="logo">leak<span class="drop"></span></div>
-  <div class="tag">hide &amp; seek — but unfair.</div>
   <div class="card">
     <input id="home-name" class="field" maxlength="14" placeholder="your name" autocomplete="off">
     <div style="height:10px"></div>
@@ -608,6 +604,7 @@ function applyRoom(incoming){ if(!room){room=incoming;return true;} return merge
    managed server. NO NAT traversal needed — works on every phone network.
    Interface:
      .broadcast(room)        — push a room snapshot to peers
+     .trackRoom(room)        — keep the room in realtime presence (join handshake)
      .ask(code)              — request the current room (join handshake)
      .presence()             — host heartbeat ping
      .close()                — tear down
@@ -620,7 +617,7 @@ function saveRoom(){
   if(!room)return;
   if(typeof room.seq==='number')room.seq++; else room.seq=1;
   LS.set(roomKey(room.code),JSON.stringify(room));
-  if(transport)transport.broadcast(room);
+  if(transport){transport.broadcast(room);try{transport.trackRoom(room);}catch(e){}}
 }
 /* cross-device sync (Supabase Realtime Broadcast robust cross-device sync via Supabase Realtime Broadcast
    (websockets to a free managed server — NO NAT traversal needed, so it works
@@ -663,6 +660,31 @@ function SupabaseTransport(code){
      until SUBSCRIBED, then the pending room snapshot (if any) is flushed. */
   const send=msg=>{ if(!ready||!chan)return false; try{chan.send(msg);return true;}catch(e){return false;} };
   const flush=()=>{ if(ready&&pendingRoom){const r=pendingRoom;pendingRoom=null;send({type:'broadcast',event:'room',payload:{room:r}});} };
+  /* Keep the presence payload lean: envelope + players only (log/fx are
+     cosmetic and arrive with the full-room broadcast/ask refresh). */
+  const compactRoom=r=>({code:r.code,hostId:r.hostId,phase:r.phase,hideMin:r.hideMin,totalMin:r.totalMin,
+    casinoMin:r.casinoMin,startedAt:r.startedAt,hideEndsAt:r.hideEndsAt,gameEndsAt:r.gameEndsAt,
+    winner:r.winner,forceCasinoId:r.forceCasinoId,seq:r.seq,players:r.players,log:[],fx:[]});
+  /* Presence-based room discovery: the host (and any room member) keeps the
+     latest room in its realtime presence state, which the server caches per
+     channel. A joiner reads it on subscribe — no live host answer needed. */
+  function syncRoom(){
+    if(!chan||!ready)return;
+    try{
+      const st=chan.presenceState();
+      /* supabase-js v2: presenceState() maps each presence key to an ARRAY of
+         tracked payloads (realtime-js v1 used a {metas:[...]} wrapper). Reading
+         .metas on a v2 array silently found nothing, so presence-based room
+         discovery never fired and a join only worked if a live host answered
+         the ask. Handle both shapes defensively. */
+      for(const key in st){
+        const list=st[key]; if(!list)continue;
+        const arr=Array.isArray(list)?list:(Array.isArray(list.metas)?list.metas:[list]);
+        for(const m of arr){ if(m&&m.room&&applyRoom(m.room)){renderAll();return;} }
+      }
+    }catch(e){}
+  }
+  const trackRoom=r=>{ if(ready&&chan){try{chan.track({room:compactRoom(r)});}catch(e){}} };
   /* Bind all handlers to a fresh channel. Rebuilding per attempt avoids
      stale state after a failed join. */
   function bindChan(){
@@ -670,6 +692,7 @@ function SupabaseTransport(code){
     chan.on('broadcast',{event:'room'},payload=>{ if(payload&&payload.room){ if(applyRoom(payload.room))renderAll(); } });
     chan.on('broadcast',{event:'presence'},()=>{ ui.hostSeen=Date.now(); });
     chan.on('broadcast',{event:'ask'},payload=>{ if(room&&room.code===code&&payload&&payload.code)send({type:'broadcast',event:'room',payload:{room}}); });
+    ['sync','join','update'].forEach(ev=>chan.on('presence',{event:ev},syncRoom));
     return chan;
   }
   /* Subscribe with retries: mobile networks drop websockets, so one failed
@@ -683,7 +706,7 @@ function SupabaseTransport(code){
       setPeerStatus('connecting');
       try{
         bindChan().subscribe(st=>{
-          if(st==='SUBSCRIBED'){ready=true;attempts=0;setPeerStatus('connected');flush();}
+          if(st==='SUBSCRIBED'){ready=true;attempts=0;setPeerStatus('connected');syncRoom();flush();if(room)trackRoom(room);}
           else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'){
             ready=false;
             try{chan&&client.removeChannel(chan);}catch(e){}
@@ -700,11 +723,34 @@ function SupabaseTransport(code){
     try{ client=sb.createClient(supaCfg.url,supaCfg.key,{realtime:{params:{eventsPerSecond:10}}}); }catch(e){setPeerStatus('error');toast('Supabase init failed — check URL/key','warn',6000);return;}
     trySubscribe(0);
   }).catch(e=>{setPeerStatus('error');toast('could not load Supabase — try again','warn',6000);});
+  /* Foreground re-join: mobile OSs suspend the websocket while the tab is
+     backgrounded, the socket can go zombie, and the server eventually times
+     out our presence — so a host returning from a backgrounded phone would
+     be invisible to joiners. On hidden→visible we rebuild the channel from
+     scratch (fresh socket + resubscribe + re-track of the room presence)
+     instead of waiting on realtime-js's slow internal retries, and reset
+     the attempt counter so a tab that sat backgrounded for a long time can
+     still recover. */
+  let lastRejoin=0;
+  const onVis=()=>{
+    if(document.visibilityState!=='visible'||!client)return;
+    const t=now();
+    if(t-lastRejoin<3000)return; // avoid thrash on rapid show/hide toggles
+    lastRejoin=t;
+    if(retryT){clearTimeout(retryT);retryT=null;}
+    attempts=0;
+    setPeerStatus('connecting');
+    if(chan){ try{ client.removeChannel(chan).catch(()=>{}); }catch(e){} }
+    chan=null; ready=false;
+    trySubscribe(0); // SUBSCRIBED re-tracks room presence (room in scope)
+  };
+  document.addEventListener('visibilitychange',onVis);
   return {
     broadcast(room){ if(!send({type:'broadcast',event:'room',payload:{room}}))pendingRoom=room; },
+    trackRoom,
     ask(code){ send({type:'broadcast',event:'ask',payload:{code}}); },
     presence(){ send({type:'broadcast',event:'presence',payload:{}}); },
-    close(){ if(retryT){clearTimeout(retryT);retryT=null;} pendingRoom=null; try{chan&&client&&client.removeChannel(chan);}catch(e){} chan=null; }
+    close(){ document.removeEventListener('visibilitychange',onVis); if(retryT){clearTimeout(retryT);retryT=null;} pendingRoom=null; try{chan&&client&&client.removeChannel(chan);}catch(e){} chan=null; }
   };
 }
 function chanFor(code,opts){
@@ -810,9 +856,11 @@ function joinRoom(code){
     if(room&&room.code===code){clearInterval(iv);finish();}
     else if(now()-t0>30000){clearInterval(iv);
       try{transport&&transport.close();}catch(e){}
-      toast(ui.peerStatus==='error'
-        ?'can\'t reach the sync server — check your connection'
-        :'room not found - check the code and that the host created it','warn',6000);}
+      const wasOn=ui.peerStatus==='connected';
+      setPeerStatus('error');
+      toast(wasOn
+        ?'room not found - check the code and that the host created it'
+        :'can\'t reach the sync server — check your connection','warn',6000);}
     else try{transport&&transport.ask(code);}catch(e){}
   },500);
 }
@@ -1441,7 +1489,7 @@ $('btn-join').onclick=()=>{ac();joinRoom($('home-code').value);};
 $('btn-how').onclick=()=>openOv('ov-how');
 $('btn-supa-set').onclick=()=>{if(promptSupabase())toast('Supabase key saved','good');};
 if(!supaCfg.key)setTimeout(()=>toast('tap "set Supabase key" once to enable cross-device','warn',6000),1200);
-$('btn-leave').onclick=()=>{room=null; try{transport&&transport.close();}catch(e){} transport=null;
+$('btn-leave').onclick=()=>{room=null; try{transport&&transport.close();}catch(e){} transport=null; setPeerStatus('connecting');
   ui.seenLog=new Set(); ui.seenReveal=new Set(); ui.sheetOpen=false; ui.screamOpen=false;
   $('sheet').classList.remove('open'); showScreen('home');};
 $('btn-copy').onclick=()=>{
@@ -1457,7 +1505,7 @@ $('btn-addbot').onclick=addBot;
 $('btn-start').onclick=()=>{ac();startGame();showScreen('game');};
 $('btn-mute').onclick=()=>{muted=!muted;LS.set('leak.muted',muted?'1':'0');$('btn-mute').textContent=muted?'🔕':'🔔';toast(muted?'sound off':'sound on (quiet)','silent');};
 $('chip-casino').onclick=openCasino;
-$('btn-end-home').onclick=()=>{closeOv('ov-end');room=null;showScreen('home');};
+$('btn-end-home').onclick=()=>{closeOv('ov-end');room=null;setPeerStatus('connecting');showScreen('home');};
 $('btn-rematch').onclick=()=>{closeOv('ov-end');resetRoom();};
 $('dev-toggle').onclick=()=>$('dev').classList.toggle('open');
 $('dev-skip').onclick=()=>{if(room&&room.phase==='hide')commit(r=>{r.hideEndsAt=Date.now();});};
