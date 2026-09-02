@@ -1120,6 +1120,8 @@ const BUFFS={
   {id:'ring',  icon:'🔔',name:'ring',  rarity:'common',desc:"a hider's phone starts ringing for 10 seconds. honor rule: they can't silence it."},
   {id:'leakpos',icon:'🎯',name:'leak spot',rarity:'secret',desc:"every seeker sees the chosen hider's exact hide spot for 90 seconds. shifts stay visible live."},
   {id:'freeze',icon:'🧊',name:'freeze hider',rarity:'secret',desc:'the chosen hider is welded to the ground — no moving at all for 2 minutes.'},
+  {id:'scan', icon:'🔭',name:'scan',   rarity:'uncommon',desc:"reveal the chosen hider's live hiding spot to you for 20 seconds."},
+  {id:'stun', icon:'⚡',name:'stun',   rarity:'rare',desc:'the chosen hider is frozen — they cannot move at all for 45 seconds.'},
  ],
  hider:[
   {id:'slow', icon:'🐌',name:'slow-mo', rarity:'rare',desc:'a seeker may only walk 3 km/h for the next 90 seconds.'},
@@ -1128,6 +1130,8 @@ const BUFFS={
   {id:'ghost',icon:'🌫️',name:'ghost',   rarity:'legendary',desc:'you become invisible to radar, ring and scream for 120 seconds.'},
   {id:'see',  icon:'👁️',name:'seeker vision',rarity:'secret',desc:'see every live seeker position on your map for 120 seconds — planning time.'},
   {id:'trap', icon:'🪤',name:'freeze seeker',rarity:'secret',desc:'the chosen seeker is welded to the ground for 5 whole minutes.'},
+  {id:'mirage',icon:'🌪️',name:'mirage', rarity:'uncommon',desc:'plant 3 fake decoy blips across the zone for 45 seconds.'},
+  {id:'cloak',icon:'🙈',name:'cloak',  rarity:'mythic',desc:'vanish completely for 45 seconds — no radar, ring, scan, leak or catch. seekers can\'t see you.'},
 ]};
 const casinoWinIdx=()=>room&&room.hideEndsAt?Math.max(0,Math.floor((now()-room.hideEndsAt)/(room.casinoMin*60000))):0;
 function casinoOpenFor(p){
@@ -1141,7 +1145,7 @@ function genCode(){const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789';let s='';for(let i=
 function newPlayer(name,bot){
   return {id:bot?uid():myId,name,bot:!!bot,roleChoice:'random',role:null,hearts:3,status:'alive',
     pos:{lat:START.lat,lng:START.lng},speed:0,hidePos:null,casinoDone:0,casinoForce:0,
-    slowUntil:0,ghostUntil:0,ringUntil:0,freezeUntil:0,shiftReady:false,pendingTask:null,caughtBy:null,wander:null,seq:0,joinedAt:Date.now(),
+    slowUntil:0,ghostUntil:0,ringUntil:0,freezeUntil:0,cloakUntil:0,shiftReady:false,pendingTask:null,caughtBy:null,wander:null,seq:0,joinedAt:Date.now(),
     botMoves:0,stats:{catches:0,buffs:0,hiddenAt:0}};
 }
 function createRoom(){
@@ -1220,7 +1224,7 @@ function startGame(){
     if(r.players.every(p=>p.role==='seeker'))r.players[r.players.length-1].role='hider';
     const t=now();
     r.players.forEach(p=>{ p.hearts=3;p.status='alive';p.pos={lat:START.lat,lng:START.lng};p.hidePos=null;
-      p.casinoDone=0;p.casinoForce=0;p.slowUntil=0;p.ghostUntil=0;p.ringUntil=0;p.freezeUntil=0;p.shiftReady=false;p.pendingTask=null;p.caughtBy=null;
+      p.casinoDone=0;p.casinoForce=0;p.slowUntil=0;p.ghostUntil=0;p.ringUntil=0;p.freezeUntil=0;p.cloakUntil=0;p.shiftReady=false;p.pendingTask=null;p.caughtBy=null;
       p.botMoves=0;p.stats={catches:0,buffs:0,hiddenAt:0};
       if(p.bot&&p.role==='hider'){p.hidePos=randInZone();p.botMoves=4;p.stats.hiddenAt=t;} });
     r.fx=[];r.log=[];r.chat=[];
@@ -1232,7 +1236,7 @@ function startGame(){
 function resetRoom(){
   commit(r=>{ r.phase='lobby';r.winner=null;r.fx=[];r.log=[];r.startedAt=0;r.forceCasinoId=0;
     r.players.forEach(p=>{p.role=null;p.hearts=3;p.status='alive';p.hidePos=null;p.pos={lat:START.lat,lng:START.lng};
-      p.pendingTask=null;p.slowUntil=0;p.ghostUntil=0;p.ringUntil=0;p.freezeUntil=0;p.shiftReady=false;p.casinoDone=0;p.casinoForce=0;p.botMoves=0;p.stats={catches:0,buffs:0,hiddenAt:0};});
+      p.pendingTask=null;p.slowUntil=0;p.ghostUntil=0;p.ringUntil=0;p.freezeUntil=0;p.cloakUntil=0;p.shiftReady=false;p.casinoDone=0;p.casinoForce=0;p.botMoves=0;p.stats={catches:0,buffs:0,hiddenAt:0};});
     r.chat=[];});
   /* same per-game UI teardown as a rematch: without it the end overlay stayed
      open and stale scream/casino state leaked into the fresh lobby. */
@@ -1252,7 +1256,7 @@ function rematchNow(){
     if(r.players.every(p=>p.role==='seeker'))r.players[r.players.length-1].role='hider';
     const t=now();
     r.players.forEach(p=>{ p.hearts=3;p.status='alive';p.pos={lat:START.lat,lng:START.lng};p.hidePos=null;
-      p.casinoDone=0;p.casinoForce=0;p.slowUntil=0;p.ghostUntil=0;p.ringUntil=0;p.freezeUntil=0;p.shiftReady=false;p.pendingTask=null;p.caughtBy=null;
+      p.casinoDone=0;p.casinoForce=0;p.slowUntil=0;p.ghostUntil=0;p.ringUntil=0;p.freezeUntil=0;p.cloakUntil=0;p.shiftReady=false;p.pendingTask=null;p.caughtBy=null;
       p.botMoves=0;p.stats={catches:0,buffs:0,hiddenAt:0};
       if(p.bot&&p.role==='hider'){p.hidePos=randInZone();p.botMoves=4;p.stats.hiddenAt=t;} });
     r.fx=[];r.log=[];r.chat=[];
@@ -1309,6 +1313,12 @@ function casApply(bf,tgt){
     }else if(bf.id==='freeze'){
       commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.freezeUntil=now()+120000;logEvent('🧊 a hider was frozen in place');});
       toast('🧊 '+escN(tgt.name)+' can\'t move for 2 minutes','good');
+    }else if(bf.id==='scan'){
+      commit(r=>{r.fx.push({id:uid(),kind:'leak',forId:myId,targetId:tgt.id,until:now()+20000,label:'🔭 spot'});logEvent('🔭 a hiding spot was scanned');});
+      toast('🔭 '+escN(tgt.name)+'\'s spot revealed to you for 20 s','good');
+    }else if(bf.id==='stun'){
+      commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.freezeUntil=now()+45000;logEvent('⚡ a hider was stunned');});
+      toast('⚡ '+escN(tgt.name)+' is stunned for 45 s','good');
     }
   }else{
     if(bf.id==='slow'){
@@ -1327,6 +1337,12 @@ function casApply(bf,tgt){
     }else if(bf.id==='trap'){
       commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.freezeUntil=now()+300000;logEvent('🪤 a seeker was frozen in place');});
       toast('🪤 '+escN(tgt.name)+' can\'t move for 5 minutes','good');
+    }else if(bf.id==='mirage'){
+      commit(r=>{for(let i=0;i<3;i++)r.fx.push({id:uid(),kind:'fake',forId:'seekers',center:randInZone(),until:now()+45000});logEvent('🌪️ a mirage scattered decoys');});
+      toast('🌪️ 3 decoy blips on every seeker map','good');
+    }else if(bf.id==='cloak'){
+      commit(r=>{me().cloakUntil=now()+45000;logEvent('🙈 you cloaked — untraceable for 45 s');});
+      toast('🙈 you are cloaked for 45 s','good');
     }
   }
   sGold();
@@ -1374,7 +1390,7 @@ function askConfirm(title,text,ok,danger,onOk){
 /* ---------------- casino machine (ported from casino.html prototype) ---------------- */
 const rand=(a,b)=>a+Math.random()*(b-a);
 /* buff id → monochrome icon name used on the reels/cards */
-const CAS_ICON={scream:'mic',radar:'radar',ring:'bell',slow:'slow',decoy:'decoy',shift:'pin',ghost:'mist',leakpos:'target',freeze:'snow',see:'eye',trap:'snow'};
+const CAS_ICON={scream:'mic',radar:'radar',ring:'bell',slow:'slow',decoy:'decoy',shift:'pin',ghost:'mist',leakpos:'target',freeze:'snow',see:'eye',trap:'snow',scan:'target',stun:'snow',mirage:'tri',cloak:'mist'};
 const CAS_SYM=['seven','bar','diamond','dot','tri','mic','radar','bell','slow','decoy','pin','mist','target','snow','eye'];
 function casIco(n,s=42){
   const P={
@@ -1568,15 +1584,15 @@ function casPickCard(el,bf){
 }
 function casTargetList(bf){
   const t=now();
-  if(me().role==='seeker')return aliveHiders().filter(p=>!(p.ghostUntil>t));
+  if(me().role==='seeker')return aliveHiders().filter(p=>!(p.ghostUntil>t)&&!(p.cloakUntil>t));
   if(bf.id==='slow'||bf.id==='trap')return aliveSeekers();
   return null; // self / global buffs — handled by the picker
 }
 function casShowTargets(bf){
   const box=$('cas-targets');box.innerHTML='';box.style.cssText='';
   let list;
-  if(bf.id==='shift'||bf.id==='ghost'||bf.id==='see')list=[{name:'you',role:me().role,self:true}];
-  else if(bf.id==='decoy')list=[{name:'all seekers',role:'seekers',global:true}];
+  if(bf.id==='shift'||bf.id==='ghost'||bf.id==='see'||bf.id==='cloak')list=[{name:'you',role:me().role,self:true}];
+  else if(bf.id==='decoy'||bf.id==='mirage')list=[{name:'all seekers',role:'seekers',global:true}];
   else list=casTargetList(bf);
   if(!list||!list.length){ // nothing to send it to — refund the spin
     casRefund();
@@ -2002,7 +2018,8 @@ function updateMap(){
     /* secret buff: leaked hide spot — gold pulsing marker, follows live (shift moves too) */
     if(f.kind==='leak'&&m.role==='seeker'){
       const tgt=room.players.find(p=>p.id===f.targetId);
-      const hp=tgt&&tgt.status==='alive'?(tgt.hidePos||tgt.pos):null;
+      const cloaked=tgt&&(tgt.cloakUntil||0)>t;
+      const hp=tgt&&tgt.status==='alive'&&!cloaked?(tgt.hidePos||tgt.pos):null;
       if(hp){want.add('fx-'+f.id);
         upsertLayer('fx-'+f.id,
           ()=>L.marker([hp.lat,hp.lng],{icon:L.divIcon({className:'',html:'<div class="leak-dot"></div>',iconSize:[16,16],iconAnchor:[8,8]}),interactive:false}),
@@ -2069,6 +2086,7 @@ function renderGame(){
   const bb=$('buff-bar');let bhtml='';
   if((m.freezeUntil||0)>t)bhtml+='<div class="buff-chip debuff">🧊 frozen <span class="t">'+Math.ceil((m.freezeUntil-t)/1000)+'s</span></div>';
   if(m.ghostUntil>t)bhtml+='<div class="buff-chip">🌫️ ghost <span class="t">'+Math.ceil((m.ghostUntil-t)/1000)+'s</span></div>';
+  if(m.cloakUntil>t)bhtml+='<div class="buff-chip">🙈 cloak <span class="t">'+Math.ceil((m.cloakUntil-t)/1000)+'s</span></div>';
   if(m.shiftReady&&ph!=='end')bhtml+='<div class="buff-chip">📍 shift ready <button class="use" id="use-shift">use</button></div>';
   room.fx.forEach(f=>{if(f.forId===myId&&f.until>t)bhtml+='<div class="buff-chip">'+f.label+' <span class="t">'+Math.ceil((f.until-t)/1000)+'s</span></div>';});
   bb.innerHTML=bhtml;
@@ -2083,7 +2101,7 @@ function renderGame(){
   }else if(ph==='seek'&&m.status==='alive'){
     if(m.role==='seeker'){
       // Phase 2 #11: nearby hiders quick-catch strip (within ~50m).
-      const nearby=room.players.filter(p=>p.role==='hider'&&p.status==='alive'&&p.id!==myId&&p.pos&&distM(m.pos,p.pos)<50);
+      const nearby=room.players.filter(p=>p.role==='hider'&&p.status==='alive'&&p.id!==myId&&p.pos&&!(p.cloakUntil>now())&&distM(m.pos,p.pos)<50);
       let strip='';
       if(nearby.length){
         strip='<div class="nearby-row">'+nearby.map(p=>'<button class="dbtn sbtn catch" data-catch="'+p.id+'">🎯 '+esc(p.name)+' · '+Math.round(distM(m.pos,p.pos))+'m</button>').join('')+'</div>';
@@ -2101,7 +2119,7 @@ function renderGame(){
   // the quick-catch strip re-renders as the seeker moves.
   let nearest=9999;
   if(ph==='seek'&&m.role==='seeker'&&m.status==='alive'&&m.pos){
-    nearest=Math.min(9999,...room.players.filter(p=>p.role==='hider'&&p.status==='alive'&&p.pos).map(p=>distM(m.pos,p.pos)));
+    nearest=Math.min(9999,...room.players.filter(p=>p.role==='hider'&&p.status==='alive'&&p.pos&&!(p.cloakUntil>now())).map(p=>distM(m.pos,p.pos)));
   }
   const sig=dhtml.length+ph+m.role+m.status+(m.hidePos?1:0)+aliveHiders().length+Math.round(nearest)+fmt((room.hideEndsAt||room.gameEndsAt||0)-t);
   if(dk.dataset.sig!==sig){dk.innerHTML=dhtml;dk.dataset.sig=sig;}
@@ -2124,7 +2142,7 @@ function renderSheet(){
       '<div class="nm">'+esc(p.name)+(p.id===myId?' (you)':'')+(p.bot?' <small>bot</small>':'')+
       (p.caughtBy?'<small> caught by '+esc((room.players.find(x=>x.id===p.caughtBy)||{}).name||'—')+'</small>':'')+'</div>'+
       '<div class="hh">'+[0,1,2].map(i=>i<p.hearts?'♥':'<span style="opacity:.2">♥</span>').join('')+'</div>';
-    if(m.role==='seeker'&&m.status==='alive'&&p.role==='hider'&&p.status==='alive'&&p.id!==myId&&room.phase==='seek'){
+    if(m.role==='seeker'&&m.status==='alive'&&p.role==='hider'&&p.status==='alive'&&p.id!==myId&&room.phase==='seek'&&!(p.cloakUntil>now())){
       const b=document.createElement('button');b.className='sbtn catch';b.textContent='catch';b.onclick=()=>{closeSheet();doCatch(p.id);};row.appendChild(b);}
     if(p.id!==myId&&m.status==='alive'&&room.phase!=='end'){
       const b=document.createElement('button');b.className='sbtn warn';b.textContent='⚠ report';b.onclick=()=>{closeSheet();doReport(p.id);};row.appendChild(b);}
