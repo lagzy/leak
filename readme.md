@@ -150,4 +150,4 @@ If you want a deeper walkthrough of the code, say which area you want documented
 
 ## License
 
-MIT — feel free to reuse parts of the code. (Add a LICENSE file if you want explicit licensing in-repo.)
+MIT — feel free to reuse parts of the code.
