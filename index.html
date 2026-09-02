@@ -1116,22 +1116,22 @@ function rollBuff(role,exclude){ // pick one card: weight the rarity, then a buf
 const BUFFS={
  seeker:[
   {id:'scream',icon:'🎤',name:'scream',rarity:'rare',desc:'a hider must scream at 65+ dB for 4s within 30 seconds. fail = they lose a ♥.'},
-  {id:'radar', icon:'📡',name:'radar', rarity:'uncommon',desc:'a live circle around a random hider for 90s. radius 80–420 m — 10% chance of a ~10 m pinpoint.'},
-  {id:'ring',  icon:'🔔',name:'ring',  rarity:'common',desc:"a hider's phone starts ringing for 10 seconds. honor rule: they can't silence it."},
-  {id:'leakpos',icon:'🎯',name:'leak spot',rarity:'secret',desc:"every seeker sees the chosen hider's exact hide spot for 90 seconds. shifts stay visible live."},
-  {id:'freeze',icon:'🧊',name:'freeze hider',rarity:'secret',desc:'the chosen hider is welded to the ground — no moving at all for 2 minutes.'},
-  {id:'scan', icon:'🔭',name:'scan',   rarity:'uncommon',desc:"reveal the chosen hider's live hiding spot to you for 20 seconds."},
+  {id:'radar', icon:'📡',name:'radar', rarity:'uncommon',desc:'a live circle around a random hider for 75s. radius 80–420 m.'},
+  {id:'ring',  icon:'🔔',name:'ring',  rarity:'common',desc:"a hider's phone starts ringing for 8 seconds. honor rule: they can't silence it."},
+  {id:'leakpos',icon:'🎯',name:'leak spot',rarity:'secret',desc:"every seeker sees the chosen hider's exact hide spot for 60 seconds. shifts stay visible live."},
+  {id:'freeze',icon:'🧊',name:'freeze hider',rarity:'secret',desc:'the chosen hider is welded to the ground — no moving at all for 90 seconds.'},
+  {id:'scan', icon:'🔭',name:'scan',   rarity:'rare',desc:"ping the chosen hider's approximate area (a 35 m circle) for 10 seconds — just you."},
   {id:'stun', icon:'⚡',name:'stun',   rarity:'rare',desc:'the chosen hider is frozen — they cannot move at all for 45 seconds.'},
  ],
  hider:[
-  {id:'slow', icon:'🐌',name:'slow-mo', rarity:'rare',desc:'a seeker may only walk 3 km/h for the next 90 seconds.'},
+  {id:'slow', icon:'🐌',name:'slow-mo', rarity:'rare',desc:'a seeker may only walk 3 km/h for the next 60 seconds.'},
   {id:'decoy',icon:'👻',name:'decoy',   rarity:'common',desc:"a fake hider blip appears on every seeker's map for 60 seconds."},
   {id:'shift',icon:'📍',name:'shift',   rarity:'uncommon',desc:'relocate your hiding spot by up to 20 meters.'},
-  {id:'ghost',icon:'🌫️',name:'ghost',   rarity:'legendary',desc:'you become invisible to radar, ring and scream for 120 seconds.'},
-  {id:'see',  icon:'👁️',name:'seeker vision',rarity:'secret',desc:'see every live seeker position on your map for 120 seconds — planning time.'},
-  {id:'trap', icon:'🪤',name:'freeze seeker',rarity:'secret',desc:'the chosen seeker is welded to the ground for 5 whole minutes.'},
+  {id:'ghost',icon:'🌫️',name:'ghost',   rarity:'legendary',desc:'you become invisible to radar, ring and scream for 90 seconds.'},
+  {id:'see',  icon:'👁️',name:'seeker vision',rarity:'secret',desc:'see every live seeker position on your map for 90 seconds — planning time.'},
+  {id:'trap', icon:'🪤',name:'freeze seeker',rarity:'secret',desc:'the chosen seeker is welded to the ground for 3 whole minutes.'},
   {id:'mirage',icon:'🌪️',name:'mirage', rarity:'uncommon',desc:'plant 3 fake decoy blips across the zone for 45 seconds.'},
-  {id:'cloak',icon:'🙈',name:'cloak',  rarity:'mythic',desc:'vanish completely for 45 seconds — no radar, ring, scan, leak or catch. seekers can\'t see you.'},
+  {id:'cloak',icon:'🙈',name:'cloak',  rarity:'mythic',desc:'vanish completely for 40 seconds — no radar, ring, scan, leak or catch. seekers can\'t see you.'},
 ]};
 const casinoWinIdx=()=>room&&room.hideEndsAt?Math.max(0,Math.floor((now()-room.hideEndsAt)/(room.casinoMin*60000))):0;
 function casinoOpenFor(p){
@@ -1302,27 +1302,28 @@ function casApply(bf,tgt){
     }else if(bf.id==='radar'){
       const radius=80+Math.random()*340;
       const center=tgt.hidePos||tgt.pos||randInZone();
-      commit(r=>{r.fx.push({id:uid(),kind:'circle',forId:myId,center,radius,until:now()+90000,label:'📡 radar'});logEvent('📡 radar sweep activated');});
+      commit(r=>{r.fx.push({id:uid(),kind:'circle',forId:myId,center,radius,until:now()+75000,label:'📡 radar'});logEvent('📡 radar sweep activated');});
       toast('📡 radar circle on your map ('+Math.round(radius)+' m)', 'gold',5000);
     }else if(bf.id==='ring'){
-      commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.ringUntil=now()+10000;logEvent('🔔 someone\'s phone is ringing…');});
+      commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.ringUntil=now()+8000;logEvent('🔔 someone\'s phone is ringing…');});
       toast('🔔 '+escN(tgt.name)+"'s phone is ringing",'good');
     }else if(bf.id==='leakpos'){
-      commit(r=>{r.fx.push({id:uid(),kind:'leak',forId:'seekers',targetId:tgt.id,until:now()+90000,label:'🎯 leak'});logEvent('🎯 a hiding spot was leaked');});
-      toast('🎯 every seeker now sees '+escN(tgt.name)+'\'s exact spot for 90 s','good');
+      commit(r=>{r.fx.push({id:uid(),kind:'leak',forId:'seekers',targetId:tgt.id,until:now()+60000,label:'🎯 leak'});logEvent('🎯 a hiding spot was leaked');});
+      toast('🎯 every seeker now sees '+escN(tgt.name)+'\'s exact spot for 60 s','good');
     }else if(bf.id==='freeze'){
-      commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.freezeUntil=now()+120000;logEvent('🧊 a hider was frozen in place');});
-      toast('🧊 '+escN(tgt.name)+' can\'t move for 2 minutes','good');
+      commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.freezeUntil=now()+90000;logEvent('🧊 a hider was frozen in place');});
+      toast('🧊 '+escN(tgt.name)+' can\'t move for 90 seconds','good');
     }else if(bf.id==='scan'){
-      commit(r=>{r.fx.push({id:uid(),kind:'leak',forId:myId,targetId:tgt.id,until:now()+20000,label:'🔭 spot'});logEvent('🔭 a hiding spot was scanned');});
-      toast('🔭 '+escN(tgt.name)+'\'s spot revealed to you for 20 s','good');
+      const sc=tgt.hidePos||tgt.pos;
+      commit(r=>{r.fx.push({id:uid(),kind:'circle',forId:myId,center:{lat:sc.lat,lng:sc.lng},radius:35,until:now()+10000,label:'🔭 ping'});logEvent('🔭 a scan pinged a hider');});
+      toast('🔭 pinged '+escN(tgt.name)+'\'s area (≈35 m) for 10 s','good');
     }else if(bf.id==='stun'){
       commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.freezeUntil=now()+45000;logEvent('⚡ a hider was stunned');});
       toast('⚡ '+escN(tgt.name)+' is stunned for 45 s','good');
     }
   }else{
     if(bf.id==='slow'){
-      commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.slowUntil=now()+90000;logEvent('🐌 slow-mo was played on a seeker');});
+      commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.slowUntil=now()+60000;logEvent('🐌 slow-mo was played on a seeker');});
       toast('🐌 '+tgt.name+' may only walk 3 km/h','good');
     }else if(bf.id==='decoy'){
       commit(r=>{r.fx.push({id:uid(),kind:'fake',forId:'seekers',center:randInZone(),until:now()+60000});logEvent('👻 a decoy blip appeared');});
@@ -1330,19 +1331,19 @@ function casApply(bf,tgt){
     }else if(bf.id==='shift'){
       commit(r=>{me().shiftReady=true;}); toast('📍 shift ready — tap it in your buff bar','good');
     }else if(bf.id==='ghost'){
-      commit(r=>{me().ghostUntil=now()+120000;}); toast('🌫️ you are ghosted for 120 s','good');
+      commit(r=>{me().ghostUntil=now()+90000;}); toast('🌫️ you are ghosted for 90 s','good');
     }else if(bf.id==='see'){
-      commit(r=>{r.fx.push({id:uid(),kind:'see',forId:myId,until:now()+120000,label:'👁️ seeker vision'});logEvent('👁️ seeker vision activated');});
-      toast('👁️ all live seeker positions shown for 120 s','good');
+      commit(r=>{r.fx.push({id:uid(),kind:'see',forId:myId,until:now()+90000,label:'👁️ seeker vision'});logEvent('👁️ seeker vision activated');});
+      toast('👁️ all live seeker positions shown for 90 s','good');
     }else if(bf.id==='trap'){
-      commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.freezeUntil=now()+300000;logEvent('🪤 a seeker was frozen in place');});
-      toast('🪤 '+escN(tgt.name)+' can\'t move for 5 minutes','good');
+      commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.freezeUntil=now()+180000;logEvent('🪤 a seeker was frozen in place');});
+      toast('🪤 '+escN(tgt.name)+' can\'t move for 3 minutes','good');
     }else if(bf.id==='mirage'){
       commit(r=>{for(let i=0;i<3;i++)r.fx.push({id:uid(),kind:'fake',forId:'seekers',center:randInZone(),until:now()+45000});logEvent('🌪️ a mirage scattered decoys');});
       toast('🌪️ 3 decoy blips on every seeker map','good');
     }else if(bf.id==='cloak'){
-      commit(r=>{me().cloakUntil=now()+45000;logEvent('🙈 you cloaked — untraceable for 45 s');});
-      toast('🙈 you are cloaked for 45 s','good');
+      commit(r=>{me().cloakUntil=now()+40000;logEvent('🙈 you cloaked — untraceable for 40 s');});
+      toast('🙈 you are cloaked for 40 s','good');
     }
   }
   sGold();
