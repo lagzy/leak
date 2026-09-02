@@ -97,10 +97,14 @@ Fx: map effects (radar circles, fake blips, etc.) with expirations.
 
 ## Buffs (casino)
 
-Seeker examples: scream (force target to hold a loud mic input), radar (circle around a hider), ring (phone rings + vibrate).
-Hider examples: slow (cap seeker speed), decoy (fake blip on seeker maps), shift (move hide spot ≤ 20 m), ghost (temporary immunity).
+Every spin draws two cards, each from a rarity tier. Tiers are weighted: common ~36% · uncommon ~30% · rare ~20% · mythic ~10% · legendary ~4% · secret ~0.2%. If a tier has no card for your role, the draw falls to the next tier.
 
-Add a buff by extending the `BUFFS` table in the code and implementing its behavior in `applyBuff()`.
+Seeker cards: ring (common), radar (uncommon), scream (rare), leak spot (secret — every seeker sees the chosen hider's live hide spot for 90 s), freeze hider (secret — target can't move for 2 min).
+Hider cards: decoy (common), shift (uncommon), slow-mo (rare), ghost (legendary — invisible to radar, ring and scream), seeker vision (secret — see all live seeker positions for 120 s), freeze seeker (secret — target can't move for 5 min).
+
+Frozen players can't move (tap-to-move, GPS, hide spot, shift) until the timer runs out — a 🧊 chip with a countdown shows on their HUD.
+
+Add a buff by extending the `BUFFS` table in the code (giving it a `rarity`) and implementing its behavior in `casApply()`.
 
 ---
 

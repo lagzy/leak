@@ -137,7 +137,7 @@ input,select{font-family:inherit;color:inherit}
 .hud-hearts .h.off{opacity:.22;filter:grayscale(1)}
 .hud-hearts.shake{animation:shake .5s}
 @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}
-.icon-btn{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px}
+.icon-btn{position:relative;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px}
 #chip-casino{padding:9px 15px;background:rgba(240,180,41,.92);color:#231a02;font-weight:700;font-size:13px;
   animation:casinoPulse 1.4s infinite;display:none}
 #chip-casino.on{display:block}
@@ -150,7 +150,7 @@ input,select{font-family:inherit;color:inherit}
   border-radius:14px;padding:10px 16px;color:#fff;font-weight:700;font-size:13.5px;text-align:center;
   box-shadow:0 8px 24px rgba(0,0,0,.4);max-width:calc(100% - 32px)}
 #zone-banner{top:calc(64px + env(safe-area-inset-top));background:var(--danger);animation:blink 1s infinite}
-#slow-banner{top:calc(64px + env(safe-area-inset-top));background:#3b3f45;border:1px solid rgba(255,255,255,.2)}
+#slow-banner{top:calc(112px + env(safe-area-inset-top));background:#3b3f45;border:1px solid rgba(255,255,255,.2)}
 #slow-banner.fast{background:var(--danger)}
 @keyframes blink{50%{opacity:.72}}
 #buff-bar{position:absolute;top:calc(62px + env(safe-area-inset-top));left:12px;z-index:18;display:flex;
@@ -189,6 +189,10 @@ input,select{font-family:inherit;color:inherit}
 .fake-dot{width:15px;height:15px;border-radius:50%;background:var(--seeker);border:2px solid #fff;
   box-shadow:0 0 0 0 rgba(255,77,42,.6);animation:fakePulse 1.3s infinite}
 @keyframes fakePulse{0%{box-shadow:0 0 0 0 rgba(255,77,42,.55)}100%{box-shadow:0 0 0 16px rgba(255,77,42,0)}}
+/* leaked hide spot (secret seeker buff) */
+.leak-dot{width:15px;height:15px;border-radius:50%;background:var(--gold);border:2px solid #fff;
+  box-shadow:0 0 0 0 rgba(240,180,41,.7);animation:leakPulse 1.1s infinite}
+@keyframes leakPulse{0%{box-shadow:0 0 0 0 rgba(240,180,41,.65)}100%{box-shadow:0 0 0 14px rgba(240,180,41,0)}}
 .corner-dot{width:11px;height:11px;background:#fff;border-radius:3px;border:2px solid var(--ink);box-shadow:0 2px 6px rgba(0,0,0,.4)}
 .leaflet-container{font-family:'Space Grotesk',sans-serif}
 .leaflet-control-attribution{background:rgba(13,15,16,.6)!important;color:#aaa!important;font-size:9px!important}
@@ -206,15 +210,20 @@ input,select{font-family:inherit;color:inherit}
 .panel .sub{color:var(--ink-soft);font-size:14px;line-height:1.55;margin-bottom:18px}
 
 #ov-reveal{background:#0d0f10;flex-direction:column;gap:0}
-#ov-reveal .role-word{font-size:clamp(48px,14vw,84px);font-weight:700;letter-spacing:-.04em;color:#fff;
+#ov-reveal .role-word,#ov-caught .role-word{font-size:clamp(48px,14vw,84px);font-weight:700;letter-spacing:-.04em;color:#fff;
   animation:revealIn .8s cubic-bezier(.22,1.1,.36,1) both}
-#ov-reveal .role-sub{color:rgba(255,255,255,.6);margin:14px 0 40px;font-size:15px;text-align:center;max-width:320px;line-height:1.6;animation:fadeUp .6s .25s both}
-#ov-reveal .btn{width:min(300px,80%);animation:fadeUp .6s .4s both}
+#ov-reveal .role-sub,#ov-caught .role-sub{color:rgba(255,255,255,.6);margin:14px 0 40px;font-size:15px;text-align:center;max-width:320px;line-height:1.6;animation:fadeUp .6s .25s both}
+#ov-reveal .btn,#ov-caught .btn{width:min(300px,80%);animation:fadeUp .6s .4s both}
 @keyframes revealIn{from{opacity:0;transform:scale(.7);filter:blur(8px)}to{opacity:1;transform:none;filter:none}}
 #ov-reveal.hider{background:radial-gradient(120% 120% at 50% 110%, #0e6e50 0%, #0d0f10 62%)}
 #ov-reveal.seeker{background:radial-gradient(120% 120% at 50% 110%, #a52c12 0%, #0d0f10 62%)}
 #ov-reveal.kicked{background:radial-gradient(120% 120% at 50% 110%, #8e1111 0%, #0d0f10 62%)}
-#ov-reveal .mini{position:absolute;top:calc(20px + env(safe-area-inset-top));left:24px;color:rgba(255,255,255,.8);font-weight:700;font-size:20px;letter-spacing:-.04em}
+#ov-reveal .mini,#ov-caught .mini{position:absolute;top:calc(20px + env(safe-area-inset-top));left:24px;color:rgba(255,255,255,.8);font-weight:700;font-size:20px;letter-spacing:-.04em}
+/* caught / gave-up / out overlay */
+#ov-caught{background:#0d0f10;flex-direction:column;gap:0}
+#ov-caught.caught{background:radial-gradient(120% 120% at 50% 110%, #8e1111 0%, #0d0f10 62%)}
+#ov-caught.giveup{background:radial-gradient(120% 120% at 50% 110%, #3b3f45 0%, #0d0f10 62%)}
+#ov-caught.out{background:radial-gradient(120% 120% at 50% 110%, #1c355c 0%, #0d0f10 62%)}
 
 /* ---------- casino machine (ported from casino.html prototype) ---------- */
 .casino-ov{background:rgba(8,9,11,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);padding:0;
@@ -334,6 +343,8 @@ input,select{font-family:inherit;color:inherit}
 .mcard.discard{opacity:0;transform:translateY(14px) scale(.97);pointer-events:none}
 .mcard.sent{opacity:0;transform:scale(.85);pointer-events:none}
 #cas-cards.out .mcard{opacity:0;transform:translateY(10px);transition:opacity .4s var(--ease-out),transform .4s var(--ease-out)}
+.mcard.jackpot{border-color:var(--gold)}
+.cas-jackpot-tag{position:absolute;top:-38px;left:50%;transform:translateX(-50%);background:var(--gold);color:#231a02;font-size:9.5px;font-weight:700;letter-spacing:.22em;padding:6px 14px;border-radius:999px;white-space:nowrap;text-transform:uppercase}
 /* target picker: exit is a container-level opacity fade, chips never move */
 #cas-targets{position:absolute;left:0;right:0;bottom:calc(96px + env(safe-area-inset-bottom));z-index:40;
   display:flex;justify-content:center;gap:22px;pointer-events:none}
@@ -401,6 +412,15 @@ input,select{font-family:inherit;color:inherit}
 .sbtn.warn{color:var(--danger);border-color:rgba(255,59,48,.4)}
 .sbtn.quit{color:var(--ink-soft)}
 
+/* chat */
+.chat-input-row{display:flex;gap:8px;padding:12px 0 4px;flex:none}
+.chat-input-row .field{flex:1}
+.chat-msg{padding:9px 4px;border-bottom:1px solid var(--line);font-size:14px;line-height:1.45}
+.chat-msg:last-child{border:none}
+.chat-msg .who{display:flex;align-items:center;gap:6px;font-weight:700;font-size:12px;margin-bottom:2px}
+.chat-msg .dd{width:7px;height:7px;border-radius:50%;flex:none}
+#btn-chat.unread:after{content:'';position:absolute;top:9px;right:8px;width:9px;height:9px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 2px rgba(13,15,16,.9)}
+
 /* toasts */
 #toasts{position:fixed;top:calc(14px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:300;
   display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;width:min(400px,calc(100% - 28px))}
@@ -433,11 +453,15 @@ input,select{font-family:inherit;color:inherit}
 .end-row{display:flex;gap:9px;align-items:center;font-size:14px;background:#f6f6f3;border-radius:11px;padding:9px 12px}
 .end-row .st{margin-left:auto;font-size:12px;color:var(--ink-soft);font-weight:700}
 
+/* end stats */
+.end-stats{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px}
+.stat-chip{background:#f6f6f3;border:1px solid var(--line);border-radius:999px;padding:6px 11px;font-size:12px;font-weight:700}
+
 .how-list{display:flex;flex-direction:column;gap:9px;font-size:13.5px;line-height:1.55;color:var(--ink)}
 .how-list b{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-soft);margin-bottom:1px}
 ::-webkit-scrollbar{width:0;height:0}
 @media (prefers-reduced-motion:reduce){
-  .hud-phase .dot,.fake-dot,#chip-casino,.casinoPulse,
+  .hud-phase .dot,.fake-dot,.leak-dot,#chip-casino,.casinoPulse,
   .toast,.panel,.prow,.dock-card,.buff-chip{animation:none!important}
   .screen,.ov{transition:opacity .15s linear!important;transform:none!important}
   *{scroll-behavior:auto!important}
@@ -458,6 +482,7 @@ input,select{font-family:inherit;color:inherit}
       <input id="home-code" class="field" maxlength="4" placeholder="CODE" autocomplete="off">
       <button id="btn-join" class="btn ghost" style="width:110px;flex:none">join</button>
     </div>
+    <div id="recent-codes" style="display:none;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px"></div>
   </div>
     <div class="foot" id="home-foot">
     cross-device · sync: <span id="home-sync">connecting…</span> · <button id="btn-supa-set">set Supabase key</button> · <button id="btn-how">how to play</button>
@@ -468,7 +493,7 @@ input,select{font-family:inherit;color:inherit}
   <div class="topbar">
     <button class="icon-btn" id="btn-leave" aria-label="leave room" style="background:rgba(20,21,24,.06)">←</button>
     <div class="mini-logo">leak<i>.</i></div>
-    <div class="code-chip"><span id="lobby-code">----</span><button id="btn-copy" aria-label="copy room code">copy</button></div>
+    <div class="code-chip"><span id="lobby-code">----</span><button id="btn-copy" aria-label="copy room code">copy</button><button id="btn-qr" aria-label="show join QR code">qr</button></div>
   </div>
   <div class="lob-scroll">
     <div class="sec-title">play zone — Root, 6037</div>
@@ -505,6 +530,7 @@ input,select{font-family:inherit;color:inherit}
     <div class="hud-right">
       <button class="hud-pill icon-btn" id="chip-casino" aria-label="open casino">casino open</button>
       <div class="hud-pill hud-hearts" id="hud-hearts" aria-label="hearts remaining"></div>
+      <button class="hud-pill icon-btn" id="btn-chat" aria-label="room chat">💬</button>
       <button class="hud-pill icon-btn" id="btn-mute" aria-label="toggle sound">🔔</button>
     </div>
   </div></div>
@@ -521,6 +547,13 @@ input,select{font-family:inherit;color:inherit}
   <div class="role-word" id="reveal-word">you hide.</div>
   <div class="role-sub" id="reveal-sub"></div>
   <button class="btn" id="btn-enter">enter the field</button>
+</div>
+
+<div id="ov-caught" class="ov">
+  <div class="mini">leak.</div>
+  <div class="role-word" id="caught-word">caught.</div>
+  <div class="role-sub" id="caught-sub"></div>
+  <button class="btn" id="btn-caught-ok">watch the end</button>
 </div>
 
 <div id="ov-casino" class="ov casino-ov">
@@ -570,6 +603,14 @@ input,select{font-family:inherit;color:inherit}
   <button class="btn ghost" id="btn-mapedit-cancel">cancel</button>
 </div></div>
 
+<div id="ov-qr" class="ov"><div class="panel" style="text-align:center">
+  <h2>scan to join</h2>
+  <p class="sub">open leak on another phone and scan — it joins this room automatically.</p>
+  <div id="qr-box" style="display:flex;justify-content:center;margin:6px 0 16px"></div>
+  <p class="sub mono" id="qr-fallback" style="display:none;font-size:11px;word-break:break-all"></p>
+  <button class="btn" id="qr-close">done</button>
+</div></div>
+
 <div id="ov-confirm" class="ov"><div class="panel">
   <h2 id="cf-title"></h2>
   <p class="sub" id="cf-text"></p>
@@ -596,8 +637,11 @@ input,select{font-family:inherit;color:inherit}
 <div id="ov-end" class="ov"><div class="panel">
   <h2 id="end-title">—</h2>
   <p class="sub" id="end-sub"></p>
+  <div class="end-stats" id="end-stats"></div>
   <div class="end-list" id="end-list"></div>
-  <button class="btn" id="btn-rematch">rematch (same room)</button>
+  <button class="btn gold" id="btn-rematch-now">⚡ rematch now — new roles</button>
+  <div style="height:8px"></div>
+  <button class="btn" id="btn-rematch">rematch (same room → lobby)</button>
   <div style="height:8px"></div>
   <button class="btn ghost" id="btn-end-home">back to home</button>
 </div></div>
@@ -606,6 +650,13 @@ input,select{font-family:inherit;color:inherit}
   <div class="grab"></div>
   <div class="sec-title" style="margin-top:0">players</div>
   <div class="sheet-body" id="sheet-list"></div>
+</div>
+
+<div class="sheet" id="chat">
+  <div class="grab"></div>
+  <div class="sec-title" style="margin-top:0">room chat</div>
+  <div class="sheet-body" id="chat-list"></div>
+  <div class="chat-input-row"><input id="chat-input" class="field" maxlength="140" placeholder="message the room…" autocomplete="off"><button id="chat-send" class="btn small" style="width:auto;flex:none">send</button></div>
 </div>
 
 <div id="dev">
@@ -623,6 +674,7 @@ input,select{font-family:inherit;color:inherit}
 <div id="toasts"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
 <script>
 /* ================================================================
    leak — hide & seek prototype (GitHub Pages friendly, no server)
@@ -745,7 +797,8 @@ let myId=LS.get('leak.id'); if(!myId){myId=uid();LS.set('leak.id',myId);}
 let myName=LS.get('leak.name')||'';
 let room=null, tickIv=null; // transport declared in the transport block
 let muted=LS.get('leak.muted')==='1';
-const ui={screen:'home',simMode:true,sheetOpen:false,screamOpen:false,lastCasinoWin:0,casDismissed:0,seenLog:new Set(),revealKey:'',lastPosWrite:0,zoneOutSince:0,lastZoneHit:0,botTick:0,lastMapUpd:0,seenReveal:new Set(),zoneViolations:0,hostHeart:0,hostSeen:0,buffWarned:new Set(),seenCasinoOnce:false,left:false};
+const ui={screen:'home',simMode:true,sheetOpen:false,chatOpen:false,chatSeenAt:0,screamOpen:false,lastCasinoWin:0,casDismissed:0,seenLog:new Set(),revealKey:'',lastPosWrite:0,zoneOutSince:0,lastZoneHit:0,botTick:0,lastMapUpd:0,seenReveal:new Set(),seenCaught:new Set(),zoneViolations:0,hostHeart:0,hostSeen:0,buffWarned:new Set(),reportCd:{},seenCasinoOnce:false,ambient:true,ambiT:0,lastFreezeToast:0,left:false};
+if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)ui.ambient=false;
 
 const me=()=>room?room.players.find(p=>p.id===myId):null;
 const aliveHiders=()=>room?room.players.filter(p=>p.role==='hider'&&p.status==='alive'):[];
@@ -795,6 +848,11 @@ function mergeRoom(incoming){
   const logIds=new Set(room.log.map(l=>l.id));
   incoming.log.forEach(l=>{if(!logIds.has(l.id)){room.log.push(l);changed=true;}});
   if(room.log.length>40)room.log=room.log.slice(-40);
+  /* chat: union by message id, like the log */
+  if(!room.chat)room.chat=[];
+  const chatIds=new Set(room.chat.map(m=>m.id));
+  (incoming.chat||[]).forEach(m=>{if(!chatIds.has(m.id)){room.chat.push(m);changed=true;}});
+  if(room.chat.length>200)room.chat=room.chat.slice(-200);
   return changed;
 }
 function applyRoom(incoming){
@@ -810,8 +868,8 @@ function bootRoom(){
   if(room){LS.del(roomKey(room.code));LS.del('leak.active');}
   try{transport&&transport.close();}catch(e){}
   transport=null;room=null;
-  ui.seenLog=new Set();ui.seenReveal=new Set();ui.sheetOpen=false;ui.screamOpen=false;ui.left=false;
-  $('sheet').classList.remove('open');
+  ui.seenLog=new Set();ui.seenReveal=new Set();ui.sheetOpen=false;ui.chatOpen=false;ui.screamOpen=false;ui.left=false;
+  $('sheet').classList.remove('open');$('chat').classList.remove('open');
   setPeerStatus('connecting');
   ui.kicked=true; // stop any running join poll (see joinRoom)
   showKickedOverlay();
@@ -894,7 +952,7 @@ function SupabaseTransport(code){
      cosmetic and arrive with the full-room broadcast/ask refresh). */
   const compactRoom=r=>({code:r.code,hostId:r.hostId,phase:r.phase,hideMin:r.hideMin,totalMin:r.totalMin,
     casinoMin:r.casinoMin,startedAt:r.startedAt,hideEndsAt:r.hideEndsAt,gameEndsAt:r.gameEndsAt,
-    winner:r.winner,forceCasinoId:r.forceCasinoId,seq:r.seq,zone:r.zone,players:r.players,removed:r.removed,log:[],fx:[]});
+    winner:r.winner,forceCasinoId:r.forceCasinoId,seq:r.seq,zone:r.zone,players:r.players,removed:r.removed,log:[],fx:[],chat:[]});
   /* Presence-based room discovery: the host (and any room member) keeps the
      latest room in its realtime presence state, which the server caches per
      channel. A joiner reads it on subscribe — no live host answer needed. */
@@ -1040,17 +1098,39 @@ function flushLog(){ if(!room)return;
 }
 
 /* ---------------- buffs ---------------- */
+/* rarity tiers — weights (kept proportional to the design notes):
+   common 90 / uncommon 75 / rare 50 / mythic 25 / legendary 10 / secret 0.5
+   → ~36% / ~30% / ~20% / ~10% / ~4% / ~0.2% per drawn card */
+const RARITY_WEIGHTS={common:90,uncommon:75,rare:50,mythic:25,legendary:10,secret:.5};
+const RARITY_LABEL={common:'common',uncommon:'uncommon',rare:'rare',mythic:'mythic',legendary:'legendary',secret:'secret'};
+const RARITY_COLOR={common:'#9aa0a8',uncommon:'#2f9e6e',rare:'#2f7be0',mythic:'#8a4ff0',legendary:'#f0a929',secret:'#ff4d2a'};
+function rollRarity(){ // weighted roll over the rarity tiers
+  let r=Math.random()*Object.values(RARITY_WEIGHTS).reduce((a,b)=>a+b,0);
+  for(const k of Object.keys(RARITY_WEIGHTS)){r-=RARITY_WEIGHTS[k];if(r<=0)return k;}
+  return 'common';
+}
+function rollBuff(role,exclude){ // pick one card: weight the rarity, then a buff of that tier
+  const pool=BUFFS[role].filter(b=>b.id!==exclude);
+  let tier=rollRarity(),sub=pool.filter(b=>b.rarity===tier),guard=0;
+  while(!sub.length&&guard++<10){tier=rollRarity();sub=pool.filter(b=>b.rarity===tier);} // tier not in your role's deck? re-roll
+  if(!sub.length)sub=pool; // ultra fallback: anything
+  return sub[Math.floor(Math.random()*sub.length)];
+}
 const BUFFS={
  seeker:[
-  {id:'scream',icon:'🎤',name:'scream',desc:'a hider must scream at 65+ dB for 4s within 30 seconds. fail = they lose a ♥.'},
-  {id:'radar', icon:'📡',name:'radar', desc:'a live circle around a random hider for 90s. radius 80–420 m — 10% chance of a ~10 m pinpoint.'},
-  {id:'ring',  icon:'🔔',name:'ring',  desc:"a hider's phone starts ringing for 10 seconds. honor rule: they can't silence it."},
+  {id:'scream',icon:'🎤',name:'scream',rarity:'rare',desc:'a hider must scream at 65+ dB for 4s within 30 seconds. fail = they lose a ♥.'},
+  {id:'radar', icon:'📡',name:'radar', rarity:'uncommon',desc:'a live circle around a random hider for 90s. radius 80–420 m — 10% chance of a ~10 m pinpoint.'},
+  {id:'ring',  icon:'🔔',name:'ring',  rarity:'common',desc:"a hider's phone starts ringing for 10 seconds. honor rule: they can't silence it."},
+  {id:'leakpos',icon:'🎯',name:'leak spot',rarity:'secret',desc:"every seeker sees the chosen hider's exact hide spot for 90 seconds. shifts stay visible live."},
+  {id:'freeze',icon:'🧊',name:'freeze hider',rarity:'secret',desc:'the chosen hider is welded to the ground — no moving at all for 2 minutes.'},
  ],
  hider:[
-  {id:'slow', icon:'🐌',name:'slow-mo', desc:'a seeker may only walk 3 km/h for the next 90 seconds.'},
-  {id:'decoy',icon:'👻',name:'decoy',   desc:"a fake hider blip appears on every seeker's map for 60 seconds."},
-  {id:'shift',icon:'📍',name:'shift',   desc:'relocate your hiding spot by up to 20 meters.'},
-  {id:'ghost',icon:'🌫️',name:'ghost',   desc:'you become invisible to radar, ring and scream for 120 seconds.'},
+  {id:'slow', icon:'🐌',name:'slow-mo', rarity:'rare',desc:'a seeker may only walk 3 km/h for the next 90 seconds.'},
+  {id:'decoy',icon:'👻',name:'decoy',   rarity:'common',desc:"a fake hider blip appears on every seeker's map for 60 seconds."},
+  {id:'shift',icon:'📍',name:'shift',   rarity:'uncommon',desc:'relocate your hiding spot by up to 20 meters.'},
+  {id:'ghost',icon:'🌫️',name:'ghost',   rarity:'legendary',desc:'you become invisible to radar, ring and scream for 120 seconds.'},
+  {id:'see',  icon:'👁️',name:'seeker vision',rarity:'secret',desc:'see every live seeker position on your map for 120 seconds — planning time.'},
+  {id:'trap', icon:'🪤',name:'freeze seeker',rarity:'secret',desc:'the chosen seeker is welded to the ground for 5 whole minutes.'},
 ]};
 const casinoWinIdx=()=>room&&room.startedAt?Math.floor((now()-room.startedAt)/(room.casinoMin*60000)):0;
 function casinoOpenFor(p){
@@ -1064,17 +1144,19 @@ function genCode(){const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789';let s='';for(let i=
 function newPlayer(name,bot){
   return {id:bot?uid():myId,name,bot:!!bot,roleChoice:'random',role:null,hearts:3,status:'alive',
     pos:{lat:START.lat,lng:START.lng},speed:0,hidePos:null,casinoDone:0,casinoForce:0,
-    slowUntil:0,ghostUntil:0,ringUntil:0,shiftReady:false,pendingTask:null,caughtBy:null,wander:null,seq:0,joinedAt:Date.now()};
+    slowUntil:0,ghostUntil:0,ringUntil:0,freezeUntil:0,shiftReady:false,pendingTask:null,caughtBy:null,wander:null,seq:0,joinedAt:Date.now(),
+    botMoves:0,stats:{catches:0,buffs:0,hiddenAt:0}};
 }
 function createRoom(){
   const name=myName.trim(); if(!name){toast('enter your name first','warn');return;}
   LS.set('leak.name',name);
   room={code:genCode(),hostId:myId,phase:'lobby',hideMin:10,totalMin:45,casinoMin:12,
-    startedAt:0,hideEndsAt:0,gameEndsAt:0,winner:null,forceCasinoId:0,zone:CORNERS.map(c=>({lat:c.lat,lng:c.lng})),players:[],removed:[],fx:[],log:[],seq:0};
+    startedAt:0,hideEndsAt:0,gameEndsAt:0,winner:null,forceCasinoId:0,zone:CORNERS.map(c=>({lat:c.lat,lng:c.lng})),players:[],removed:[],fx:[],log:[],chat:[],seq:0};
   ui.hostSeen=Date.now(); // we are host, heartbeat present
   ui.left=false; // fresh room — accept room traffic again
   room.players.push(newPlayer(name,false));
   LS.set('leak.active',room.code); // reload recovery: remember which room to restore
+  addRecent(room.code);
   if(!supaCfg.key){toast('set your Supabase key first','warn',5000);}
   chanFor(room.code,{host:true}); saveRoom(); ui.seenLog=new Set(); showScreen('lobby');
   toast('room created — share code <b>'+room.code+'</b>'+(storageAvailable?'':'<br><small>(storage blocked here: state lives in memory)</small>'),'gold',5000);
@@ -1108,6 +1190,7 @@ function joinRoom(code){
       saveRoom();
     }
     showScreen(room.phase==='lobby'?'lobby':'game');
+    addRecent(code);
     toast('joined room '+room.code,'good');
   };
   chanFor(code,{host:false});
@@ -1140,9 +1223,10 @@ function startGame(){
     if(r.players.every(p=>p.role==='seeker'))r.players[r.players.length-1].role='hider';
     const t=now();
     r.players.forEach(p=>{ p.hearts=3;p.status='alive';p.pos={lat:START.lat,lng:START.lng};p.hidePos=null;
-      p.casinoDone=0;p.casinoForce=0;p.slowUntil=0;p.ghostUntil=0;p.ringUntil=0;p.shiftReady=false;p.pendingTask=null;p.caughtBy=null;
-      if(p.bot&&p.role==='hider')p.hidePos=randInZone(); });
-    r.fx=[];r.log=[];
+      p.casinoDone=0;p.casinoForce=0;p.slowUntil=0;p.ghostUntil=0;p.ringUntil=0;p.freezeUntil=0;p.shiftReady=false;p.pendingTask=null;p.caughtBy=null;
+      p.botMoves=0;p.stats={catches:0,buffs:0,hiddenAt:0};
+      if(p.bot&&p.role==='hider'){p.hidePos=randInZone();p.botMoves=4;p.stats.hiddenAt=t;} });
+    r.fx=[];r.log=[];r.chat=[];
     r.startedAt=t;r.hideEndsAt=t+r.hideMin*60000;r.gameEndsAt=t+r.totalMin*60000;
     r.phase='hide';r.winner=null;r.forceCasinoId=0;
     logEvent('🏁 game started — hiders, run!');
@@ -1151,8 +1235,29 @@ function startGame(){
 function resetRoom(){
   commit(r=>{ r.phase='lobby';r.winner=null;r.fx=[];r.log=[];r.startedAt=0;r.forceCasinoId=0;
     r.players.forEach(p=>{p.role=null;p.hearts=3;p.status='alive';p.hidePos=null;p.pos={lat:START.lat,lng:START.lng};
-      p.pendingTask=null;p.slowUntil=0;p.ghostUntil=0;p.ringUntil=0;p.shiftReady=false;p.casinoDone=0;p.casinoForce=0;});});
+      p.pendingTask=null;p.slowUntil=0;p.ghostUntil=0;p.ringUntil=0;p.freezeUntil=0;p.shiftReady=false;p.casinoDone=0;p.casinoForce=0;p.botMoves=0;p.stats={catches:0,buffs:0,hiddenAt:0};});
+    r.chat=[];});
   ui.seenLog=new Set(); showScreen('lobby');
+}
+
+/* instant rematch: same room, same players & settings, new roles, straight back into hiding */
+function rematchNow(){
+  commit(r=>{
+    r.players.forEach(p=>{ p.role=p.roleChoice==='random'?(Math.random()<.5?'hider':'seeker'):p.roleChoice; });
+    if(r.players.every(p=>p.role==='hider'))r.players[r.players.length-1].role='seeker';
+    if(r.players.every(p=>p.role==='seeker'))r.players[r.players.length-1].role='hider';
+    const t=now();
+    r.players.forEach(p=>{ p.hearts=3;p.status='alive';p.pos={lat:START.lat,lng:START.lng};p.hidePos=null;
+      p.casinoDone=0;p.casinoForce=0;p.slowUntil=0;p.ghostUntil=0;p.ringUntil=0;p.freezeUntil=0;p.shiftReady=false;p.pendingTask=null;p.caughtBy=null;
+      p.botMoves=0;p.stats={catches:0,buffs:0,hiddenAt:0};
+      if(p.bot&&p.role==='hider'){p.hidePos=randInZone();p.botMoves=4;p.stats.hiddenAt=t;} });
+    r.fx=[];r.log=[];r.chat=[];
+    r.startedAt=t;r.hideEndsAt=t+r.hideMin*60000;r.gameEndsAt=t+r.totalMin*60000;
+    r.phase='hide';r.winner=null;r.forceCasinoId=0;
+    logEvent('⚡ rematch — new roles, new round');
+  });
+  ui.seenLog=new Set();ui.seenReveal=new Set();ui.seenCaught=new Set();ui.zoneOutSince=0;ui.zoneViolations=0;
+  ui.lastCasinoWin=0;ui.casDismissed=0;closeOv('ov-end');
 }
 
 /* ---------------- hearts / rules ---------------- */
@@ -1172,6 +1277,7 @@ function casSpend(){ // mark this casino window as used
     const p=r.players.find(x=>x.id===myId);
     if(r.forceCasinoId&&p.casinoForce!==r.forceCasinoId)p.casinoForce=r.forceCasinoId;
     else p.casinoDone=casinoWinIdx();
+    if(p){const s=p.stats=p.stats||{catches:0,buffs:0,hiddenAt:0};s.buffs++;}
   });
 }
 function casRefund(){ // nothing to send it to — restore the window
@@ -1187,11 +1293,17 @@ function casApply(bf,tgt){
       const jackpot=Math.random()<0.10;
       const radius=jackpot?8+Math.random()*7:80+Math.random()*340;
       const center=tgt.hidePos||tgt.pos||randInZone();
-      commit(r=>{r.fx.push({id:uid(),kind:'circle',forId:myId,center,radius,until:now()+90000,label:jackpot?'radar · PINPOINT':'radar'});logEvent('📡 radar sweep activated');});
+      commit(r=>{r.fx.push({id:uid(),kind:'circle',forId:myId,center,radius,until:now()+90000,label:jackpot?'📡 radar · PINPOINT':'📡 radar'});logEvent('📡 radar sweep activated');});
       toast(jackpot?'📡 jackpot — ~10 m pinpoint!':'📡 radar circle on your map ('+Math.round(radius)+' m)', 'gold',5000);
     }else if(bf.id==='ring'){
       commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.ringUntil=now()+10000;logEvent('🔔 someone\'s phone is ringing…');});
       toast('🔔 '+escN(tgt.name)+"'s phone is ringing",'good');
+    }else if(bf.id==='leakpos'){
+      commit(r=>{r.fx.push({id:uid(),kind:'leak',forId:'seekers',targetId:tgt.id,until:now()+90000,label:'🎯 leak'});logEvent('🎯 a hiding spot was leaked');});
+      toast('🎯 every seeker now sees '+escN(tgt.name)+'\'s exact spot for 90 s','good');
+    }else if(bf.id==='freeze'){
+      commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.freezeUntil=now()+120000;logEvent('🧊 a hider was frozen in place');});
+      toast('🧊 '+escN(tgt.name)+' can\'t move for 2 minutes','good');
     }
   }else{
     if(bf.id==='slow'){
@@ -1204,6 +1316,12 @@ function casApply(bf,tgt){
       commit(r=>{me().shiftReady=true;}); toast('📍 shift ready — tap it in your buff bar','good');
     }else if(bf.id==='ghost'){
       commit(r=>{me().ghostUntil=now()+120000;}); toast('🌫️ you are ghosted for 120 s','good');
+    }else if(bf.id==='see'){
+      commit(r=>{r.fx.push({id:uid(),kind:'see',forId:myId,until:now()+120000,label:'👁️ seeker vision'});logEvent('👁️ seeker vision activated');});
+      toast('👁️ all live seeker positions shown for 120 s','good');
+    }else if(bf.id==='trap'){
+      commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.freezeUntil=now()+300000;logEvent('🪤 a seeker was frozen in place');});
+      toast('🪤 '+escN(tgt.name)+' can\'t move for 5 minutes','good');
     }
   }
   sGold();
@@ -1212,20 +1330,25 @@ function casApply(bf,tgt){
 /* ---------------- actions ---------------- */
 function setHideSpot(){
   const m=me(); const p=m.pos||START;
+  if((m.freezeUntil||0)>now()){toast('🧊 frozen — you can\'t move','warn');return;}
   if(!inZone(p)){toast('you are outside the zone','warn');return;}
-  commit(r=>{me().hidePos={lat:p.lat,lng:p.lng};});
+  commit(r=>{me().hidePos={lat:p.lat,lng:p.lng};const s=me().stats=me().stats||{catches:0,buffs:0,hiddenAt:0};s.hiddenAt=now();});
   toast('hidden ✓ stay quiet','good'); vib(40);
 }
 function doCatch(pid){
   const tgt=room.players.find(p=>p.id===pid);
   askConfirm('catch '+tgt.name+'?','you physically found them. they are out of the game.','caught!',true,()=>{
-    commit(r=>{const p=r.players.find(x=>x.id===pid);if(p&&p.status==='alive'){p.status='caught';p.caughtBy=myId;logEvent('🕵️ '+escN(p.name)+' was caught by '+escN(me().name)+'!');}});
+    commit(r=>{const p=r.players.find(x=>x.id===pid);if(p&&p.status==='alive'){p.status='caught';p.caughtBy=myId;
+      const c=r.players.find(x=>x.id===myId);if(c){c.stats=c.stats||{catches:0,buffs:0,hiddenAt:0};c.stats.catches++;}
+      logEvent('🕵️ '+escN(p.name)+' was caught by '+escN(me().name)+'!');}});
     sCatch(); vib([60,50,60]);
   });
 }
 function doReport(pid){
   const tgt=room.players.find(p=>p.id===pid);
+  if(ui.reportCd[pid]&&now()<ui.reportCd[pid]){toast('hold on — you just reported '+escN(tgt.name)+' ('+Math.ceil((ui.reportCd[pid]-now())/1000)+'s cooldown)','warn');return;}
   askConfirm('report '+tgt.name+'?','they broke a rule and lose 1 ♥. use honor — no griefing.','report',true,()=>{
+    ui.reportCd[pid]=now()+90000;
     loseHeart(pid,'reported'); sWarn();
   });
 }
@@ -1244,8 +1367,8 @@ function askConfirm(title,text,ok,danger,onOk){
 /* ---------------- casino machine (ported from casino.html prototype) ---------------- */
 const rand=(a,b)=>a+Math.random()*(b-a);
 /* buff id → monochrome icon name used on the reels/cards */
-const CAS_ICON={scream:'mic',radar:'radar',ring:'bell',slow:'slow',decoy:'decoy',shift:'pin',ghost:'mist'};
-const CAS_SYM=['seven','bar','diamond','dot','tri','mic','radar','bell','slow','decoy','pin','mist'];
+const CAS_ICON={scream:'mic',radar:'radar',ring:'bell',slow:'slow',decoy:'decoy',shift:'pin',ghost:'mist',leakpos:'target',freeze:'snow',see:'eye',trap:'snow'};
+const CAS_SYM=['seven','bar','diamond','dot','tri','mic','radar','bell','slow','decoy','pin','mist','target','snow','eye'];
 function casIco(n,s=42){
   const P={
     seven:'<text x="12" y="17" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-weight="700" font-size="16" fill="currentColor" stroke="none">7</text>',
@@ -1259,7 +1382,10 @@ function casIco(n,s=42){
     slow:'<path d="M4.6 15.6a7.4 7.4 0 0 1 14.8 0M12 15.6 15.8 9"/><circle cx="12" cy="15.6" r="1.3" fill="currentColor" stroke="none"/>',
     decoy:'<path d="M7.2 19.6v-7.4a4.8 4.8 0 0 1 9.6 0v7.4l-1.9-1.5-1.6 1.5-1.3-1.5-1.3 1.5-1.6-1.5z"/><circle cx="10.4" cy="11.4" r=".9" fill="currentColor" stroke="none"/><circle cx="13.6" cy="11.4" r=".9" fill="currentColor" stroke="none"/>',
     pin:'<path d="M12 20.6s-5.8-5.2-5.8-9.4a5.8 5.8 0 0 1 11.6 0c0 4.2-5.8 9.4-5.8 9.4z"/><circle cx="12" cy="11" r="2"/>',
-    mist:'<path d="M5 9.4h9.6M8 12.6h11M6.4 15.8h8.2"/>'
+    mist:'<path d="M5 9.4h9.6M8 12.6h11M6.4 15.8h8.2"/>',
+    target:'<circle cx="12" cy="12" r="4.8"/><path d="M12 2.8v4M12 17.2v4M2.8 12h4M17.2 12h4M6 6l2.8 2.8M15.2 15.2 18 18M18 6l-2.8 2.8M8.8 15.2 6 18"/>',
+    snow:'<path d="M12 3v18M4.7 7.5l14.6 9M19.3 7.5l-14.6 9"/>',
+    eye:'<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.6"/>'
   };
   return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${P[n]}</svg>`;
 }
@@ -1285,6 +1411,7 @@ const casSHit  =()=>{tone(392,.09,'sine',.035);tone(587,.14,'sine',.03,.08);};
 const casReels=[{pos:0,vel:0,mode:'idle'},{pos:0,vel:0,mode:'idle'}];
 let casState='idle',casMachine=null,casReelEls=[],casStrips=[],casArm=null,casHit=null,casKnob=null;
 let casTargets=[0,0],casDoneCount=0,casRafId=null,casSpinCards=[null,null],casPickedEl=null,casPicked=null;
+let casJackpot=false,casJackpotFirst=false,casSecondCard=null;
 let casPulling=false,casY0=0,casPull=0;
 const CAS_CELL=92,CAS_N=CAS_SYM.length,CAS_SET=CAS_N*CAS_CELL,CAS_WINH=128,CAS_BASE=(CAS_WINH-CAS_CELL)/2-2*CAS_SET;
 const CAS_KNOB_L=128,CAS_MAXANG=138;
@@ -1359,11 +1486,12 @@ function casStartSpin(){
   LS.set('leak.cas_hint','1'); // gesture learned — never show the tutorial again
   casState='spin';casCaption('');
   casMachine.classList.remove('attract');
-  const pool=BUFFS[me().role].slice();
-  const a=pool.splice(Math.floor(Math.random()*pool.length),1)[0];
-  const b=pool.splice(Math.floor(Math.random()*pool.length),1)[0];
+  const a=rollBuff(me().role,null);
+  const b=rollBuff(me().role,a?a.id:null); // two independent rarity rolls, no duplicates within a spin
   casSpinCards=[a,b];
-  casTargets=[CAS_SYM.indexOf(CAS_ICON[a.id]),CAS_SYM.indexOf(CAS_ICON[b.id])];
+  /* jackpot: both reels land on 7s and BOTH buffs are yours — pick and send them one after the other */
+  casJackpot=Math.random()<1/14;casJackpotFirst=casJackpot;casSecondCard=null;
+  casTargets=casJackpot?[CAS_SYM.indexOf('seven'),CAS_SYM.indexOf('seven')]:[CAS_SYM.indexOf(CAS_ICON[a.id]),CAS_SYM.indexOf(CAS_ICON[b.id])];
   casDoneCount=0;
   const t0=performance.now();
   casReels[0].mode='spin';casReels[0].vel=5;casReels[0].stopAt=t0+1500;
@@ -1400,7 +1528,7 @@ function casMorphToCards(){
       <div class="c-main">${casIco(CAS_ICON[bf.id],24)}
         <div class="c-name">${bf.name}</div><div class="c-sep"></div>
         <div class="c-desc">${bf.desc}</div>
-        <div class="c-tag">${me().role} buff</div></div>`;
+        <div class="c-tag" style="color:${RARITY_COLOR[bf.rarity]}">${RARITY_LABEL[bf.rarity]} · ${me().role} buff</div></div>`;
     el.addEventListener('click',()=>casPickCard(el,bf));
     box.appendChild(el);
   });
@@ -1418,7 +1546,8 @@ function casMorphToCards(){
     setTimeout(()=>{
       [...box.children].forEach(el=>{el.classList.add('settled');el.style.transition='';el.classList.add('unfold');});
       box.classList.add('on');
-      casCaption('choose one buff');
+      if(casJackpot){box.querySelectorAll('.mcard').forEach(el=>el.classList.add('jackpot'));box.insertAdjacentHTML('afterbegin','<div class="cas-jackpot-tag">💰 jackpot · take both</div>');}
+      casCaption(casJackpot?'💰 jackpot — both buffs are yours':'choose one buff');
       casState='choose';
       casSCard();
     },720);
@@ -1428,6 +1557,7 @@ function casPickCard(el,bf){
   if(casState!=='choose')return;
   casState='target';casSPick();vib(20);
   casPickedEl=el;casPicked=bf;
+  if(casJackpotFirst){casSecondCard=casSpinCards.find(c=>c.id!==bf.id)||null;casJackpotFirst=false;}
   el.parentElement.querySelectorAll('.mcard').forEach(o=>{if(o!==el)o.classList.add('discard');});
   el.classList.add('picked');
   casCaption('send '+bf.name+' to whom?');
@@ -1436,13 +1566,13 @@ function casPickCard(el,bf){
 function casTargetList(bf){
   const t=now();
   if(me().role==='seeker')return aliveHiders().filter(p=>!(p.ghostUntil>t));
-  if(bf.id==='slow')return aliveSeekers();
+  if(bf.id==='slow'||bf.id==='trap')return aliveSeekers();
   return null; // self / global buffs — handled by the picker
 }
 function casShowTargets(bf){
   const box=$('cas-targets');box.innerHTML='';box.style.cssText='';
   let list;
-  if(bf.id==='shift'||bf.id==='ghost')list=[{name:'you',role:me().role,self:true}];
+  if(bf.id==='shift'||bf.id==='ghost'||bf.id==='see')list=[{name:'you',role:me().role,self:true}];
   else if(bf.id==='decoy')list=[{name:'all seekers',role:'seekers',global:true}];
   else list=casTargetList(bf);
   if(!list||!list.length){ // nothing to send it to — refund the spin
@@ -1505,15 +1635,33 @@ function casSendBuff(player,chipEl){
     setTimeout(()=>{
       token.remove();
       $('cas-cards').classList.add('out');
-      if(casMachine)casMachine.classList.add('bye');
+      if(casMachine&&!(casJackpot&&casSecondCard))casMachine.classList.add('bye');
       const tg=$('cas-targets');
       tg.classList.remove('on');
       tg.style.transition='opacity .5s var(--ease-out)';
       requestAnimationFrame(()=>{tg.style.opacity='0';});
       casCaption('');
-      setTimeout(casClose,620);
+      if(casJackpot&&casSecondCard)setTimeout(casJackpotNext,620);
+      else setTimeout(casClose,620);
     },1100);
   }
+}
+/* jackpot second half: show the remaining card, let the player target it, then finish */
+function casJackpotNext(){
+  if(!casSecondCard)return;
+  const bf=casSecondCard;casSecondCard=null;
+  const box=$('cas-cards');box.classList.remove('on','out');box.innerHTML='';
+  const el=document.createElement('div');el.className='mcard settled unfolded jackpot';
+  el.innerHTML='<div class="c-big">'+casIco(CAS_ICON[bf.id],42)+'</div>'
+    +'<div class="c-main">'+casIco(CAS_ICON[bf.id],24)+'<div class="c-name">'+bf.name+'</div><div class="c-sep"></div>'
+    +'<div class="c-desc">'+bf.desc+'</div><div class="c-tag" style="color:'+RARITY_COLOR[bf.rarity]+'">'+RARITY_LABEL[bf.rarity]+' · '+me().role+' buff</div></div>';
+  el.addEventListener('click',()=>casPickCard(el,bf));
+  box.appendChild(el);
+  box.insertAdjacentHTML('afterbegin','<div class="cas-jackpot-tag">💰 jackpot · take both</div>');
+  box.classList.add('on');
+  casState='choose';
+  casCaption('💰 second buff — pick it to send');
+  casSCard();
 }
 /* lever: fake-3d swipe-down, toward the camera */
 function casSetPull(p){
@@ -1559,7 +1707,7 @@ function casCleanup(){
   const tk=$('cas-token');if(tk)tk.remove();
   $('cas-stage').innerHTML='';
   $('cas-cards').innerHTML='';$('cas-targets').innerHTML='';
-  casMachine=null;casState='idle';
+  casMachine=null;casState='idle';casJackpot=false;casJackpotFirst=false;casSecondCard=null;
 }
 function casClose(){
   casCleanup();
@@ -1657,11 +1805,14 @@ document.querySelectorAll('.ov').forEach(ov=>{
 $('btn-how').onclick=()=>openOv('ov-how');
 $('btn-how-close').onclick=()=>closeOv('ov-how');
 $('btn-enter').onclick=()=>{closeOv('ov-reveal');};
+$('btn-caught-ok').onclick=()=>closeOv('ov-caught');
 $('btn-shift-cancel').onclick=()=>closeOv('ov-shift');
 $('sh-bearing').oninput=e=>{$('sh-bv').textContent=e.target.value;};
 $('sh-dist').oninput=e=>{$('sh-dv').textContent=e.target.value;};
 $('btn-shift-ok').onclick=()=>{
-  const m=me();const base=m.hidePos||m.pos||START;
+  const m=me();
+  if((m.freezeUntil||0)>now()){toast('🧊 frozen — you can\'t move','warn');closeOv('ov-shift');return;}
+  const base=m.hidePos||m.pos||START;
   const np=dest(base,+$('sh-bearing').value,+$('sh-dist').value);
   commit(r=>{me().hidePos=np;me().shiftReady=false;});
   closeOv('ov-shift');toast('shifted '+$('sh-dist').value+' m — new spot set','good');
@@ -1788,6 +1939,7 @@ function initGameMap(){
     if(!room||ui.screen!=='game')return;
     if(!ui.simMode)return;
     const m=me();if(!m)return;
+    if((m.freezeUntil||0)>now()){toast('🧊 frozen — you can\'t move','warn');return;}
     commit(r=>{me().pos={lat:e.latlng.lat,lng:e.latlng.lng};});
     if(!inZone(e.latlng))toast('⚠ that spot is outside the zone','warn');
   });
@@ -1823,8 +1975,10 @@ function updateMap(){
   const t=now(),m=me();if(!m)return;
   const want=new Set();
   const revealAll=m.status!=='alive'||room.phase==='end';
+  /* secret buff: hider with 'seeker vision' sees every live seeker dot */
+  const seeFx=m.role==='hider'&&room.fx.some(f=>f.kind==='see'&&f.forId===myId&&f.until>t);
   room.players.forEach(p=>{
-    if(p.role==='seeker'&&p.status==='alive'&&p.id!==myId&&p.pos){
+    if(p.role==='seeker'&&p.status==='alive'&&p.id!==myId&&p.pos&&(revealAll||seeFx)){
       want.add('sk-'+p.id);
       upsertLayer('sk-'+p.id,
         ()=>L.marker([p.pos.lat,p.pos.lng],{icon:mkIcon(p,'sk','#ff4d2a',p.name),interactive:false}),
@@ -1855,6 +2009,15 @@ function updateMap(){
       upsertLayer('fx-'+f.id,
         ()=>L.marker([f.center.lat,f.center.lng],{icon:L.divIcon({className:'',html:'<div class="fake-dot"></div>',iconSize:[15,15],iconAnchor:[7,7]}),interactive:false}),
         ly=>ly.setLatLng([f.center.lat,f.center.lng]));}
+    /* secret buff: leaked hide spot — gold pulsing marker, follows live (shift moves too) */
+    if(f.kind==='leak'&&m.role==='seeker'){
+      const tgt=room.players.find(p=>p.id===f.targetId);
+      const hp=tgt&&tgt.status==='alive'?(tgt.hidePos||tgt.pos):null;
+      if(hp){want.add('fx-'+f.id);
+        upsertLayer('fx-'+f.id,
+          ()=>L.marker([hp.lat,hp.lng],{icon:L.divIcon({className:'',html:'<div class="leak-dot"></div>',iconSize:[16,16],iconAnchor:[8,8]}),interactive:false}),
+          ly=>ly.setLatLng([hp.lat,hp.lng]));}
+    }
   });
   Object.keys(gLayers).forEach(k=>{if(!want.has(k)){gMap.removeLayer(gLayers[k]);delete gLayers[k];}});
 }
@@ -1868,7 +2031,9 @@ function setPosMode(sim){
     if(!navigator.geolocation){toast('no GPS here — staying in sim','warn');ui.simMode=true;$('btn-posmode').textContent='📍 sim';return;}
     try{
       watchId=navigator.geolocation.watchPosition(pos=>{
-        commit(r=>{const p=me();if(p){p.pos={lat:pos.coords.latitude,lng:pos.coords.longitude};p.speed=pos.coords.speed||0;}});
+        commit(r=>{const p=me();
+          if(p&&(p.freezeUntil||0)>now()){if(now()-(ui.lastFreezeToast||0)>8000){ui.lastFreezeToast=now();toast('🧊 frozen — position locked','warn');}return;}
+          if(p){p.pos={lat:pos.coords.latitude,lng:pos.coords.longitude};p.speed=pos.coords.speed||0;}});
       },()=>{toast('GPS denied — back to sim mode (tap map)','warn');setPosMode(true);},{enableHighAccuracy:true,maximumAge:2000});
       toast('GPS mode — walk for real 🚶','silent');
     }catch(e){ui.simMode=true;$('btn-posmode').textContent='📍 sim';}
@@ -1883,7 +2048,8 @@ function renderGame(){
   const ph=room.phase;
   $('hud-phase').textContent=ph==='hide'?'hiding':ph==='seek'?'seeking':'ended';
   $('hud-dot').className='dot'+(m.role==='seeker'?' seeker':'');
-  $('hud-dot').style.background=m.role==='seeker'?'var(--seeker)':'var(--hider)';
+  $('hud-dot').style.background=m.role==='seeker'?'var(--seeker)':m.role==='hider'?'var(--hider)':'#6b6f76';
+  $('hud-hearts').style.display=(m.role&&m.status!=='spectate')?'flex':'none';
   $('hud-hearts').innerHTML=[0,1,2].map(i=>'<span class="h'+(i<m.hearts?'':' off')+'">♥</span>').join('');
   $('btn-mute').textContent=muted?'🔕':'🔔';
   $('chip-casino').classList.toggle('on',casinoOpenFor(m));
@@ -1912,11 +2078,12 @@ function renderGame(){
     sb.innerHTML=fast?'🐌 TOO FAST — max 3 km/h!':'🐌 slow-mo · max 3 km/h · '+Math.ceil((m.slowUntil-t)/1000)+'s';
   }else sb.style.display='none';
   const bb=$('buff-bar');let bhtml='';
+  if((m.freezeUntil||0)>t)bhtml+='<div class="buff-chip debuff">🧊 frozen <span class="t">'+Math.ceil((m.freezeUntil-t)/1000)+'s</span></div>';
   if(m.ghostUntil>t)bhtml+='<div class="buff-chip">🌫️ ghost <span class="t">'+Math.ceil((m.ghostUntil-t)/1000)+'s</span></div>';
   if(m.shiftReady&&ph!=='end')bhtml+='<div class="buff-chip">📍 shift ready <button class="use" id="use-shift">use</button></div>';
-  room.fx.forEach(f=>{if(f.forId===myId&&f.until>t)bhtml+='<div class="buff-chip">📡 '+f.label+' <span class="t">'+Math.ceil((f.until-t)/1000)+'s</span></div>';});
+  room.fx.forEach(f=>{if(f.forId===myId&&f.until>t)bhtml+='<div class="buff-chip">'+f.label+' <span class="t">'+Math.ceil((f.until-t)/1000)+'s</span></div>';});
   bb.innerHTML=bhtml;
-  const us=$('use-shift');if(us)us.onclick=()=>openOv('ov-shift');
+  const us=$('use-shift');if(us)us.onclick=()=>{const mm=me();if(mm&&(mm.freezeUntil||0)>now()){toast('🧊 frozen — you can\'t move','warn');return;}openOv('ov-shift');};
   const dk=$('dock');let dhtml='';
   if(ph==='hide'&&m.role==='hider'&&m.status==='alive'){
     dhtml=m.hidePos
@@ -1932,9 +2099,9 @@ function renderGame(){
       if(nearby.length){
         strip='<div class="nearby-row">'+nearby.map(p=>'<button class="dbtn sbtn catch" data-catch="'+p.id+'">🎯 '+esc(p.name)+' · '+Math.round(distM(m.pos,p.pos))+'m</button>').join('')+'</div>';
       }
-      dhtml='<div class="dock-card"><div class="dock-title">seeker · hunt</div>'+
+      dhtml='<div class="dock-card"><div class="dock-title">seeker · hunt · '+aliveHiders().length+' left</div>'+
         (nearby.length?strip:'<div class="dock-btns"><button class="dbtn primary seeker" id="d-players">🕵️ find &amp; catch</button></div>')+
-        '<div class="dock-hint">'+(nearby.length?'tap a nearby hider to catch · ':'find hiders in real life, then tap catch · ')+'time left '+fmt(room.gameEndsAt-t)+'</div></div>';
+        '<div class="dock-hint">'+(nearby.length?'tap a nearby hider to catch · ':'find hiders in real life, then tap catch · ')+aliveHiders().length+' hider'+(aliveHiders().length===1?'':'s')+' left · time '+fmt(room.gameEndsAt-t)+'</div></div>';
     }
     else
       dhtml='<div class="dock-card"><div class="dock-title">hider · survive</div><div class="dock-btns"><div class="dbtn" style="pointer-events:none">🤫 '+aliveHiders().length+' hiders alive</div><button class="dbtn" id="d-players">players</button></div><div class="dock-hint">survive '+fmt(room.gameEndsAt-t)+' to win · seeker dots are live</div></div>';
@@ -1982,7 +2149,52 @@ function renderSheet(){
   });
 }
 
+/* ---------------- room chat ---------------- */
+function renderChat(){
+  if(!room||ui.screen!=='game')return;
+  const box=$('chat-list');if(!box)return;
+  if(!room.chat)room.chat=[];
+  let html='';
+  room.chat.forEach(msg=>{
+    const from=room.players.find(p=>p.id===msg.fromId);
+    const col=from?(from.role==='seeker'?'var(--seeker)':from.role==='hider'?'var(--hider)':'#9aa0a8'):'#9aa0a8';
+    html+='<div class="chat-msg"><div class="who"><span class="dd" style="background:'+col+'"></span>'+esc(msg.fromName||'?')+'</div><div>'+esc(msg.text)+'</div></div>';
+  });
+  box.innerHTML=html||'<div style="color:var(--ink-soft);font-size:13px;padding:10px 4px">no messages yet — say hi to the room.</div>';
+  const unread=room.chat.filter(m=>m.at>(ui.chatSeenAt||0)&&m.fromId!==myId).length;
+  $('btn-chat').classList.toggle('unread',unread>0);
+  if(ui.chatOpen){ui.chatSeenAt=now();box.scrollTop=box.scrollHeight;}
+}
+function openChat(){ui.chatOpen=true;ui.chatSeenAt=now();$('chat').classList.add('open');renderChat();}
+function closeChat(){ui.chatOpen=false;$('chat').classList.remove('open');renderChat();}
+function sendChat(){
+  const inp=$('chat-input');const txt=inp.value.trim();if(!txt)return;
+  const nm=(me()&&me().name)||myName||'—';
+  commit(r=>{r.chat=r.chat||[];r.chat.push({id:uid(),fromId:myId,fromName:nm,text:txt,at:now()});if(r.chat.length>200)r.chat=r.chat.slice(-200);});
+  inp.value='';
+}
+
 /* ---------------- end / reveal ---------------- */
+/* full-screen "you're out" moment — reveal style, once per game */
+function showCaughtOverlay(){
+  const m=me();if(!m||!m.role||ui.kicked)return;
+  if(room.phase!=='hide'&&room.phase!=='seek')return;
+  const key='leak-caught-'+room.code+':'+room.startedAt;
+  if(SS.get(key)||ui.seenCaught.has(key))return;
+  SS.set(key,'1');ui.seenCaught.add(key);
+  const ov=$('ov-caught'),w=$('caught-word'),s=$('caught-sub');
+  if(m.status==='caught'&&m.caughtBy){
+    const c=room.players.find(x=>x.id===m.caughtBy);
+    ov.className='ov open caught';w.textContent='caught.';
+    s.innerHTML='<b>'+esc((c&&c.name)||'—')+'</b> found you. you\'re out of this round — watch the map and cheer your team.';
+  }else if(m.status==='caught'){
+    ov.className='ov open giveup';w.textContent='you gave up.';
+    s.innerHTML='the round goes on without you — watch the map and cheer your team.';
+  }else{
+    ov.className='ov open out';w.textContent='out.';
+    s.innerHTML='your hearts ran out — rules are rules. watch the map and cheer your team.';
+  }
+}
 function renderReveal(){
   const m=me();if(!m||!m.role)return;
   if(ui.kicked)return; // never overwrite the kicked screen with a reveal
@@ -2009,6 +2221,16 @@ function renderEnd(){
   // Phase 2 #15: tint the wordmark's drop the winner color while the end screen is up.
   const drop=document.querySelector('#scr-home .drop');
   if(drop)drop.style.background=room.winner==='hiders'?'var(--hider)':'var(--seeker)';
+  /* Phase 2 stats: catches per seeker, where/when each hider hid, spins used */
+  const statsBox=$('end-stats');statsBox.innerHTML='';
+  room.players.forEach(p=>{
+    const s=p.stats||{catches:0,buffs:0,hiddenAt:0};
+    const chips=[];
+    if(p.role==='seeker'&&s.catches>0)chips.push('🕵️ '+esc(p.name)+' · '+s.catches+' catch'+(s.catches===1?'':'es'));
+    if(p.role==='hider'&&s.hiddenAt)chips.push('🤫 '+esc(p.name)+' · hid at '+fmt(s.hiddenAt-room.startedAt));
+    if(s.buffs>0)chips.push('🎰 '+esc(p.name)+' · '+s.buffs+' spin'+(s.buffs===1?'':'s'));
+    chips.forEach(t=>{const el=document.createElement('span');el.className='stat-chip';el.innerHTML=t;statsBox.appendChild(el);});
+  });
   const list=$('end-list');list.innerHTML='';
   room.players.forEach(p=>{
     const r=document.createElement('div');r.className='end-row';
@@ -2022,6 +2244,7 @@ function renderEnd(){
     list.appendChild(r);
   });
   $('btn-rematch').style.display=(room.hostId===myId)?'flex':'none';
+  $('btn-rematch-now').style.display=(room.hostId===myId)?'flex':'none';
   openOv('ov-end');
   if(!renderEnd._played){renderEnd._played=true;mySideWon?sWin():sLose();setTimeout(()=>renderEnd._played=false,4000);}
 }
@@ -2038,7 +2261,9 @@ function renderAll(){
     if(m&&m.pendingTask&&!ui.screamOpen&&now()<m.pendingTask.deadline+500)openScream(m.pendingTask);
     if((!m||!m.pendingTask)&&ui.screamOpen)closeScream(); // #6: tear down if task cleared elsewhere
     if(room.phase==='end')renderEnd();else closeOv('ov-end');
+    if(m&&m.role&&(m.status==='caught'||m.status==='out'))showCaughtOverlay();
     renderSheet();
+    renderChat();
   }
 }
 
@@ -2094,6 +2319,13 @@ function tick(){
         loseHeart(myId,'left the zone');
       }
     }else ui.zoneOutSince=0;
+    /* quiet ambience (seek only): tension pulse for hiders near a seeker, faint sweep for seekers */
+    if(t-ui.ambiT>7000){ui.ambiT=t;
+      if(ui.ambient&&m&&m.status==='alive'){
+        if(m.role==='hider'){const near=Math.min(9999,...room.players.filter(s=>s.role==='seeker'&&s.status==='alive').map(s=>distM(m.pos,s.pos)));if(near<150)tone(196,.24,'sine',.016);}
+        else if(m.role==='seeker')tone(880,.1,'sine',.009);
+      }
+    }
     /* Phase 2 #12: soft cue when a timed buff/debuff is ~10s from ending. */
     const warnAt=ms=>ms>0&&ms<=10000;
     const warnKey=(id,ms)=>id+':'+Math.ceil(ms/1000);
@@ -2114,7 +2346,12 @@ function tick(){
       room.players.forEach(p=>{
         if(!p.bot||p.status!=='alive')return;
         if(p.pendingTask){p.pendingTask=null;logEvent('😱 a hider screamed');moved=true;}
-        if(room.phase==='seek'&&p.role==='seeker'){
+        /* smarter hider bots: slip to a new spot while a seeker circles close */
+        if(room.phase==='seek'&&p.role==='hider'&&p.botMoves>0&&!((p.freezeUntil||0)>now())){
+          const near=Math.min(9999,...room.players.filter(s=>s.role==='seeker'&&s.status==='alive').map(s=>distM(p.hidePos||p.pos,s.pos)));
+          if(near<80&&Math.random()<0.35){p.hidePos=randInZone();p.botMoves--;moved=true;}
+        }
+        if(room.phase==='seek'&&p.role==='seeker'&&!((p.freezeUntil||0)>now())){
           const targets=aliveHiders();
           const goal=targets.length?(targets[Math.floor(Math.random()*targets.length)].hidePos||randInZone()):(p.wander||(p.wander=randInZone()));
           if(distM(p.pos,goal)<6)p.wander=randInZone();
@@ -2142,6 +2379,39 @@ $('home-code').addEventListener('keydown',e=>{if(e.key==='Enter')joinRoom($('hom
 $('btn-create').onclick=()=>{ac();createRoom();};
 $('btn-join').onclick=()=>{ac();joinRoom($('home-code').value);};
 $('btn-how').onclick=()=>openOv('ov-how');
+/* room chat */
+$('btn-chat').onclick=()=>ui.chatOpen?closeChat():openChat();
+$('chat-send').onclick=sendChat;
+$('chat-input').addEventListener('keydown',e=>{if(e.key==='Enter')sendChat();});
+$('chat').addEventListener('click',e=>{if(e.target===$('chat'))closeChat();});
+/* join QR — encodes this page's URL + the room code; degrades to the URL as text */
+let qrShown='';
+function openQr(){
+  const c=room&&room.code;if(!c)return;
+  if(qrShown!==c||!$('qr-box').children.length){
+    qrShown=c;
+    const url=location.href.split('?')[0].split('#')[0]+'?room='+c;
+    const box=$('qr-box');box.innerHTML='';
+    if(window.QRious){try{box.appendChild(new QRious({value:url,size:150,background:'#ffffff',foreground:'#141518',level:'M'}).canvas);}catch(e){}}
+    const fb=$('qr-fallback');
+    if(box.children.length){fb.style.display='none';}else{fb.style.display='block';fb.textContent=url;}
+  }
+  openOv('ov-qr');
+}
+$('btn-qr').onclick=openQr;
+$('qr-close').onclick=()=>closeOv('ov-qr');
+/* recent rooms quick-join */
+function recentCodes(){try{const r=LS.get('leak.recent');if(r)return JSON.parse(r);}catch(e){} return [];}
+function addRecent(code){try{let arr=recentCodes().filter(x=>x.code!==code);arr.unshift({code,at:now()});LS.set('leak.recent',JSON.stringify(arr.slice(0,4)));renderRecent();}catch(e){}}
+function renderRecent(){
+  const box=$('recent-codes');if(!box)return;
+  const arr=recentCodes();
+  box.innerHTML='';
+  arr.forEach(r=>{const b=document.createElement('button');b.className='btn ghost small';b.textContent=r.code;
+    b.onclick=()=>{$('home-code').value=r.code;joinRoom(r.code);};box.appendChild(b);});
+  box.style.display=arr.length?'flex':'none';
+}
+renderRecent();
 $('btn-supa-set').onclick=()=>{if(promptSupabase())toast('Supabase key saved','good');};
 if(!supaCfg.key)setTimeout(()=>toast('tap "set Supabase key" once to enable cross-device','warn',6000),1200);
 $('btn-leave').onclick=()=>{
@@ -2154,8 +2424,8 @@ $('btn-leave').onclick=()=>{
   }
   ui.left=true; // ignore our own removal broadcast + any late merges
   room=null; try{transport&&transport.close();}catch(e){} transport=null; setPeerStatus('connecting');
-  ui.seenLog=new Set(); ui.seenReveal=new Set(); ui.sheetOpen=false; ui.screamOpen=false;
-  $('sheet').classList.remove('open'); showScreen('home');};
+  ui.seenLog=new Set(); ui.seenReveal=new Set(); ui.sheetOpen=false; ui.chatOpen=false; ui.screamOpen=false;
+  $('sheet').classList.remove('open'); $('chat').classList.remove('open'); showScreen('home');};
 $('btn-copy').onclick=()=>{
   const c=room&&room.code||''; if(!c)return;
   if(navigator.clipboard&&navigator.clipboard.writeText){
@@ -2176,9 +2446,11 @@ $('btn-end-home').onclick=()=>{
     LS.del(roomKey(room.code));LS.del('leak.active');
   }
   ui.left=true; // leave the room for good (same as the lobby ← button)
+  ui.chatOpen=false;$('chat').classList.remove('open');
   room=null; try{transport&&transport.close();}catch(e){} transport=null; setPeerStatus('connecting');
   showScreen('home');};
 $('btn-rematch').onclick=()=>{closeOv('ov-end');resetRoom();};
+$('btn-rematch-now').onclick=rematchNow;
 $('dev-toggle').onclick=()=>$('dev').classList.toggle('open');
 $('dev-skip').onclick=()=>{if(room&&room.phase==='hide')commit(r=>{r.hideEndsAt=Date.now();});};
 $('dev-casino').onclick=()=>{if(room)commit(r=>{r.forceCasinoId=Date.now();});toast('casino forced for everyone','gold');};
@@ -2190,6 +2462,16 @@ document.addEventListener('pointerdown',()=>ac(),{once:true});
 setPosMode(true);
 tickIv=setInterval(tick,250);
 showScreen('home');
+/* deep-link join: leak.html?room=CODE — the QR in the lobby encodes this, so
+   scanning on another phone lands straight in the room */
+(function(){
+  const q=(location.search||'').match(/[?&]room=([A-Za-z0-9]{2,4})/);
+  if(!q)return;
+  const code=q[1].toUpperCase();
+  if(room&&room.code===code)return;
+  $('home-code').value=code;
+  if(myName.trim())setTimeout(()=>joinRoom(code),300);
+})();
 /* reload recovery: every saveRoom() persists the room to localStorage, so a
    reload can bring the user straight back into their lobby/game instead of a
    dead home screen. The transport rebuilds the channel and re-tracks presence
