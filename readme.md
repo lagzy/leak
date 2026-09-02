@@ -1,4 +1,4 @@
-# leak
+# leak.
 
 *Hide & seek — but unfair.* A lightweight, static web app for real-life hide-and-seek with chaotic, asymmetric mechanics and small-team play inside a fixed rectangular play zone.
 
