@@ -755,8 +755,8 @@ function applyCorners(pts){
 // boundary tolerance: a point within ~3 m of any edge/vertex counts as inside, so players
 // standing exactly on a corner (e.g. START at corner 1) aren't flagged out-of-zone.
 const _segDistM=(p,a,b)=>{ // approx metres from point p to segment a-b (equirectangular, fine at this scale)
-  const toRad=x=>x*Math.PI/180,R=6371000,k=Math.cos(toRad(p.lat));
-  const ax=(a.lng-p.lng)*k*R*0.5,ay=(a.lat-p.lat)*R*0.5,bx=(b.lng-p.lng)*k*R*0.5,by=(b.lat-p.lat)*R*0.5;
+  const toRad=x=>x*Math.PI/180,R=6371000,DEG=R*Math.PI/180,k=Math.cos(toRad(p.lat));
+  const ax=(a.lng-p.lng)*k*DEG,ay=(a.lat-p.lat)*DEG,bx=(b.lng-p.lng)*k*DEG,by=(b.lat-p.lat)*DEG;
   const dx=bx-ax,dy=by-ay,t=Math.max(0,Math.min(1,((ax*dx)+(ay*dy))/((dx*dx)+(dy*dy)||1)));
   const ex=ax+dx*t,ey=ay+dy*t;return Math.sqrt(ex*ex+ey*ey);
 };
@@ -1237,7 +1237,14 @@ function resetRoom(){
     r.players.forEach(p=>{p.role=null;p.hearts=3;p.status='alive';p.hidePos=null;p.pos={lat:START.lat,lng:START.lng};
       p.pendingTask=null;p.slowUntil=0;p.ghostUntil=0;p.ringUntil=0;p.freezeUntil=0;p.shiftReady=false;p.casinoDone=0;p.casinoForce=0;p.botMoves=0;p.stats={catches:0,buffs:0,hiddenAt:0};});
     r.chat=[];});
-  ui.seenLog=new Set(); showScreen('lobby');
+  /* same per-game UI teardown as a rematch: without it the end overlay stayed
+     open and stale scream/casino state leaked into the fresh lobby. */
+  ui.seenLog=new Set();ui.seenReveal=new Set();ui.seenCaught=new Set();ui.zoneOutSince=0;ui.zoneViolations=0;
+  ui.lastCasinoWin=0;ui.casDismissed=0;
+  if($('ov-casino').classList.contains('open'))casClose(); /* round ended with the casino up — tear it down */
+  closeOv('ov-end');closeOv('ov-caught');
+  if(ui.screamOpen)closeScream();
+  showScreen('lobby');
 }
 
 /* instant rematch: same room, same players & settings, new roles, straight back into hiding */
@@ -1257,7 +1264,9 @@ function rematchNow(){
     logEvent('⚡ rematch — new roles, new round');
   });
   ui.seenLog=new Set();ui.seenReveal=new Set();ui.seenCaught=new Set();ui.zoneOutSince=0;ui.zoneViolations=0;
-  ui.lastCasinoWin=0;ui.casDismissed=0;closeOv('ov-end');
+  ui.lastCasinoWin=0;ui.casDismissed=0;
+  if($('ov-casino').classList.contains('open'))casClose(); /* rematch with the casino up — tear it down */
+  closeOv('ov-end');
 }
 
 /* ---------------- hearts / rules ---------------- */
@@ -1337,6 +1346,7 @@ function setHideSpot(){
 }
 function doCatch(pid){
   const tgt=room.players.find(p=>p.id===pid);
+  if(!tgt||tgt.status!=='alive')return; // gone / already caught (stale strip button)
   askConfirm('catch '+tgt.name+'?','you physically found them. they are out of the game.','caught!',true,()=>{
     commit(r=>{const p=r.players.find(x=>x.id===pid);if(p&&p.status==='alive'){p.status='caught';p.caughtBy=myId;
       const c=r.players.find(x=>x.id===myId);if(c){c.stats=c.stats||{catches:0,buffs:0,hiddenAt:0};c.stats.catches++;}
@@ -1346,6 +1356,7 @@ function doCatch(pid){
 }
 function doReport(pid){
   const tgt=room.players.find(p=>p.id===pid);
+  if(!tgt)return; // player may have been kicked/left between render and tap
   if(ui.reportCd[pid]&&now()<ui.reportCd[pid]){toast('hold on — you just reported '+escN(tgt.name)+' ('+Math.ceil((ui.reportCd[pid]-now())/1000)+'s cooldown)','warn');return;}
   askConfirm('report '+tgt.name+'?','they broke a rule and lose 1 ♥. use honor — no griefing.','report',true,()=>{
     ui.reportCd[pid]=now()+90000;
@@ -1716,6 +1727,10 @@ function casClose(){
 }
 function openCasino(){
   if(!casinoOpenFor(me()))return;
+  /* re-entry guard: the HUD chip stays tappable while a spin is running;
+     building the machine twice would wipe an in-flight animation and could
+     double-spend the window. */
+  if(casState!=='idle')return;
   openOv('ov-casino');
   casCaption('');
   setTimeout(()=>{
@@ -1981,18 +1996,18 @@ function updateMap(){
     if(p.role==='seeker'&&p.status==='alive'&&p.id!==myId&&p.pos&&(revealAll||seeFx)){
       want.add('sk-'+p.id);
       upsertLayer('sk-'+p.id,
-        ()=>L.marker([p.pos.lat,p.pos.lng],{icon:mkIcon(p,'sk','#ff4d2a',p.name),interactive:false}),
+        ()=>L.marker([p.pos.lat,p.pos.lng],{icon:mkIcon(p,'sk','#ff4d2a',esc(p.name)),interactive:false}),
         ly=>ly.setLatLng([p.pos.lat,p.pos.lng]));
     }
     if(revealAll&&p.role==='hider'&&p.id!==myId){
       const hp=p.hidePos||p.pos;if(hp){want.add('hd-'+p.id);
         upsertLayer('hd-'+p.id,
-          ()=>L.marker([hp.lat,hp.lng],{icon:mkIcon(p,'hd','#12c98f',p.name+(p.status!=='alive'?' ✕':'')),interactive:false}),
+          ()=>L.marker([hp.lat,hp.lng],{icon:mkIcon(p,'hd','#12c98f',esc(p.name)+(p.status!=='alive'?' ✕':'')),interactive:false}),
           ly=>ly.setLatLng([hp.lat,hp.lng]));}
     }
   });
   if(m.pos){want.add('me');
-    upsertLayer('me',()=>L.marker([m.pos.lat,m.pos.lng],{icon:mkIcon(m,'','#4d8dff',m.name,true),zIndexOffset:900,interactive:false}),
+    upsertLayer('me',()=>L.marker([m.pos.lat,m.pos.lng],{icon:mkIcon(m,'','#4d8dff',esc(m.name),true),zIndexOffset:900,interactive:false}),
       ly=>ly.setLatLng([m.pos.lat,m.pos.lng]));}
   if(m.role==='hider'&&m.hidePos){want.add('hide');
     upsertLayer('hide',()=>L.circleMarker([m.hidePos.lat,m.hidePos.lng],{radius:9,color:'#fff',weight:2,fillColor:'#12c98f',fillOpacity:.9}),
@@ -2104,7 +2119,7 @@ function renderGame(){
         '<div class="dock-hint">'+(nearby.length?'tap a nearby hider to catch · ':'find hiders in real life, then tap catch · ')+aliveHiders().length+' hider'+(aliveHiders().length===1?'':'s')+' left · time '+fmt(room.gameEndsAt-t)+'</div></div>';
     }
     else
-      dhtml='<div class="dock-card"><div class="dock-title">hider · survive</div><div class="dock-btns"><div class="dbtn" style="pointer-events:none">🤫 '+aliveHiders().length+' hiders alive</div><button class="dbtn" id="d-players">players</button></div><div class="dock-hint">survive '+fmt(room.gameEndsAt-t)+' to win · seeker dots are live</div></div>';
+      dhtml='<div class="dock-card"><div class="dock-title">hider · survive</div><div class="dock-btns"><div class="dbtn" style="pointer-events:none">🤫 '+aliveHiders().length+' hiders alive</div><button class="dbtn" id="d-players">players</button></div><div class="dock-hint">survive '+fmt(room.gameEndsAt-t)+' to win · stay quiet & stay in the zone</div></div>';
   }else{
     dhtml='<div class="dock-card"><div class="dock-title">'+(room.phase==='end'?'game over':'spectating')+'</div><div class="dock-btns"><button class="dbtn" id="d-players">players</button></div><div class="dock-hint">all positions revealed</div></div>';
   }
@@ -2214,7 +2229,10 @@ function renderReveal(){
 function renderEnd(){
   if(room.phase!=='end'){closeOv('ov-end');return;}
   const m=me();
-  const mySideWon=room.winner===(m?m.role:null);
+  /* winner is stored as a team ('hiders'/'seekers'); compare the plural team
+     name with the player's role — the old singular comparison never matched,
+     so the end screen always told everyone they lost. */
+  const mySideWon=m?(m.role==='hider'?room.winner==='hiders':m.role==='seeker'?room.winner==='seekers':false):false;
   $('end-title').textContent=room.winner==='hiders'?'hiders win.':'seekers win.';
   $('end-title').className=mySideWon?'end-win':'end-lose';
   $('end-sub').textContent=mySideWon?'your side survived the leak.':'your side got flushed out.';
@@ -2258,7 +2276,17 @@ function renderAll(){
     renderGame();updateMap();
     const m=me();
     if(m&&(room.phase==='hide'||room.phase==='seek'))renderReveal();
-    if(m&&m.pendingTask&&!ui.screamOpen&&now()<m.pendingTask.deadline+500)openScream(m.pendingTask);
+    if(m&&m.pendingTask){
+      if(m.pendingTask.deadline<=now()){
+        /* expired while the overlay was never opened (tab was in the lobby /
+           another overlay ate the render) — enforce the penalty here, else the
+           order is silently dodged. */
+        if(!ui.screamOpen){
+          commit(r=>{const q=r.players.find(x=>x.id===myId);if(q&&q.pendingTask){q.pendingTask=null;logEvent('🙉 a scream order was ignored.');}});
+          toast('scream failed — you lose a ♥','warn');loseHeart(myId,'ignored scream');
+        }
+      }else if(!ui.screamOpen)openScream(m.pendingTask);
+    }
     if((!m||!m.pendingTask)&&ui.screamOpen)closeScream(); // #6: tear down if task cleared elsewhere
     if(room.phase==='end')renderEnd();else closeOv('ov-end');
     if(m&&m.role&&(m.status==='caught'||m.status==='out'))showCaughtOverlay();
@@ -2346,6 +2374,15 @@ function tick(){
       room.players.forEach(p=>{
         if(!p.bot||p.status!=='alive')return;
         if(p.pendingTask){p.pendingTask=null;logEvent('😱 a hider screamed');moved=true;}
+        /* hider bots: actually WALK to their hiding spot. Before this, a hider bot's
+           live pos stayed at START forever, so every seeker saw it at 0 m and could
+           tap-catch it instantly. Walk during hide AND seek (so a slip relocates by
+           walking, not teleporting). Frozen hiders hold still. */
+        if(p.role==='hider'&&p.hidePos&&!((p.freezeUntil||0)>now())){
+          const d=distM(p.pos,p.hidePos)||1;
+          if(d>6){const st=Math.min(1,3.2/d);p.pos={lat:p.pos.lat+(p.hidePos.lat-p.pos.lat)*st,lng:p.pos.lng+(p.hidePos.lng-p.pos.lng)*st};moved=true;}
+          else if(p.pos.lat!==p.hidePos.lat||p.pos.lng!==p.hidePos.lng){p.pos={lat:p.hidePos.lat,lng:p.hidePos.lng};moved=true;}
+        }
         /* smarter hider bots: slip to a new spot while a seeker circles close */
         if(room.phase==='seek'&&p.role==='hider'&&p.botMoves>0&&!((p.freezeUntil||0)>now())){
           const near=Math.min(9999,...room.players.filter(s=>s.role==='seeker'&&s.status==='alive').map(s=>distM(p.hidePos||p.pos,s.pos)));
