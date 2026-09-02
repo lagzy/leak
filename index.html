@@ -343,8 +343,6 @@ input,select{font-family:inherit;color:inherit}
 .mcard.discard{opacity:0;transform:translateY(14px) scale(.97);pointer-events:none}
 .mcard.sent{opacity:0;transform:scale(.85);pointer-events:none}
 #cas-cards.out .mcard{opacity:0;transform:translateY(10px);transition:opacity .4s var(--ease-out),transform .4s var(--ease-out)}
-.mcard.jackpot{border-color:var(--gold)}
-.cas-jackpot-tag{position:absolute;top:-38px;left:50%;transform:translateX(-50%);background:var(--gold);color:#231a02;font-size:9.5px;font-weight:700;letter-spacing:.22em;padding:6px 14px;border-radius:999px;white-space:nowrap;text-transform:uppercase}
 /* target picker: exit is a container-level opacity fade, chips never move */
 #cas-targets{position:absolute;left:0;right:0;bottom:calc(96px + env(safe-area-inset-bottom));z-index:40;
   display:flex;justify-content:center;gap:22px;pointer-events:none}
@@ -531,7 +529,6 @@ input,select{font-family:inherit;color:inherit}
       <button class="hud-pill icon-btn" id="chip-casino" aria-label="open casino">casino open</button>
       <div class="hud-pill hud-hearts" id="hud-hearts" aria-label="hearts remaining"></div>
       <button class="hud-pill icon-btn" id="btn-chat" aria-label="room chat">💬</button>
-      <button class="hud-pill icon-btn" id="btn-mute" aria-label="toggle sound">🔔</button>
     </div>
   </div></div>
   <div id="zone-banner">⚠ you left the zone — get back!</div>
@@ -796,7 +793,7 @@ function dest(p,bearing,m){const R=6371000,r=x=>x*Math.PI/180,br=r(bearing);
 let myId=LS.get('leak.id'); if(!myId){myId=uid();LS.set('leak.id',myId);}
 let myName=LS.get('leak.name')||'';
 let room=null, tickIv=null; // transport declared in the transport block
-let muted=LS.get('leak.muted')==='1';
+let muted=false; /* sound is always on now — the mute button was removed */
 const ui={screen:'home',simMode:true,sheetOpen:false,chatOpen:false,chatSeenAt:0,screamOpen:false,lastCasinoWin:0,casDismissed:0,seenLog:new Set(),revealKey:'',lastPosWrite:0,zoneOutSince:0,lastZoneHit:0,botTick:0,lastMapUpd:0,seenReveal:new Set(),seenCaught:new Set(),zoneViolations:0,hostHeart:0,hostSeen:0,buffWarned:new Set(),reportCd:{},seenCasinoOnce:false,ambient:true,ambiT:0,lastFreezeToast:0,left:false};
 if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)ui.ambient=false;
 
@@ -1132,7 +1129,7 @@ const BUFFS={
   {id:'see',  icon:'👁️',name:'seeker vision',rarity:'secret',desc:'see every live seeker position on your map for 120 seconds — planning time.'},
   {id:'trap', icon:'🪤',name:'freeze seeker',rarity:'secret',desc:'the chosen seeker is welded to the ground for 5 whole minutes.'},
 ]};
-const casinoWinIdx=()=>room&&room.startedAt?Math.floor((now()-room.startedAt)/(room.casinoMin*60000)):0;
+const casinoWinIdx=()=>room&&room.hideEndsAt?Math.max(0,Math.floor((now()-room.hideEndsAt)/(room.casinoMin*60000))):0;
 function casinoOpenFor(p){
   if(!p||room.phase==='lobby'||room.phase==='end')return false;
   if(room.forceCasinoId&&p.casinoForce!==room.forceCasinoId)return true;
@@ -1299,11 +1296,10 @@ function casApply(bf,tgt){
       if(tgt.bot){ commit(()=>{logEvent('😱 a hider screamed their lungs out');}); toast('🎤 '+tgt.name+' screamed!','good'); }
       else commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.pendingTask={byId:myId,deadline:now()+30000,holdMs:4000,dbMin:65};logEvent('🎤 a scream order was played');});
     }else if(bf.id==='radar'){
-      const jackpot=Math.random()<0.10;
-      const radius=jackpot?8+Math.random()*7:80+Math.random()*340;
+      const radius=80+Math.random()*340;
       const center=tgt.hidePos||tgt.pos||randInZone();
-      commit(r=>{r.fx.push({id:uid(),kind:'circle',forId:myId,center,radius,until:now()+90000,label:jackpot?'📡 radar · PINPOINT':'📡 radar'});logEvent('📡 radar sweep activated');});
-      toast(jackpot?'📡 jackpot — ~10 m pinpoint!':'📡 radar circle on your map ('+Math.round(radius)+' m)', 'gold',5000);
+      commit(r=>{r.fx.push({id:uid(),kind:'circle',forId:myId,center,radius,until:now()+90000,label:'📡 radar'});logEvent('📡 radar sweep activated');});
+      toast('📡 radar circle on your map ('+Math.round(radius)+' m)', 'gold',5000);
     }else if(bf.id==='ring'){
       commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.ringUntil=now()+10000;logEvent('🔔 someone\'s phone is ringing…');});
       toast('🔔 '+escN(tgt.name)+"'s phone is ringing",'good');
@@ -1500,9 +1496,7 @@ function casStartSpin(){
   const a=rollBuff(me().role,null);
   const b=rollBuff(me().role,a?a.id:null); // two independent rarity rolls, no duplicates within a spin
   casSpinCards=[a,b];
-  /* jackpot: both reels land on 7s and BOTH buffs are yours — pick and send them one after the other */
-  casJackpot=Math.random()<1/14;casJackpotFirst=casJackpot;casSecondCard=null;
-  casTargets=casJackpot?[CAS_SYM.indexOf('seven'),CAS_SYM.indexOf('seven')]:[CAS_SYM.indexOf(CAS_ICON[a.id]),CAS_SYM.indexOf(CAS_ICON[b.id])];
+  casTargets=[CAS_SYM.indexOf(CAS_ICON[a.id]),CAS_SYM.indexOf(CAS_ICON[b.id])];
   casDoneCount=0;
   const t0=performance.now();
   casReels[0].mode='spin';casReels[0].vel=5;casReels[0].stopAt=t0+1500;
@@ -1557,8 +1551,7 @@ function casMorphToCards(){
     setTimeout(()=>{
       [...box.children].forEach(el=>{el.classList.add('settled');el.style.transition='';el.classList.add('unfold');});
       box.classList.add('on');
-      if(casJackpot){box.querySelectorAll('.mcard').forEach(el=>el.classList.add('jackpot'));box.insertAdjacentHTML('afterbegin','<div class="cas-jackpot-tag">💰 jackpot · take both</div>');}
-      casCaption(casJackpot?'💰 jackpot — both buffs are yours':'choose one buff');
+      casCaption('choose one buff');
       casState='choose';
       casSCard();
     },720);
@@ -1568,7 +1561,6 @@ function casPickCard(el,bf){
   if(casState!=='choose')return;
   casState='target';casSPick();vib(20);
   casPickedEl=el;casPicked=bf;
-  if(casJackpotFirst){casSecondCard=casSpinCards.find(c=>c.id!==bf.id)||null;casJackpotFirst=false;}
   el.parentElement.querySelectorAll('.mcard').forEach(o=>{if(o!==el)o.classList.add('discard');});
   el.classList.add('picked');
   casCaption('send '+bf.name+' to whom?');
@@ -1646,34 +1638,17 @@ function casSendBuff(player,chipEl){
     setTimeout(()=>{
       token.remove();
       $('cas-cards').classList.add('out');
-      if(casMachine&&!(casJackpot&&casSecondCard))casMachine.classList.add('bye');
+      if(casMachine)casMachine.classList.add('bye');
       const tg=$('cas-targets');
       tg.classList.remove('on');
       tg.style.transition='opacity .5s var(--ease-out)';
       requestAnimationFrame(()=>{tg.style.opacity='0';});
       casCaption('');
-      if(casJackpot&&casSecondCard)setTimeout(casJackpotNext,620);
-      else setTimeout(casClose,620);
+      setTimeout(casClose,620);
     },1100);
   }
 }
-/* jackpot second half: show the remaining card, let the player target it, then finish */
-function casJackpotNext(){
-  if(!casSecondCard)return;
-  const bf=casSecondCard;casSecondCard=null;
-  const box=$('cas-cards');box.classList.remove('on','out');box.innerHTML='';
-  const el=document.createElement('div');el.className='mcard settled unfolded jackpot';
-  el.innerHTML='<div class="c-big">'+casIco(CAS_ICON[bf.id],42)+'</div>'
-    +'<div class="c-main">'+casIco(CAS_ICON[bf.id],24)+'<div class="c-name">'+bf.name+'</div><div class="c-sep"></div>'
-    +'<div class="c-desc">'+bf.desc+'</div><div class="c-tag" style="color:'+RARITY_COLOR[bf.rarity]+'">'+RARITY_LABEL[bf.rarity]+' · '+me().role+' buff</div></div>';
-  el.addEventListener('click',()=>casPickCard(el,bf));
-  box.appendChild(el);
-  box.insertAdjacentHTML('afterbegin','<div class="cas-jackpot-tag">💰 jackpot · take both</div>');
-  box.classList.add('on');
-  casState='choose';
-  casCaption('💰 second buff — pick it to send');
-  casSCard();
-}
+
 /* lever: fake-3d swipe-down, toward the camera */
 function casSetPull(p){
   casPull=p;
@@ -2066,16 +2041,15 @@ function renderGame(){
   $('hud-dot').style.background=m.role==='seeker'?'var(--seeker)':m.role==='hider'?'var(--hider)':'#6b6f76';
   $('hud-hearts').style.display=(m.role&&m.status!=='spectate')?'flex':'none';
   $('hud-hearts').innerHTML=[0,1,2].map(i=>'<span class="h'+(i<m.hearts?'':' off')+'">♥</span>').join('');
-  $('btn-mute').textContent=muted?'🔕':'🔔';
   $('chip-casino').classList.toggle('on',casinoOpenFor(m));
   /* next casino reveal countdown: shown while a future window is coming up;
      hidden once the casino is available (machine pops / chip shows) or the
      window would land after the game ends. */
   const cc=$('hud-casino-count');
-  if(!m||room.phase==='lobby'||room.phase==='end'||casinoOpenFor(m)){
+  if(!m||room.phase==='hide'||room.phase==='lobby'||room.phase==='end'||casinoOpenFor(m)){
     if(cc.classList.contains('on')){cc.classList.remove('on');cc.textContent='—';}
   }else{
-    const openAt=room.startedAt+(m.casinoDone+1)*room.casinoMin*60000;
+    const openAt=room.hideEndsAt+(m.casinoDone+1)*room.casinoMin*60000;
     if(openAt>=room.gameEndsAt){if(cc.classList.contains('on'))cc.classList.remove('on');}
     else{
       const txt=fmt(Math.max(0,openAt-t));
@@ -2474,7 +2448,6 @@ $('btn-copy').onclick=()=>{
   $('sel-casino').onchange=e=>commit(r=>{r.casinoMin=+e.target.value;});
 $('btn-addbot').onclick=addBot;
 $('btn-start').onclick=()=>{ac();startGame();showScreen('game');};
-$('btn-mute').onclick=()=>{muted=!muted;LS.set('leak.muted',muted?'1':'0');$('btn-mute').textContent=muted?'🔕':'🔔';toast(muted?'sound off':'sound on (quiet)','silent');};
 $('chip-casino').onclick=openCasino;
 $('btn-end-home').onclick=()=>{
   closeOv('ov-end');
