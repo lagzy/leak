@@ -142,6 +142,10 @@ input,select{font-family:inherit;color:inherit}
   animation:casinoPulse 1.4s infinite;display:none}
 #chip-casino.on{display:block}
 @keyframes casinoPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+/* next casino reveal countdown — only shown while a future window is coming */
+#hud-casino-count{display:none;padding:8px 12px;color:rgba(240,180,41,.95);
+  font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;letter-spacing:.06em}
+#hud-casino-count.on{display:block}
 #zone-banner,#slow-banner{position:absolute;left:50%;transform:translateX(-50%);z-index:22;display:none;
   border-radius:14px;padding:10px 16px;color:#fff;font-weight:700;font-size:13.5px;text-align:center;
   box-shadow:0 8px 24px rgba(0,0,0,.4);max-width:calc(100% - 32px)}
@@ -497,8 +501,9 @@ input,select{font-family:inherit;color:inherit}
   <div class="hud-top"><div class="hud-top-inner">
     <div class="hud-pill hud-phase"><span class="dot" id="hud-dot"></span><span id="hud-phase">—</span></div>
     <div class="hud-pill hud-timer" id="hud-timer">00:00</div>
+    <div class="hud-pill hud-timer" id="hud-casino-count" aria-label="time until the casino opens">—</div>
     <div class="hud-right">
-      <button class="hud-pill icon-btn" id="chip-casino" aria-label="open casino">🎰 casino open</button>
+      <button class="hud-pill icon-btn" id="chip-casino" aria-label="open casino">casino open</button>
       <div class="hud-pill hud-hearts" id="hud-hearts" aria-label="hearts remaining"></div>
       <button class="hud-pill icon-btn" id="btn-mute" aria-label="toggle sound">🔔</button>
     </div>
@@ -607,7 +612,7 @@ input,select{font-family:inherit;color:inherit}
   <div id="dev-panel">
     <div class="t">prototype tools</div>
     <button id="dev-skip">⏩ end hiding phase</button>
-    <button id="dev-casino">🎰 open casino now</button>
+    <button id="dev-casino">open casino now</button>
     <button id="dev-heart">💔 lose a heart</button>
     <button id="dev-end">🏁 end game now</button>
     <button id="dev-reset">🧹 reset room</button>
@@ -1142,7 +1147,6 @@ function startGame(){
     r.phase='hide';r.winner=null;r.forceCasinoId=0;
     logEvent('🏁 game started — hiders, run!');
   });
-  ui.seenLog=new Set(); flushLog();
 }
 function resetRoom(){
   commit(r=>{ r.phase='lobby';r.winner=null;r.fx=[];r.log=[];r.startedAt=0;r.forceCasinoId=0;
@@ -1883,6 +1887,20 @@ function renderGame(){
   $('hud-hearts').innerHTML=[0,1,2].map(i=>'<span class="h'+(i<m.hearts?'':' off')+'">♥</span>').join('');
   $('btn-mute').textContent=muted?'🔕':'🔔';
   $('chip-casino').classList.toggle('on',casinoOpenFor(m));
+  /* next casino reveal countdown: shown while a future window is coming up;
+     hidden once the casino is available (machine pops / chip shows) or the
+     window would land after the game ends. */
+  const cc=$('hud-casino-count');
+  if(!m||room.phase==='lobby'||room.phase==='end'||casinoOpenFor(m)){
+    if(cc.classList.contains('on')){cc.classList.remove('on');cc.textContent='—';}
+  }else{
+    const openAt=room.startedAt+(m.casinoDone+1)*room.casinoMin*60000;
+    if(openAt>=room.gameEndsAt){if(cc.classList.contains('on'))cc.classList.remove('on');}
+    else{
+      const txt=fmt(Math.max(0,openAt-t));
+      if(cc.textContent!==txt){cc.textContent=txt;cc.classList.add('on');}
+    }
+  }
   const z=$('zone-banner');
   if(m.pos&&!inZone(m.pos)&&ph!=='end'&&m.status==='alive'){z.style.display='block';
     const el=ui.zoneOutSince?Math.floor((t-ui.zoneOutSince)/1000):0;
@@ -2059,7 +2077,7 @@ function tick(){
     const casKey=(room&&room.forceCasinoId)||w;
     if(casinoOpenFor(me())&&!$('ov-casino').classList.contains('open')&&ui.casDismissed!==casKey){
       const first=!ui.seenCasinoOnce; ui.seenCasinoOnce=true;
-      toast(first?'🎰 casino time — pull the lever!':'🎰 casino time — grab a buff','gold',first?4500:3500);
+      toast(first?'casino time — pull the lever!':'casino time — grab a buff','gold',first?4500:3500);
       sGold(); vib([40,40,40]);
       openCasino(); // the machine appears on its own when the casino is possible
     }
@@ -2163,7 +2181,7 @@ $('btn-end-home').onclick=()=>{
 $('btn-rematch').onclick=()=>{closeOv('ov-end');resetRoom();};
 $('dev-toggle').onclick=()=>$('dev').classList.toggle('open');
 $('dev-skip').onclick=()=>{if(room&&room.phase==='hide')commit(r=>{r.hideEndsAt=Date.now();});};
-$('dev-casino').onclick=()=>{if(room)commit(r=>{r.forceCasinoId=Date.now();});toast('🎰 casino forced for everyone','gold');};
+$('dev-casino').onclick=()=>{if(room)commit(r=>{r.forceCasinoId=Date.now();});toast('casino forced for everyone','gold');};
 $('dev-heart').onclick=()=>loseHeart(myId,'dev testing');
 $('dev-end').onclick=()=>{if(room&&room.phase==='seek')commit(r=>{r.phase='end';r.winner=aliveHiders().length?'hiders':'seekers';});};
 $('dev-reset').onclick=()=>{if(room)resetRoom();};
