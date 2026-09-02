@@ -1,240 +1,153 @@
-leak
+# leak
 
-hide & seek — but unfair. a real-life hide-and-seek game for phones, played inside a fixed rectangle in Root (LU), Switzerland, with casino buffs, rule policing and hearts.
+*Hide & seek — but unfair.* A lightweight, static web app for real-life hide-and-seek with chaotic, asymmetric mechanics and small-team play inside a fixed rectangular play zone.
 
-this file is the single source of truth for the project. read it fully before changing code.
+This repository is a single-page prototype: the entire app lives in index.html (HTML, CSS, and JS). Read this README to learn how it works, how to run it locally, and how to contribute.
 
-what this project is
+---
 
-leak is a web app where friends meet in real life and play hide & seek with asymmetric, chaotic mechanics:
+## Quick links
 
-everyone starts at one meeting point.
-players become hiders or seekers (chosen or random).
-hiders get 10 minutes (configurable) to hide inside a fixed rectangle zone.
-then seekers are released and hunt. catching a hider happens in real life, then the seeker taps catch in the app.
-every 12 minutes (host-set) a casino opens: spin → get 2 random buff offers → keep one. buffs sabotage the other side (scream orders, radar circles, ringing phones, slow-mo, decoys, …).
-3 hearts per player. breaking rules (leaving the zone, ignoring a scream order, being reported) costs a heart. 0 hearts = automatic loss.
-seekers win by catching all hiders before time runs out. hiders win by surviving.
+- Live app: open `index.html` (no server required) or serve the repo via GitHub Pages.
+- App file: `index.html` — everything is embedded in this one file.
 
-current status: TEST PROTOTYPE (UI-complete)
+---
 
-there is no server and no budget. the app is 100% static and must stay deployable on GitHub Pages.
-"multiplayer" is simulated/synced locally (see §5). the full game loop is playable solo with bots or across tabs of the same browser.
-the map is real satellite imagery of the real zone.
+## What is leak?
 
-file structure
+leak is a phone-first web app for friends to play hide & seek in a real-world rectangle (the default is a zone in Root, Switzerland). Players choose or are assigned roles (hider or seeker). Hiders get a hiding window, then seekers hunt. The game includes "casino" rounds that grant role-specific buffs (e.g. scream orders, radar glimpses, decoys) and a simple hearts-based rule system.
 
-leak/
-├── index.html      ← THE app. single file: HTML + embedded CSS + embedded JS.
-└── README.md       ← this file.
+Key goals:
+- Single-file, zero-build, GitHub Pages friendly.
+- Runs fully client-side; sync is best-effort and opt-in for cross-device play.
+- Mobile-first UI with a satellite map and small, quiet notification sounds.
 
-agent rule: keep it a single index.html. do not split into files unless we also add a build step (we won't). external libs only via CDN.
+Status: TEST PROTOTYPE (UI-complete)
 
-external dependencies (CDN only, no keys, no cost)
+---
 
-| lib | why |
-|---|---|
-| leaflet@1.9.4 (unpkg) | map rendering |
-| Esri World Imagery tiles | free satellite tiles, no API key ("sky photo as on gmaps") |
-| fontsource (jsdelivr) | Space Grotesk (UI) + JetBrains Mono (timers/codes) |
+## Features
 
-no frameworks, no build step, no bundler. vanilla JS only.
+- Single HTML file: index.html contains the whole app (no bundler).
+- Offline / sandbox-safe storage wrappers (works in frames that block localStorage).
+- Same-browser multiplayer via BroadcastChannel + localStorage sync.
+- Optional cross-device P2P sync (PeerJS transport) — fragile by NAT/TURN limits; opt-in.
+- Bots for local testing (hider bots stand still; seeker bots wander).
+- Casino mechanic: periodic buff windows to pick role-specific effects.
+- Rule enforcement: zone exit detection and scream tasks are client-enforced; reporting is honor-based.
 
-the play zone is a 4-corner rectangle around Root, 6037 — editable in the lobby
-via the "map edit" button (drag the corners; saved per device and synced to the
-room). default corners (geocoded via OSM Nominatim, corner 1 = start point):
+---
 
-constants in code: CORNERS, bounding box Z (min/max lat/lng with ~25 m padding), START, helper inZone(p). the zone is drawn as a dashed white rectangle with a dark "outside" mask. players may not leave it — leaving triggers a banner and costs a heart after 20 s outside.
+## Quick start (local)
 
-game flow / phase machine
+1. Clone the repo or download the ZIP.
+2. Open `index.html` in your browser — it runs without a server.
 
-home ── create/join ──▶ lobby ── host "lock roles & start" ──▶ hide ──▶ seek ──▶ end
-                          ▲                                                        │
-                          └────────────────── rematch (host) ◀─────────────────────┘
+Optional: run a local static server to avoid some browser restrictions:
 
-room.phase values: 'lobby' | 'hide' | 'seek' | 'end'
+```bash
+python3 -m http.server 8080
+# then open http://localhost:8080
+```
 
-timestamps drive everything (any client can execute transitions; they're idempotent):
+To deploy on GitHub Pages: push `index.html` to the repository root and enable Pages in your repo settings (branch: main, folder: /).
 
-room.startedAt, room.hideEndsAt = startedAt + hideMin60k, room.gameEndsAt = startedAt + totalMin60k
-hide → seek when now >= hideEndsAt
-seek → end (seekers win) when no alive hiders remain
-seek → end (hiders win) when now >= gameEndsAt
+---
 
-defaults: hide 10 min, total 45 min, casino every 12 min (lobby selects for all three; host-only).
+## Gameplay (brief)
 
-round sequence details
+1. Home: create or join a 4-character room code.
+2. Lobby: pick roles (hider / seeker / random), edit the 4-corner play zone, add test bots, and set host options (hide time, game length, casino frequency).
+3. Reveal: each player sees a one-time reveal overlay of their role.
+4. Hide phase: hiders set their hide spot inside the zone ("hide here"). Seekers wait a countdown.
+5. Seek phase: seekers hunt in real life and tap *catch* for a found hider in the app.
+6. Casino windows: every N minutes the casino opens and players may spin for two buff offers (pick one).
+7. Hearts & rules: players have 3 hearts. Leaving the zone, ignoring a scream, or being reported costs hearts; 0 hearts = eliminated.
+8. End: seekers win by catching all hiders; hiders win by surviving until time runs out.
 
-lobby — room code (4 chars), role chips per player (hider / seeker / random, tap to cycle), host settings, "add test bot", zone preview map.
-role reveal — full-screen overlay, shown once per game per tab (session flag leak-reveal-:).
-hide phase — hiders set their hide spot ("hide here" → stores player.hidePos); seekers see a countdown.
-seek phase — seekers see live seeker dots only (hiders invisible except via buffs); hiders see seeker dots live. catching = real-life find + tap catch in the players sheet.
-end — winner overlay, per-player recap, rematch (host resets to lobby).
+---
 
-sync architecture (the unusual part — read carefully)
+## Architecture overview
 
-there is no server. state sync is best-effort and designed for the prototype:
+The app is intentionally simple and client-only. The central state is the `room` object (serialized to `localStorage` as `leak-room-<CODE>`). All mutations go through a single `commit()` funnel which saves the room, bumps `room.seq`, renders the UI, and broadcasts the update via the chosen transport.
 
-authoritative-ish state object room is serialized to localStorage key leak-room- and broadcast via BroadcastChannel('leak-ch-').
-every mutation goes through commit(fn) → mutate room → saveRoom() → renderAll(). saveRoom() bumps room.seq and calls transport.broadcast(room). commit() stays the only mutation funnel — that's what makes the transport swappable.
+Transport implementations:
+- LocalTransport (default): BroadcastChannel + localStorage + `storage` event fallback (same-browser sync across tabs).
+- PeerJSTransport (opt-in): WebRTC data channels using PeerJS Cloud for signaling (cross-device sync). This is fragile on symmetric NATs and has practical limits (~6 players).
 
-transport interface (Phase 3): the wire is pluggable. two ship:
-  - LocalTransport (default) = BroadcastChannel('leak-ch-'+code) + localStorage 'leak-room-'+code + the 'storage' event fallback + the {ask: code} <-> {room} handshake. this is today's behavior, unchanged.
-  - PeerJSTransport (opt-in, 'cross device (P2P)' toggle on the home screen) = free cross-device sync over WebRTC data channels via the public PeerJS Cloud signaling server (no account, no keys, no server cost). the room code is the peer id (leak-<CODE>); the host registers it, joiners connect to it; the host relays room snapshots to all peers, joiners push commits back to the host. PeerJS is lazy-loaded from CDN only when cross-device is selected, so same-browser play pays zero extra cost.
-incoming rooms are merged, NOT wholesale-replaced: mergeRoom(incoming) unions players/fx/log by id (newer per-element seq wins) and applies envelope scalars only when the incoming room carries a higher seq. prevents two near-simultaneous commits from clobbering each other.
-host presence is a heartbeat (transport.presence() every ~2 s); if no ping arrives in ~7 s, the oldest non-host alive player promotes itself (host migration) so bots keep moving and rematch still works.
-foreground re-join: on hidden→visible (phone background/foreground), the transport rebuilds its channel from scratch — fresh websocket, resubscribe, re-track of room presence — so a host whose socket the OS suspended stays joinable instead of letting its room presence expire.
-reload recovery: the room snapshot is persisted to localStorage on every save (key leak-room-<CODE>, plus leak.active for the current code), and on page load the app restores it — rebuilding the channel and re-tracking presence — so a reload drops you back into the lobby/game instead of a dead home screen. this also covers the solo host whose reloaded page has no other live member left to answer a re-join ask. leaving a room clears the saved snapshot.
-realtime-js v2 quirks handled: broadcast callbacks receive the send() envelope ({type,event,payload:{...}}), not the inner payload — handlers unwrap it (with fallback to the old inline shape); and presenceState() maps each key to an array of tracked payloads, so syncRoom merges every entry (one per member) instead of stopping at the first, or newer members never appear on older clients.
-host removal: the host can kick any player (✕ in the lobby list or the in-game sheet). removal is a sticky tombstone (room.removed ids) that travels with every broadcast and presence snapshot — the kicked player's own device instantly shows a full-screen kicked screen (same style as the hider/seeker reveal, red glow, "you were kicked by the host") before returning home, and the tombstone prevents their stale snapshot or a rejoin from resurrecting them.
-honest limits of PeerJSTransport (surfaced in-app, never a hard crash): symmetric-NAT peers can't connect without a paid TURN relay; ~6 players is the practical cap per room; PeerJS Cloud has no uptime guarantee. failures show a toast and fall back to same-browser mode.
-window 'storage' event is a fallback sync path between tabs.
-sandbox-proof storage: the page may run inside a sandboxed preview iframe where localStorage/sessionStorage throw SecurityError. ALL storage access goes through the wrappers LS / SS (makeStore()), which silently fall back to an in-memory Map. never use raw localStorage/sessionStorage anywhere.
-if storage is blocked, joining a room uses a BroadcastChannel handshake: joiner posts {ask: code}, the tab holding the room replies with {room}.
-host (room.hostId) is the only client that drives bot movement; phase transitions may be executed by any client.
-cross-device play is opt-in via PeerJSTransport (see below). the default is same-browser.
+Merging: incoming room snapshots are merged (union of players, fx, log) with per-element seqs to avoid accidental overwrites when multiple clients publish simultaneously.
 
-identity
+Host & presence: the host sends a presence ping. If host disappears, the oldest non-host alive player promotes itself so the game continues.
 
-myId — persisted in localStorage (key leak.id) so a reopened tab reclaims its seat (Phase 1 #3: reconnection). each tab/browser = one player.
-myName — persisted (leak.name).
+---
 
-state model
+## Data model (summary)
 
-room
-js
-{
-  code: 'ABCD',            // 4-char room code
-  hostId: '…',             // player id of host
-  phase: 'lobby|hide|seek|end',
-  hideMin: 10, totalMin: 45, casinoMin: 12,
-  startedAt, hideEndsAt, gameEndsAt,   // epoch ms
-  winner: null | 'hiders' | 'seekers',
-  forceCasinoId: 0,        // dev tool: non-zero opens casino for everyone once
-  seq: 0,                  // room envelope version, bumped by saveRoom() (conflict-merge)
-  players: [Player],
-  fx: [Fx],                // map effects (radar circles, decoys)
-  log: [{id, text}],       // toast feed, capped at 40
+room: {
+  code, hostId, phase (lobby|hide|seek|end), hideMin, totalMin, casinoMin,
+  startedAt, hideEndsAt, gameEndsAt, winner, seq,
+  players: [Player], fx: [Fx], log: [{id,text}]
 }
 
-Player
-js
-{
-  id, name, bot: bool,
-  roleChoice: 'hider|seeker|random',  // lobby
-  role: null | 'hider' | 'seeker',    // resolved at start
-  hearts: 3, status: 'alive|caught|out|spectate',
-  pos: {lat,lng}, speed,              // live position (GPS or sim)
-  hidePos: {lat,lng} | null,          // hiders only
-  casinoDone: n, casinoForce: n,      // casino window bookkeeping
-  slowUntil, ghostUntil, ringUntil,   // epoch ms buffs/debuffs
-  shiftReady: bool,
-  pendingTask: null | {type:'scream', byId, deadline, holdMs:4000, dbMin:65},
-  caughtBy: playerId | null,
-  wander: {lat,lng} | null,           // bot nav helper
-  seq: 0,                             // per-player version for merge
-  joinedAt: epochMs                   // host-migration ordering
-}
+Player includes: id, name, roleChoice, role, hearts, status, pos, hidePos, buffs (slow/ghost/etc.), pending scream tasks, seq, joinedAt.
 
-Fx (map effects)
-js
-{ id, kind: 'circle'|'fake', forId: playerId | 'seekers',
-  center: {lat,lng}, radius?, until: epochMs, label? }
+Fx: map effects (radar circles, fake blips, etc.) with expirations.
 
-forId = only that player sees it (radar). 'seekers' = visible to all seekers (decoy).
+---
 
-buffs (casino payloads)
+## Buffs (casino)
 
-casino window: floor((now - startedAt) / 15min); player may spin once per window (casinoDone). dev tool can force a window (forceCasinoId). spin shows 2 distinct buffs from the player's role pool; pick one.
+Seeker examples: scream (force target to hold a loud mic input), radar (circle around a hider), ring (phone rings + vibrate).
+Hider examples: slow (cap seeker speed), decoy (fake blip on seeker maps), shift (move hide spot ≤ 20 m), ghost (temporary immunity).
 
-seeker buffs (BUFFS.seeker)
+Add a buff by extending the `BUFFS` table in the code and implementing its behavior in `applyBuff()`.
 
-| id | effect |
-|---|---|
-| scream | target hider gets pendingTask: must hold-scream ≥ 65 dB for 4 s within 30 s (mic RMS via getUserMedia, holding-only fallback). fail/ignore → lose a heart. |
-| radar | circle around a random hider on caster's map, 90 s. radius 80–420 m; 10% jackpot → ~10 m pinpoint. |
-| ring | target's phone rings (soft beep loop + vibration) for 10 s. honor rule: can't silence. |
+---
 
-hider buffs (BUFFS.hider)
+## Development notes
 
-| id | effect |
-|---|---|
-| slow | a seeker is capped at 3 km/h for 90 s (slowUntil; GPS speed > ~3.3 km/h shows red banner). |
-| decoy | fake pulsing hider blip on all seeker maps, 60 s. |
-| shift | shiftReady=true → buff-bar "use" → slider modal → move hide spot ≤ 20 m (dest() polar math). |
-| ghost | ghostUntil +120 s → immune to scream/radar/ring targeting. |
+- The entire app is inside `index.html`. Use the browser debugger and editor to iterate quickly.
+- Key functions to inspect:
+  - geo & zone: CORNERS, Z, START, inZone(), randInZone(), dest()
+  - storage: LS, SS (sandbox-safe wrappers)
+  - sync: commit(), saveRoom(), chanFor(), mergeRoom()
+  - lifecycle: createRoom(), joinRoom(), startGame(), resetRoom(), addBot()
+  - game rules: loseHeart(), doCatch(), doReport(), applyBuff(), openCasino()
+  - scream: ensureMic(), micRms(), openScream()
+  - render: renderLobby(), renderGame(), renderSheet(), renderReveal(), renderEnd(), renderAll()
+  - loop: tick() — runs timers, bot movement, fx pruning
 
-adding a buff: add entry to BUFFS[role] + a branch in applyBuff() (+ rendering if it needs map/HUD). keep effects honor-based or client-verifiable — no server exists.
+UI IDs worth knowing: scr-home, scr-lobby, scr-game, ov-reveal, ov-casino, ov-scream, ov-shift, ov-confirm, ov-how, ov-end, sheet, dev, toasts.
 
-hearts / rule system
+---
 
-3 hearts, UI in HUD (#hud-hearts) and players sheet.
-loseHeart(pid, reason) → −1 heart, log event; at 0: hider → status:'caught', seeker → 'out'.
-ways to lose hearts:
-  1. leave the zone — auto-detected: banner + 20 s grace, then −1 heart (repeats with cooldown).
-  2. fail/ignore a scream order — handled by the scream modal timer.
-  3. reported by another player — players sheet → ⚠ report → confirm dialog. honor system, no validation.
-⚙ dev panel has "lose a heart" for testing.
+## Testing
 
-key code landmarks (index.html)
+- Solo: create a room, add 2+ bots, start. Use the dev panel to jump phases, open casino, or end the game.
+- Multi-tab: open the same room code in multiple tabs to simulate players.
+- Real devices: enable GPS mode on phones; on desktop use the default `sim` (tap to move) mode.
 
-| area | symbols |
-|---|---|
-| constants/geo | CORNERS, Z, START, inZone, randInZone, distM, dest |
-| storage-safe | LS, SS, makeStore, safeRef |
-| sync | saveRoom, chanFor, commit, roomKey |
-| lifecycle | createRoom, joinRoom, startGame, resetRoom, addBot |
-| rules | loseHeart, doCatch, doReport, surrender, askConfirm |
-| casino | casinoWinIdx, casinoOpenFor, openCasino, pickBuff, applyBuff |
-| scream | ensureMic, micRms, openScream |
-| render | showScreen, renderLobby, renderGame, renderSheet, renderReveal, renderEnd, renderAll, updateMap |
-| loop | tick() (250 ms interval: phase transitions, fx prune, casino windows, ring loop, zone penalty, bot movement, HUD timers) |
-| sound | tone() + presets (sNotif, sWarn, sGold, sCatch, sWin, sLose, sRing) — keep gain ≤ ~0.05, notifications must stay quiet; global muted toggle #btn-mute. |
-| position | setPosMode(sim) — sim = tap map to move (default, for desktop testing), gps = watchPosition. |
+---
 
-DOM ids worth knowing
+## Known limitations
 
-screens: scr-home, scr-lobby, scr-game · overlays: ov-reveal, ov-casino, ov-scream, ov-shift, ov-confirm, ov-how, ov-end · sheet (players bottom sheet) · dev (prototype tools) · toasts.
+- No server: sync is best-effort. The honor system is required for reporting and many rule decisions.
+- PeerJS P2P is fragile under some NATs and may require TURN to be reliable.
+- Bots are simple and not competitive (seekers wander; hiders stand still).
+- Some enforcement is client-side only (reports are honor-based). Zone exit and scream tasks are client-detected.
 
-run & deploy
-bash
-local (any static server works; not even required)
-python3 -m http.server 8080     # open http://localhost:8080
-or just open index.html in the browser
+---
 
-GitHub Pages
+## Contributing
 
-push repo → index.html at root.
-Settings → Pages → deploy from branch (main, /).
-done. no env vars, no build, no keys.
+- Keep it single-file unless you add a build step. The project rule: no bundler, no frameworks, CDN-only dependencies.
+- Keep animation and sound levels subtle and mobile-friendly.
+- Add features as small, well-tested JS blocks that integrate into the `commit()` flow and persist through `saveRoom()`.
 
-testing matrix
+If you want a deeper walkthrough of the code, say which area you want documented (sync, map, casino, or scream) and I'll draft a short guide.
 
-solo: create game → add 2+ bots → start. use ⚙ dev panel: end hiding phase, open casino now, end game now.
-multi-"player": open the page in 2–3 tabs of the same browser, join with the code.
-on real phones: same device GPS via 🛰 gps toggle; on desktop use 📍 sim (tap map).
+---
 
-known limitations (by design, for now)
+## License
 
-cross-device (PeerJSTransport) is free but fragile: symmetric-NAT users can't connect without a paid TURN relay, and ~6 players is the practical cap per room. failures fall back to same-browser mode.
-rule enforcement is honor-based except: zone exit (GPS, with escalating grace on repeat exits) and scream task (mic/timer, with a retry button if the mic prompt was dismissed).
-host migration and reconnection are implemented (see sync §5).
-bots are simple: hider bots stand still, seeker bots wander toward hide spots and never auto-catch.
-"seeker sees hider position" exists only via the radar buff (by design).
-speed limit (slow) warns but doesn't punish automatically.
-
-roadmap (in priority order)
-
-free cross-device multiplayer is implemented (PeerJSTransport via PeerJS Cloud). the next upgrade path, if P2P proves too fragile in real play, is to swap the transport for a managed free-tier realtime DB (Supabase/Firebase) — a one-file change inside index.html since commit() is the only mutation funnel.
-stricter enforcement: sustained overspeed → auto heart loss; scream dB calibration note.
-hider "panic move" cooldown, seeker count-up pings, spectator cam.
-i18n (EN/DE) — UI is currently English.
-
-design rules (do not break)
-
-ultra minimalistic & clean. off-white #f3f3f0 UI, ink #141518, hider mint #12c98f, seeker ember #ff4d2a, casino gold #f0b429. rounded pills, blurred dark HUD over the satellite map.
-lowercase wordmark: leak (with pulsing orange drop on the home screen).
-all transitions/animations smooth (cubic-bezier .22,.9,.3,1-family), no harsh flashes.
-notification sounds must stay quiet (master gain ~0.04).
-mobile-first, safe-area insets respected, no page scroll during game.
-no external images/stock photos — map tiles and inline SVG/emoji only.
+MIT — feel free to reuse parts of the code. (Add a LICENSE file if you want explicit licensing in-repo.)
