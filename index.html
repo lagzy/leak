@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>leak — hide & seek, but unfair</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💧</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 8 17 55a33 33 0 0 0 66 0z' fill='%23ff4d2a'/></svg>">
 <link href="https://cdn.jsdelivr.net/fontsource/fonts/space-grotesk@latest/latin-400-normal.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/fontsource/fonts/space-grotesk@latest/latin-500-normal.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/fontsource/fonts/space-grotesk@latest/latin-700-normal.css" rel="stylesheet">
@@ -141,7 +141,9 @@ input,select{font-family:inherit;color:inherit}
 .trow b{font-weight:800}
 .trow small{color:#5f6368;font-weight:500;font-size:10.5px}
 .tdot{width:9px;height:9px;border-radius:50%;background:#2b6ef2;box-shadow:0 0 0 3px rgba(43,110,242,.18);flex:none}
-.tpin{font-size:11.5px;flex:none}
+.tpin{font-size:11.5px;flex:none;display:flex;align-items:center}
+svg.i{vertical-align:-.15em;pointer-events:none;flex:none}
+.grow .gmeta svg.i,.grow .gbtn svg.i,.chat-empty svg.i{vertical-align:-.12em}
 .tdiv{display:flex;align-items:center;gap:8px;margin:4px 0}
 .tdiv i{flex:1;height:1px;background:#e6e8ec}
 .phasepill{font-size:9.5px;font-weight:800;letter-spacing:.09em;padding:3px 9px;border-radius:999px;white-space:nowrap}
@@ -611,7 +613,7 @@ input,select{font-family:inherit;color:inherit}
     <div class="sec-title">play zone — Root, 6037</div>
     <div class="lobby-map-wrap">
       <div id="lobby-map"></div>
-      <button id="btn-spot" aria-label="set my starting spot (GPS, or tap the map in sim mode)">📍 my spot</button>
+      <button id="btn-spot" aria-label="set my starting spot (GPS, or tap the map in sim mode)"><svg class="i" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.6s-5.8-5.2-5.8-9.4a5.8 5.8 0 0 1 11.6 0c0 4.2-5.8 9.4-5.8 9.4z"/><circle cx="12" cy="11" r="2"/></svg> my spot</button>
       <button id="btn-mapedit" class="btn" aria-label="edit play zone map"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>
     </div>
     <div class="sec-title">settings <span id="set-lock" style="text-transform:none;letter-spacing:0"></span></div>
@@ -625,7 +627,7 @@ input,select{font-family:inherit;color:inherit}
     <div style="height:10px"></div>
     <button id="btn-addbot" class="btn ghost" style="font-size:14px;padding:11px">＋ add test bot</button>
     <div class="lob-note" id="role-hint">tap a role chip to cycle hider → seeker → random</div>
-    <div class="lob-note">the game starts at the host's spot — host taps 📍 my spot for GPS · roles are picked or random ·
+    <div class="lob-note">the game starts at the host's spot — host taps <svg class="i" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.6s-5.8-5.2-5.8-9.4a5.8 5.8 0 0 1 11.6 0c0 4.2-5.8 9.4-5.8 9.4z"/><circle cx="12" cy="11" r="2"/></svg> my spot for GPS · roles are picked or random ·
     nobody may leave the rectangle · breaking rules costs a ♥</div>
   </div>
   <div class="lob-actions">
@@ -647,7 +649,7 @@ input,select{font-family:inherit;color:inherit}
       <div class="trows">
         <div class="trow"><span class="tdot"></span><span id="youRole">You</span></div>
         <div class="tdiv"><i></i><span class="phasepill hide" id="phasePill">HIDE · 00:00</span><i></i></div>
-        <div class="trow"><span class="tpin">📍</span><span id="zoneLine">Zone · Root, 6037</span></div>
+        <div class="trow"><span class="tpin"><svg class="i" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.6s-5.8-5.2-5.8-9.4a5.8 5.8 0 0 1 11.6 0c0 4.2-5.8 9.4-5.8 9.4z"/><circle cx="12" cy="11" r="2"/></svg></span><span id="zoneLine">Zone · Root, 6037</span></div>
       </div>
       <div class="tright">
         <div id="hud-hearts" aria-label="hearts remaining"></div>
@@ -657,17 +659,17 @@ input,select{font-family:inherit;color:inherit}
       </div>
     </div>
     <div class="chips">
-      <button class="chip" id="btn-posmode" aria-label="toggle position mode">📍 sim</button>
-      <button class="chip" id="chip-casino" aria-label="open casino">🎰&nbsp;<b id="casinoChipT">—</b></button>
-      <button class="chip" id="chip-players" aria-label="players list">👥 0</button>
-      <button class="chip" id="chip-zone" aria-label="zone status">📍 in zone</button>
-      <button class="chip" id="chip-chat" aria-label="chat — general &amp; team">💬 chat</button>
+      <button class="chip" id="btn-posmode" aria-label="toggle position mode"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.6s-5.8-5.2-5.8-9.4a5.8 5.8 0 0 1 11.6 0c0 4.2-5.8 9.4-5.8 9.4z"/><circle cx="12" cy="11" r="2"/></svg> sim</button>
+      <button class="chip" id="chip-casino" aria-label="open casino"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3.6" width="18" height="16.8" rx="2.6"/><rect x="6.6" y="8.4" width="4.4" height="5.6" rx=".7"/><rect x="13" y="8.4" width="4.4" height="5.6" rx=".7"/><path d="M9 15.6h6"/></svg>&nbsp;<b id="casinoChipT">—</b></button>
+      <button class="chip" id="chip-players" aria-label="players list"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.2" r="3.4"/><path d="M2.8 20v-1.8a6.2 6.2 0 0 1 12.4 0V20"/><circle cx="17.2" cy="9.8" r="2.5"/><path d="M16.6 13.4a5.2 5.2 0 0 1 4.6 5V20"/></svg> 0</button>
+      <button class="chip" id="chip-zone" aria-label="zone status"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.6s-5.8-5.2-5.8-9.4a5.8 5.8 0 0 1 11.6 0c0 4.2-5.8 9.4-5.8 9.4z"/><circle cx="12" cy="11" r="2"/></svg> in zone</button>
+      <button class="chip" id="chip-chat" aria-label="chat — general &amp; team"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 11.7a8.4 8.4 0 0 1-12.4 7.3L4 20.4l1.5-4.6a8.4 8.4 0 1 1 15.3-4.1z"/><path d="M8.2 11.6h7.6M8.2 14.6h4.6"/></svg> chat</button>
       <span class="chipGroup" id="buffChips"></span>
     </div>
   </div>
 
   <div id="zone-banner">⚠ you left the zone — return!</div>
-  <div id="slow-banner">🐌 slow-mo active — walk max 3 km/h</div>
+  <div id="slow-banner"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 15.6a7.4 7.4 0 0 1 14.8 0M12 15.6 15.8 9"/><circle cx="12" cy="15.6" r="1.3" fill="currentColor" stroke="none"/></svg> slow-mo active — walk max 3 km/h</div>
 
   <div class="fabs">
     <button class="fab" id="fab-loc" aria-label="recenter on you or the zone">
@@ -677,10 +679,10 @@ input,select{font-family:inherit;color:inherit}
 
   <!-- menu popover -->
   <div class="menuPop" id="menuPop" hidden>
-    <button class="mitem" id="miHow">❓ how to play</button>
-    <button class="mitem" id="miChat">💬 chat</button>
+    <button class="mitem" id="miHow"><svg class="i" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.3 9.3a2.8 2.8 0 0 1 5.4 1c0 2-2.7 2.4-2.7 4"/><circle cx="12" cy="17.2" r="1.1" fill="currentColor" stroke="none"/></svg> how to play</button>
+    <button class="mitem" id="miChat"><svg class="i" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 11.7a8.4 8.4 0 0 1-12.4 7.3L4 20.4l1.5-4.6a8.4 8.4 0 1 1 15.3-4.1z"/><path d="M8.2 11.6h7.6M8.2 14.6h4.6"/></svg> chat</button>
     <button class="mitem" id="miDev">⚙ dev tools</button>
-    <button class="mitem" id="miReset">🧹 reset room</button>
+    <button class="mitem" id="miReset"><svg class="i" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></svg> reset room</button>
   </div>
 
   <!-- bottom sheet (maps-style panel) -->
@@ -700,16 +702,15 @@ input,select{font-family:inherit;color:inherit}
         <h2 id="hiderTitle">Find your spot.</h2>
         <p id="hiderSub"></p>
         <div class="btnrow">
-          <button class="btn primary" id="btnHide">📍&nbsp; Hide here</button>
-          <button class="btn ghost" id="btnCasinoH">🎰&nbsp; Casino</button>
+          <button class="btn primary" id="btnHide"><svg class="i" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.6s-5.8-5.2-5.8-9.4a5.8 5.8 0 0 1 11.6 0c0 4.2-5.8 9.4-5.8 9.4z"/><circle cx="12" cy="11" r="2"/></svg>&nbsp; Hide here</button>
         </div>
       </div>
       <div class="sbody" id="hiderBody">
         <div class="grid">
-          <button class="tile" id="tileShift">📍<b>Shift</b><small>relocate your spot ≤ 20 m</small><span class="r" style="background:#2f7be0">uncommon</span></button>
-          <button class="tile" id="tileDecoy">🎈<b>Decoy</b><small>plant a fake blip</small><span class="r" style="background:#9aa0a8">common</span></button>
-          <button class="tile" id="tileCloak">🫥<b>Cloak</b><small>vanish for 40 s</small><span class="r" style="background:#8a4ff0">mythic</span></button>
-          <button class="tile" id="tileMirage">✨<b>Mirage</b><small>3 fake blips, 45 s</small><span class="r" style="background:#2f7be0">uncommon</span></button>
+          <button class="tile" id="tileShift"><svg class="i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.6s-5.8-5.2-5.8-9.4a5.8 5.8 0 0 1 11.6 0c0 4.2-5.8 9.4-5.8 9.4z"/><circle cx="12" cy="11" r="2"/></svg><b>Shift</b><small>relocate your spot ≤ 20 m</small><span class="r" style="background:#2f7be0">uncommon</span></button>
+          <button class="tile" id="tileDecoy"><svg class="i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.2 19.6v-7.4a4.8 4.8 0 0 1 9.6 0v7.4l-1.9-1.5-1.6 1.5-1.3-1.5-1.3 1.5-1.6-1.5z"/><circle cx="10.4" cy="11.4" r=".9" fill="currentColor" stroke="none"/><circle cx="13.6" cy="11.4" r=".9" fill="currentColor" stroke="none"/></svg><b>Decoy</b><small>plant a fake blip</small><span class="r" style="background:#9aa0a8">common</span></button>
+          <button class="tile" id="tileCloak"><svg class="i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9.4h9.6M8 12.6h11M6.4 15.8h8.2"/></svg><b>Cloak</b><small>vanish for 40 s</small><span class="r" style="background:#8a4ff0">mythic</span></button>
+          <button class="tile" id="tileMirage"><svg class="i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.2 17.8 16.4H6.2z"/></svg><b>Mirage</b><small>3 fake blips, 45 s</small><span class="r" style="background:#2f7be0">uncommon</span></button>
         </div>
         <div class="secTag">players</div>
         <div id="roster-h"></div>
@@ -723,8 +724,7 @@ input,select{font-family:inherit;color:inherit}
         <h2 id="seekTitle">Hunt is on.</h2>
         <p id="seekSub"></p>
         <div class="btnrow">
-          <button class="btn primary" id="btnFind">🕵️&nbsp; find &amp; catch</button>
-          <button class="btn ghost" id="btnCasinoS">🎰&nbsp; Casino</button>
+          <button class="btn primary" id="btnFind"><svg class="i" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.6"/><path d="m16.2 16.2 4.8 4.8"/></svg>&nbsp; find &amp; catch</button>
         </div>
       </div>
       <div class="sbody" id="seekerBody">
@@ -760,7 +760,7 @@ input,select{font-family:inherit;color:inherit}
 </div>
 
 <div id="ov-scream" class="ov"><div class="panel">
-  <h2 style="color:var(--seeker)">🎤 scream order!</h2>
+  <h2 style="color:var(--seeker)"><svg class="i" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9.2" y="3.4" width="5.6" height="9.2" rx="2.8"/><path d="M6.4 11.2a5.6 5.6 0 0 0 11.2 0M12 16.8v3.4M9 20.2h6"/></svg>&nbsp;scream order!</h2>
   <p class="sub" style="color:rgba(255,255,255,.6)">a seeker played a buff on you. scream at <b>65</b>+ dB
   for <b>4 seconds</b>. fail or ignore = <b>lose a ♥</b>.</p>
   <div id="sc-time">30</div>
@@ -770,11 +770,11 @@ input,select{font-family:inherit;color:inherit}
   <div id="sc-db">-- dB</div>
   <div class="sc-prog"><i id="sc-prog"></i></div>
   <div style="font-size:11px;opacity:.5;margin-top:8px">screamed so far: <span class="mono" id="sc-held">0.0</span>s / 4s</div>
-  <button class="btn" id="sc-retry" style="display:none;margin-top:10px;background:rgba(255,255,255,.12);font-size:13px;padding:9px">🎤 retry mic permission</button>
+  <button class="btn" id="sc-retry" style="display:none;margin-top:10px;background:rgba(255,255,255,.12);font-size:13px;padding:9px"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9.2" y="3.4" width="5.6" height="9.2" rx="2.8"/><path d="M6.4 11.2a5.6 5.6 0 0 0 11.2 0M12 16.8v3.4M9 20.2h6"/></svg> retry mic permission</button>
 </div></div>
 
 <div id="ov-shift" class="ov"><div class="panel">
-  <h2>📍 shift</h2>
+  <h2><svg class="i" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.6s-5.8-5.2-5.8-9.4a5.8 5.8 0 0 1 11.6 0c0 4.2-5.8 9.4-5.8 9.4z"/><circle cx="12" cy="11" r="2"/></svg>&nbsp;shift</h2>
   <p class="sub">relocate your hiding spot — max <b>20 m</b> from where you are.</p>
   <label class="sec-title" style="margin-top:0">direction — <span class="mono" id="sh-bv">180</span>°</label>
   <input type="range" id="sh-bearing" min="0" max="359" value="180" style="width:100%">
@@ -834,7 +834,7 @@ input,select{font-family:inherit;color:inherit}
   <p class="sub" id="end-sub"></p>
   <div class="end-stats" id="end-stats"></div>
   <div class="end-list" id="end-list"></div>
-  <button class="btn gold" id="btn-rematch-now">⚡ rematch now — new roles</button>
+  <button class="btn gold" id="btn-rematch-now"><svg class="i" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2.4 4.6 13.6h4.8L8.6 21.6l8.6-11.2h-4.8z"/></svg> rematch now — new roles</button>
   <div style="height:8px"></div>
   <button class="btn" id="btn-rematch">rematch (same room → lobby)</button>
   <div style="height:8px"></div>
@@ -865,11 +865,11 @@ input,select{font-family:inherit;color:inherit}
 <div id="dev">
   <div id="dev-panel">
     <div class="t">prototype tools</div>
-    <button id="dev-skip">⏩ end hiding phase</button>
+    <button id="dev-skip"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.6 5.4 13.4 12l-7.8 6.6zM12.6 5.4 20.4 12l-7.8 6.6z"/></svg> end hiding phase</button>
     <button id="dev-casino">open casino now</button>
-    <button id="dev-heart">💔 lose a heart</button>
-    <button id="dev-end">🏁 end game now</button>
-    <button id="dev-reset">🧹 reset room</button>
+    <button id="dev-heart"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.8 4.2 13A5 5 0 0 1 11 5.6l1 .9 1-.9a5 5 0 0 1 6.8 7.4z"/><path d="M9 15.8 11.4 13l1.5 1.7 1.6-2"/></svg> lose a heart</button>
+    <button id="dev-end"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 21.2V3.5"/><path d="M6.5 3.5h11.4l-2.8 3 2.8 3H6.5"/></svg> end game now</button>
+    <button id="dev-reset"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></svg> reset room</button>
   </div>
   <button id="dev-toggle" aria-label="toggle developer tools">⚙ dev</button>
 </div>
@@ -1465,6 +1465,48 @@ const sLose =()=>{[330,262,196].forEach((f,i)=>tone(f,.22,'triangle',.045,i*.16)
 const sRing =()=>{tone(1040,.1,'sine',.05);tone(1040,.1,'sine',.05,.18);};
 const vib=p=>{try{navigator.vibrate&&navigator.vibrate(p);}catch(e){}};
 
+/* ---------------- inline svg icons ---------------- */
+/* monochrome stroke icons that inherit currentColor, so they tint with the
+   surrounding UI. These are the "real icons" replacing the old emoji glyphs. */
+const ICON={
+  pin:'<path d="M12 20.6s-5.8-5.2-5.8-9.4a5.8 5.8 0 0 1 11.6 0c0 4.2-5.8 9.4-5.8 9.4z"/><circle cx="12" cy="11" r="2"/>',
+  people:'<circle cx="9" cy="8.2" r="3.4"/><path d="M2.8 20v-1.8a6.2 6.2 0 0 1 12.4 0V20"/><circle cx="17.2" cy="9.8" r="2.5"/><path d="M16.6 13.4a5.2 5.2 0 0 1 4.6 5V20"/>',
+  chat:'<path d="M20.8 11.7a8.4 8.4 0 0 1-12.4 7.3L4 20.4l1.5-4.6a8.4 8.4 0 1 1 15.3-4.1z"/><path d="M8.2 11.6h7.6M8.2 14.6h4.6"/>',
+  help:'<circle cx="12" cy="12" r="9"/><path d="M9.3 9.3a2.8 2.8 0 0 1 5.4 1c0 2-2.7 2.4-2.7 4"/><circle cx="12" cy="17.2" r="1.1" fill="currentColor" stroke="none"/>',
+  slot:'<rect x="3" y="3.6" width="18" height="16.8" rx="2.6"/><rect x="6.6" y="8.4" width="4.4" height="5.6" rx=".7"/><rect x="13" y="8.4" width="4.4" height="5.6" rx=".7"/><path d="M9 15.6h6"/>',
+  gps:'<circle cx="12" cy="12" r="6.8"/><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/>',
+  flag:'<path d="M6.5 21.2V3.5"/><path d="M6.5 3.5h11.4l-2.8 3 2.8 3H6.5"/>',
+  bolt:'<path d="M13 2.4 4.6 13.6h4.8L8.6 21.6l8.6-11.2h-4.8z"/>',
+  reset:'<path d="M1 4v6h6"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/>',
+  search:'<circle cx="11" cy="11" r="6.6"/><path d="m16.2 16.2 4.8 4.8"/>',
+  eyeoff:'<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.6"/><path d="M4 4.2 20 19.8"/>',
+  mic:'<rect x="9.2" y="3.4" width="5.6" height="9.2" rx="2.8"/><path d="M6.4 11.2a5.6 5.6 0 0 0 11.2 0M12 16.8v3.4M9 20.2h6"/>',
+  radar:'<circle cx="12" cy="14.6" r="1.5" fill="currentColor" stroke="none"/><path d="M7.9 10.6a5.8 5.8 0 0 1 8.2 0M5.2 7.7a9.7 9.7 0 0 1 13.6 0"/>',
+  bell:'<path d="M6.6 16.6v-5.4a5.4 5.4 0 0 1 10.8 0v5.4l1.7 2.2H4.9zM10.3 21a1.9 1.9 0 0 0 3.4 0"/>',
+  belloff:'<path d="M6.6 16.6v-5.4a5.4 5.4 0 0 1 10.8 0v5.4l1.7 2.2H4.9zM10.3 21a1.9 1.9 0 0 0 3.4 0"/><path d="M4.6 4.8 19.4 19.2"/>',
+  slow:'<path d="M4.6 15.6a7.4 7.4 0 0 1 14.8 0M12 15.6 15.8 9"/><circle cx="12" cy="15.6" r="1.3" fill="currentColor" stroke="none"/>',
+  tri:'<path d="M12 6.2 17.8 16.4H6.2z"/>',
+  decoy:'<path d="M7.2 19.6v-7.4a4.8 4.8 0 0 1 9.6 0v7.4l-1.9-1.5-1.6 1.5-1.3-1.5-1.3 1.5-1.6-1.5z"/><circle cx="10.4" cy="11.4" r=".9" fill="currentColor" stroke="none"/><circle cx="13.6" cy="11.4" r=".9" fill="currentColor" stroke="none"/>',
+  mist:'<path d="M5 9.4h9.6M8 12.6h11M6.4 15.8h8.2"/>',
+  target:'<circle cx="12" cy="12" r="4.8"/><path d="M12 2.8v4M12 17.2v4M2.8 12h4M17.2 12h4M6 6l2.8 2.8M15.2 15.2 18 18M18 6l-2.8 2.8M8.8 15.2 6 18"/>',
+  snow:'<path d="M12 3v18M4.7 7.5l14.6 9M19.3 7.5l-14.6 9"/>',
+  eye:'<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.6"/>',
+  crown:'<path d="m4.4 17.8-1.6-10.2 5.6 3.9L12 6.4l3.6 5.1 5.6-3.9-1.6 10.2zM5 20.6h14"/>',
+  broken:'<path d="M12 20.8 4.2 13A5 5 0 0 1 11 5.6l1 .9 1-.9a5 5 0 0 1 6.8 7.4z"/><path d="M9 15.8 11.4 13l1.5 1.7 1.6-2"/>',
+  lock:'<rect x="4.6" y="10.8" width="14.8" height="9.8" rx="2.4"/><path d="M8.2 10.8V8a3.8 3.8 0 0 1 7.6 0v2.8"/>',
+  walk:'<circle cx="13" cy="4.8" r="1.9"/><path d="M8.8 20.4l2.2-5.4-.3-3.3 3 2 3.6-.4M10.8 15 8.4 20.4"/>',
+  skip:'<path d="M5.6 5.4 13.4 12l-7.8 6.6zM12.6 5.4 20.4 12l-7.8 6.6z"/>',
+  bot:'<rect x="4.6" y="8.6" width="14.8" height="9.2" rx="2.8"/><path d="M12 4.6v4"/><circle cx="12" cy="3.9" r="1.6"/><circle cx="8.9" cy="13.2" r="1.1" fill="currentColor" stroke="none"/><circle cx="15.1" cy="13.2" r="1.1" fill="currentColor" stroke="none"/>'
+};
+const svgI=(n,w=16,sw=2)=>'<svg class="i" width="'+w+'" height="'+w+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="'+sw+'" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(ICON[n]||'')+'</svg>';
+const ico=svgI;
+const heartIco=(w=12)=>'<svg class="i" width="'+w+'" height="'+w+'" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.6 4.6 13.2A4.8 4.8 0 0 1 11.2 6.6l.8.8.8-.8a4.8 4.8 0 0 1 6.6 6.6z" fill="currentColor"/></svg>';
+/* map-fx overlays carry an icon + clean label; snapshots saved before the
+   icon pass embedded the emoji prefix in the label — strip it on display. */
+const FX_EMO={'📡':'radar','🔔':'bell','🎯':'target','🔭':'target','👁️':'eye','👁':'eye','😱':'mic','🎤':'mic','🧊':'snow','⚡':'snow','🐌':'slow','👻':'decoy','🌫️':'mist','🙈':'mist','🪤':'snow','🌪️':'tri'};
+const fxLabel=f=>{const t=(f&&f.label)||'';for(const k in FX_EMO){if(t.indexOf(k)===0)return t.slice(k.length).replace(/^\s+/,'');}return t;};
+const fxIco=f=>{if(f&&f.icon&&ICON[f.icon])return f.icon;const t=(f&&f.label)||'';for(const k in FX_EMO){if(t.indexOf(k)===0)return FX_EMO[k];}return f&&f.kind==='see'?'eye':f&&f.kind==='leak'?'target':'radar';};
+
 /* ---------------- toasts & log ---------------- */
 function toast(text,tone_,ms=4000){
   const box=$('toasts'); if(box.children.length>3)box.firstChild.remove();
@@ -1498,23 +1540,23 @@ function rollBuff(role,exclude){ // pick one card: weight the rarity, then a buf
 }
 const BUFFS={
  seeker:[
-  {id:'scream',icon:'🎤',name:'scream',rarity:'rare',desc:'a hider must scream at 65+ dB for 4s within 30 seconds. fail = they lose a ♥.'},
-  {id:'radar', icon:'📡',name:'radar', rarity:'uncommon',desc:'a circle that follows the chosen hider for 75s. radius 50–120 m.'},
-  {id:'ring',  icon:'🔔',name:'ring',  rarity:'common',desc:"a hider's phone starts ringing for 8 seconds — hear where they are. honor rule: they can't silence it."},
-  {id:'leakpos',icon:'🎯',name:'leak spot',rarity:'secret',desc:"every seeker sees the chosen hider's exact hide spot for 45 seconds. shifts stay visible live."},
-  {id:'freeze',icon:'🧊',name:'freeze hider',rarity:'secret',desc:'the chosen hider is welded to the ground — no moving at all for 60 seconds.'},
-  {id:'scan', icon:'🔭',name:'scan',   rarity:'rare',desc:"ping the chosen hider's approximate area (a 35 m circle) for 10 seconds — just you."},
-  {id:'stun', icon:'⚡',name:'stun',   rarity:'rare',desc:'the chosen hider is frozen — they cannot move at all for 30 seconds.'},
+  {id:'scream',icon:'mic',name:'scream',rarity:'rare',desc:'a hider must scream at 65+ dB for 4s within 30 seconds. fail = they lose a ♥.'},
+  {id:'radar', icon:'radar',name:'radar', rarity:'uncommon',desc:'a circle that follows the chosen hider for 75s. radius 50–120 m.'},
+  {id:'ring',  icon:'bell',name:'ring',  rarity:'common',desc:"a hider's phone starts ringing for 8 seconds — hear where they are. honor rule: they can't silence it."},
+  {id:'leakpos',icon:'target',name:'leak spot',rarity:'secret',desc:"every seeker sees the chosen hider's exact hide spot for 45 seconds. shifts stay visible live."},
+  {id:'freeze',icon:'snow',name:'freeze hider',rarity:'secret',desc:'the chosen hider is welded to the ground — no moving at all for 60 seconds.'},
+  {id:'scan', icon:'target',name:'scan',   rarity:'rare',desc:"ping the chosen hider's approximate area (a 35 m circle) for 10 seconds — just you."},
+  {id:'stun', icon:'snow',name:'stun',   rarity:'rare',desc:'the chosen hider is frozen — they cannot move at all for 30 seconds.'},
  ],
  hider:[
-  {id:'slow', icon:'🐌',name:'slow-mo', rarity:'rare',desc:'a seeker may only walk 3 km/h for the next 60 seconds.'},
-  {id:'decoy',icon:'👻',name:'decoy',   rarity:'common',desc:"a fake hider blip appears on every seeker's map for 60 seconds."},
-  {id:'shift',icon:'📍',name:'shift',   rarity:'uncommon',desc:'relocate your hiding spot by up to 20 meters.'},
-  {id:'ghost',icon:'🌫️',name:'ghost',   rarity:'legendary',desc:'you become invisible to radar, ring and scream for 90 seconds.'},
-  {id:'see',  icon:'👁️',name:'seeker vision',rarity:'secret',desc:'see every live seeker position on your map for 60 seconds — planning time.'},
-  {id:'trap', icon:'🪤',name:'freeze seeker',rarity:'secret',desc:'the chosen seeker is welded to the ground for 2 whole minutes.'},
-  {id:'mirage',icon:'🌪️',name:'mirage', rarity:'uncommon',desc:'plant 3 fake decoy blips across the zone for 45 seconds.'},
-  {id:'cloak',icon:'🙈',name:'cloak',  rarity:'mythic',desc:'vanish completely for 40 seconds — no radar, ring, scan, leak or catch. seekers can\'t see you.'},
+  {id:'slow', icon:'slow',name:'slow-mo', rarity:'rare',desc:'a seeker may only walk 3 km/h for the next 60 seconds.'},
+  {id:'decoy',icon:'decoy',name:'decoy',   rarity:'common',desc:"a fake hider blip appears on every seeker's map for 60 seconds."},
+  {id:'shift',icon:'pin',name:'shift',   rarity:'uncommon',desc:'relocate your hiding spot by up to 20 meters.'},
+  {id:'ghost',icon:'mist',name:'ghost',   rarity:'legendary',desc:'you become invisible to radar, ring and scream for 90 seconds.'},
+  {id:'see',  icon:'eye',name:'seeker vision',rarity:'secret',desc:'see every live seeker position on your map for 60 seconds — planning time.'},
+  {id:'trap', icon:'snow',name:'freeze seeker',rarity:'secret',desc:'the chosen seeker is welded to the ground for 2 whole minutes.'},
+  {id:'mirage',icon:'tri',name:'mirage', rarity:'uncommon',desc:'plant 3 fake decoy blips across the zone for 45 seconds.'},
+  {id:'cloak',icon:'mist',name:'cloak',  rarity:'mythic',desc:'vanish completely for 40 seconds — no radar, ring, scan, leak or catch. seekers can\'t see you.'},
 ]};
 const casinoWinIdx=()=>room&&room.hideEndsAt?Math.max(0,Math.floor((now()-room.hideEndsAt)/(room.casinoMin*60000))):0;
 function casinoOpenFor(p){
@@ -1618,7 +1660,7 @@ function startGame(){
     r.fx=[];r.log=[];r.chat=[];
     r.startedAt=t;r.hideEndsAt=t+r.hideMin*60000;r.gameEndsAt=t+r.totalMin*60000;
     r.phase='hide';r.winner=null;r.forceCasinoId=0;
-    logEvent('🏁 game started — hiders, run!');
+    logEvent(ico('flag',12)+' game started — hiders, run!');
   });
 }
 function resetRoom(){
@@ -1659,7 +1701,7 @@ function rematchNow(){
     r.fx=[];r.log=[];r.chat=[];
     r.startedAt=t;r.hideEndsAt=t+r.hideMin*60000;r.gameEndsAt=t+r.totalMin*60000;
     r.phase='hide';r.winner=null;r.forceCasinoId=0;
-    logEvent('⚡ rematch — new roles, new round');
+    logEvent(ico('bolt',12)+' rematch — new roles, new round');
   });
   ui.seenLog=new Set();ui.seenReveal=new Set();ui.seenCaught=new Set();ui.zoneOutSince=0;ui.zoneViolations=0;
   ui.lastCasinoWin=0;ui.casDismissed=0;
@@ -1674,7 +1716,7 @@ function loseHeart(pid,reason){
   commit(r=>{
     const p=r.players.find(x=>x.id===pid); if(!p||p.status!=='alive')return;
     p.hearts=Math.max(0,p.hearts-1);
-    if(p.hearts<=0){ p.status=p.role==='hider'?'caught':'out'; logEvent('💀 '+escN(p.name)+' lost all hearts — out.'); }
+    if(p.hearts<=0){ p.status=p.role==='hider'?'caught':'out'; logEvent(ico('broken',12)+' '+escN(p.name)+' lost all hearts — out.'); }
     else logEvent('⚠ '+escN(p.name)+' lost a ♥ ('+reason+').');
   });
   if(pid===myId){ sHeart(); $('hud-hearts').classList.add('shake'); setTimeout(()=>$('hud-hearts').classList.remove('shake'),600); }
@@ -1696,54 +1738,54 @@ function casApply(bf,tgt){
   const t=now();
   if(me().role==='seeker'){
     if(bf.id==='scream'){
-      if(tgt.bot){ commit(()=>{logEvent('😱 a hider screamed their lungs out');}); toast('🎤 '+tgt.name+' screamed!','good'); }
-      else commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.pendingTask={byId:myId,deadline:now()+30000,holdMs:4000,dbMin:65};logEvent('🎤 a scream order was played');});
+      if(tgt.bot){ commit(()=>{logEvent(ico('mic',12)+' a hider screamed their lungs out');}); toast(ico('mic',13)+' '+tgt.name+' screamed!','good'); }
+      else commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.pendingTask={byId:myId,deadline:now()+30000,holdMs:4000,dbMin:65};logEvent(ico('mic',12)+' a scream order was played');});
     }else if(bf.id==='radar'){
       const radius=50+Math.random()*70;
       const center=tgt.hidePos||tgt.pos||randInZone();
-      commit(r=>{r.fx.push({id:uid(),kind:'circle',forId:myId,targetId:tgt.id,center,radius,until:now()+75000,label:'📡 radar'});logEvent('📡 radar sweep activated');});
-      toast('📡 radar circle on your map ('+Math.round(radius)+' m)', 'gold',5000);
+      commit(r=>{r.fx.push({id:uid(),kind:'circle',forId:myId,targetId:tgt.id,center,radius,until:now()+75000,label:'radar',icon:'radar'});logEvent(ico('radar',12)+' radar sweep activated');});
+      toast(ico('radar',13)+' radar circle on your map ('+Math.round(radius)+' m)', 'gold',5000);
     }else if(bf.id==='ring'){
       const rc=tgt.hidePos||tgt.pos;
-      commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.ringUntil=now()+8000;r.fx.push({id:uid(),kind:'circle',forId:myId,center:{lat:rc.lat,lng:rc.lng},radius:18,until:now()+8000,label:'🔔 ring'});logEvent('🔔 someone\'s phone is ringing…');});
-      toast('🔔 '+escN(tgt.name)+"'s phone is ringing — hear it?",'good');
+      commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.ringUntil=now()+8000;r.fx.push({id:uid(),kind:'circle',forId:myId,center:{lat:rc.lat,lng:rc.lng},radius:18,until:now()+8000,label:'ring',icon:'bell'});logEvent(ico('bell',12)+' someone\'s phone is ringing…');});
+      toast(ico('bell',13)+' '+escN(tgt.name)+"'s phone is ringing — hear it?",'good');
     }else if(bf.id==='leakpos'){
-      commit(r=>{r.fx.push({id:uid(),kind:'leak',forId:'seekers',targetId:tgt.id,until:now()+45000,label:'🎯 leak'});logEvent('🎯 a hiding spot was leaked');});
-      toast('🎯 every seeker now sees '+escN(tgt.name)+'\'s exact spot for 45 s','good');
+      commit(r=>{r.fx.push({id:uid(),kind:'leak',forId:'seekers',targetId:tgt.id,until:now()+45000,label:'leak',icon:'target'});logEvent(ico('target',12)+' a hiding spot was leaked');});
+      toast(ico('target',13)+' every seeker now sees '+escN(tgt.name)+'\'s exact spot for 45 s','good');
     }else if(bf.id==='freeze'){
-      commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.freezeUntil=now()+60000;logEvent('🧊 a hider was frozen in place');});
-      toast('🧊 '+escN(tgt.name)+' can\'t move for 60 seconds','good');
+      commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.freezeUntil=now()+60000;logEvent(ico('snow',12)+' a hider was frozen in place');});
+      toast(ico('snow',13)+' '+escN(tgt.name)+' can\'t move for 60 seconds','good');
     }else if(bf.id==='scan'){
       const sc=tgt.hidePos||tgt.pos;
-      commit(r=>{r.fx.push({id:uid(),kind:'circle',forId:myId,center:{lat:sc.lat,lng:sc.lng},radius:35,until:now()+10000,label:'🔭 ping'});logEvent('🔭 a scan pinged a hider');});
-      toast('🔭 pinged '+escN(tgt.name)+'\'s area (≈35 m) for 10 s','good');
+      commit(r=>{r.fx.push({id:uid(),kind:'circle',forId:myId,center:{lat:sc.lat,lng:sc.lng},radius:35,until:now()+10000,label:'ping',icon:'target'});logEvent(ico('target',12)+' a scan pinged a hider');});
+      toast(ico('target',13)+' pinged '+escN(tgt.name)+'\'s area (≈35 m) for 10 s','good');
     }else if(bf.id==='stun'){
-      commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.freezeUntil=now()+30000;logEvent('⚡ a hider was stunned');});
-      toast('⚡ '+escN(tgt.name)+' is stunned for 30 s','good');
+      commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.freezeUntil=now()+30000;logEvent(ico('snow',12)+' a hider was stunned');});
+      toast(ico('snow',13)+' '+escN(tgt.name)+' is stunned for 30 s','good');
     }
   }else{
     if(bf.id==='slow'){
-      commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.slowUntil=now()+60000;logEvent('🐌 slow-mo was played on a seeker');});
-      toast('🐌 '+tgt.name+' may only walk 3 km/h','good');
+      commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.slowUntil=now()+60000;logEvent(ico('slow',12)+' slow-mo was played on a seeker');});
+      toast(ico('slow',13)+' '+tgt.name+' may only walk 3 km/h','good');
     }else if(bf.id==='decoy'){
-      commit(r=>{r.fx.push({id:uid(),kind:'fake',forId:'seekers',center:randInZone(),until:now()+60000});logEvent('👻 a decoy blip appeared');});
-      toast('👻 fake hider planted on seeker maps','good');
+      commit(r=>{r.fx.push({id:uid(),kind:'fake',forId:'seekers',center:randInZone(),until:now()+60000});logEvent(ico('decoy',12)+' a decoy blip appeared');});
+      toast(ico('decoy',13)+' fake hider planted on seeker maps','good');
     }else if(bf.id==='shift'){
-      commit(r=>{me().shiftReady=true;}); toast('📍 shift ready — tap it in your buff bar','good');
+      commit(r=>{me().shiftReady=true;}); toast(ico('pin',13)+' shift ready — tap it in your buff bar','good');
     }else if(bf.id==='ghost'){
-      commit(r=>{me().ghostUntil=now()+90000;}); toast('🌫️ you are ghosted for 90 s','good');
+      commit(r=>{me().ghostUntil=now()+90000;}); toast(ico('mist',13)+' you are ghosted for 90 s','good');
     }else if(bf.id==='see'){
-      commit(r=>{r.fx.push({id:uid(),kind:'see',forId:myId,until:now()+60000,label:'👁️ seeker vision'});logEvent('👁️ seeker vision activated');});
-      toast('👁️ all live seeker positions shown for 60 s','good');
+      commit(r=>{r.fx.push({id:uid(),kind:'see',forId:myId,until:now()+60000,label:'seeker vision',icon:'eye'});logEvent(ico('eye',12)+' seeker vision activated');});
+      toast(ico('eye',13)+' all live seeker positions shown for 60 s','good');
     }else if(bf.id==='trap'){
-      commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.freezeUntil=now()+120000;logEvent('🪤 a seeker was frozen in place');});
-      toast('🪤 '+escN(tgt.name)+' can\'t move for 2 minutes','good');
+      commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.freezeUntil=now()+120000;logEvent(ico('snow',12)+' a seeker was frozen in place');});
+      toast(ico('snow',13)+' '+escN(tgt.name)+' can\'t move for 2 minutes','good');
     }else if(bf.id==='mirage'){
-      commit(r=>{for(let i=0;i<3;i++)r.fx.push({id:uid(),kind:'fake',forId:'seekers',center:randInZone(),until:now()+45000});logEvent('🌪️ a mirage scattered decoys');});
-      toast('🌪️ 3 decoy blips on every seeker map','good');
+      commit(r=>{for(let i=0;i<3;i++)r.fx.push({id:uid(),kind:'fake',forId:'seekers',center:randInZone(),until:now()+45000});logEvent(ico('tri',12)+' a mirage scattered decoys');});
+      toast(ico('tri',13)+' 3 decoy blips on every seeker map','good');
     }else if(bf.id==='cloak'){
-      commit(r=>{me().cloakUntil=now()+40000;logEvent('🙈 you cloaked — untraceable for 40 s');});
-      toast('🙈 you are cloaked for 40 s','good');
+      commit(r=>{me().cloakUntil=now()+40000;logEvent(ico('mist',12)+' you cloaked — untraceable for 40 s');});
+      toast(ico('mist',13)+' you are cloaked for 40 s','good');
     }
   }
   sGold();
@@ -1752,7 +1794,7 @@ function casApply(bf,tgt){
 /* ---------------- actions ---------------- */
 function setHideSpot(){
   const m=me(); const p=m.pos||START;
-  if((m.freezeUntil||0)>now()){toast('🧊 frozen — you can\'t move','warn');return;}
+  if((m.freezeUntil||0)>now()){toast(ico('snow',13)+' frozen — you can\'t move','warn');return;}
   if(!inZone(p)){toast('you are outside the zone','warn');return;}
   commit(r=>{me().hidePos={lat:p.lat,lng:p.lng};const s=me().stats=me().stats||{catches:0,buffs:0,hiddenAt:0};s.hiddenAt=now();});
   toast('hidden ✓ stay quiet','good'); vib(40);
@@ -1763,7 +1805,7 @@ function doCatch(pid){
   askConfirm('catch '+tgt.name+'?','you physically found them. they are out of the game.','caught!',true,()=>{
     commit(r=>{const p=r.players.find(x=>x.id===pid);if(p&&p.status==='alive'){p.status='caught';p.caughtBy=myId;
       const c=r.players.find(x=>x.id===myId);if(c){c.stats=c.stats||{catches:0,buffs:0,hiddenAt:0};c.stats.catches++;}
-      logEvent('🕵️ '+escN(p.name)+' was caught by '+escN(me().name)+'!');}});
+      logEvent(ico('search',12)+' '+escN(p.name)+' was caught by '+escN(me().name)+'!');}});
     sCatch(); vib([60,50,60]);
   });
 }
@@ -1778,7 +1820,7 @@ function doReport(pid){
 }
 function surrender(){
   askConfirm('give up?','you reveal yourself and are out.','give up',true,()=>{
-    commit(r=>{const p=me();p.status='caught';p.caughtBy=null;logEvent('🏳️ '+escN(p.name)+' gave up.');});
+    commit(r=>{const p=me();p.status='caught';p.caughtBy=null;logEvent(ico('flag',12)+' '+escN(p.name)+' gave up.');});
   });
 }
 function askConfirm(title,text,ok,danger,onOk){
@@ -2004,7 +2046,7 @@ function casShowTargets(bf){
   list.forEach((p,i)=>{
     const c=document.createElement('button');
     c.className='chip';
-    const av=p.global?'👥':(p.name?p.name[0].toUpperCase():'?');
+    const av=p.global?svgI('people',24,1.8):(p.name?p.name[0].toUpperCase():'?');
     c.innerHTML=`<span class="av">${av}</span>
       <span class="cn">${esc(p.name)}</span><span class="cr">${p.self?me().role:p.global?'all':(p.role||'')}</span>`;
     c.style.transitionDelay=(i*70)+'ms';
@@ -2194,7 +2236,7 @@ function openScream(task){
   },100);
   function finishScream(ok){
     closeScream();
-    commit(r=>{me().pendingTask=null;logEvent(ok?'😱 scream delivered.':'🙉 a scream order was ignored.');});
+    commit(r=>{me().pendingTask=null;logEvent(ok?ico('mic',12)+' scream delivered.':ico('belloff',12)+' a scream order was ignored.');});
     if(ok){toast('scream delivered ✓','good');sGold();}
     else{toast('scream failed — you lose a ♥','warn');loseHeart(myId,'ignored scream');}
   }
@@ -2218,7 +2260,7 @@ $('sh-bearing').oninput=e=>{$('sh-bv').textContent=e.target.value;};
 $('sh-dist').oninput=e=>{$('sh-dv').textContent=e.target.value;};
 $('btn-shift-ok').onclick=()=>{
   const m=me();
-  if((m.freezeUntil||0)>now()){toast('🧊 frozen — you can\'t move','warn');closeOv('ov-shift');return;}
+  if((m.freezeUntil||0)>now()){toast(ico('snow',13)+' frozen — you can\'t move','warn');closeOv('ov-shift');return;}
   const base=m.hidePos||m.pos||START;
   const np=dest(base,+$('sh-bearing').value,+$('sh-dist').value);
   commit(r=>{me().hidePos=np;me().shiftReady=false;});
@@ -2246,7 +2288,7 @@ function initLobbyMap(){
       if(!room||ui.simMode===false)return; // GPS mode: the watch drives the position
       const m=me();if(!m)return;
       commit(r=>{me().pos={lat:e.latlng.lat,lng:e.latlng.lng};});
-      toast('📍 starting spot set — tap again to move it','silent');
+      toast(ico('pin',13)+' starting spot set — tap again to move it','silent');
     });
     drawLobbyZone();
   }catch(e){}
@@ -2358,7 +2400,7 @@ function initGameMap(){
     if(!room||ui.screen!=='game')return;
     if(!ui.simMode)return;
     const m=me();if(!m)return;
-    if((m.freezeUntil||0)>now()){toast('🧊 frozen — you can\'t move','warn');return;}
+    if((m.freezeUntil||0)>now()){toast(ico('snow',13)+' frozen — you can\'t move','warn');return;}
     commit(r=>{me().pos={lat:e.latlng.lat,lng:e.latlng.lng};});
     if(!inZone(e.latlng))toast('⚠ that spot is outside the zone','warn');
   });
@@ -2422,7 +2464,7 @@ function updateMap(){
       const cx=(ctgt&&ctgt.lat!=null)?{lat:ctgt.lat,lng:ctgt.lng}:f.center;
       upsertLayer('fx-'+f.id,
         ()=>L.circle([cx.lat,cx.lng],{radius:f.radius,color:'#ff4d2a',weight:2,fillColor:'#ff4d2a',fillOpacity:.13,dashArray:'5 6'})
-          .bindTooltip(f.label,{permanent:true,direction:'center'}),
+          .bindTooltip(fxLabel(f),{permanent:true,direction:'center'}),
         ly=>ly.setLatLng([cx.lat,cx.lng]));}
     if(f.kind==='fake'){want.add('fx-'+f.id);
       upsertLayer('fx-'+f.id,
@@ -2455,8 +2497,8 @@ const GPS_MOVE_M=5, GPS_MIN_MS=1000;
    "my spot" button both flip it; posBtnText() updates whichever exists. */
 function posBtnText(){
   const g=$('btn-posmode'),l=$('btn-spot');
-  if(g)g.textContent=ui.simMode?'📍 sim':'🛰 gps';
-  if(l){l.textContent=ui.simMode?'📍 my spot':'🛰 gps on';l.classList.toggle('on',!ui.simMode);}
+  if(g)g.innerHTML=ui.simMode?svgI('pin',13,2.2)+' sim':svgI('gps',13,2.2)+' gps';
+  if(l){l.innerHTML=ui.simMode?svgI('pin',13,2.2)+' my spot':svgI('gps',13,2.2)+' gps on';l.classList.toggle('on',!ui.simMode);}
 }
 function setPosMode(sim){
   ui.simMode=sim;posBtnText();
@@ -2466,7 +2508,7 @@ function setPosMode(sim){
     try{
       watchId=navigator.geolocation.watchPosition(pos=>{
         const p=me(); if(!p)return;
-        if((p.freezeUntil||0)>now()){if(now()-(ui.lastFreezeToast||0)>8000){ui.lastFreezeToast=now();toast('🧊 frozen — position locked','warn');}return;}
+        if((p.freezeUntil||0)>now()){if(now()-(ui.lastFreezeToast||0)>8000){ui.lastFreezeToast=now();toast(ico('snow',13)+' frozen — position locked','warn');}return;}
         /* apply the fix locally right away — tick() re-renders the map/HUD,
            so our own screen tracks the phone even between broadcasts */
         const lat=pos.coords.latitude,lng=pos.coords.longitude;
@@ -2480,7 +2522,7 @@ function setPosMode(sim){
           saveRoom(); // bump seq + broadcast + refresh presence, no full re-render needed
         }
       },()=>{toast('GPS denied — back to sim mode (tap map)','warn');setPosMode(true);},{enableHighAccuracy:true,maximumAge:2000});
-      toast('GPS mode — walk for real 🚶','silent');
+      toast(ico('walk',14)+' GPS mode — walk for real','silent');
     }catch(e){ui.simMode=true;posBtnText();}
   }
 }  $('btn-posmode').onclick=()=>setPosMode(!ui.simMode);
@@ -2507,7 +2549,7 @@ function renderGame(){
   /* hearts */
   const hb=$('hud-hearts');
   hb.style.display=(m.role&&m.status!=='spectate')?'flex':'none';
-  const hhtml=[0,1,2].map(i=>'<span class="h'+(i<m.hearts?'':' off')+'">♥</span>').join('');
+  const hhtml=[0,1,2].map(i=>'<span class="h'+(i<m.hearts?'':' off')+'">'+heartIco(13)+'</span>').join('');
   if(hb.innerHTML!==hhtml)hb.innerHTML=hhtml;
   /* phase pill */
   const pill=$('phasePill');
@@ -2522,13 +2564,13 @@ function renderGame(){
   if(cst){cc.style.display='';if(ct.textContent!==cst.txt)ct.textContent=cst.txt;}
   else cc.style.display='none';
   /* players chip */
-  const pc=$('chip-players');const pTxt='👥 '+room.players.filter(p=>!p.bot).length+(room.players.some(p=>p.bot)?'+'+room.players.filter(p=>p.bot).length:'');
-  if(pc.textContent!==pTxt)pc.textContent=pTxt;
+  const pc=$('chip-players');const pTxt=svgI('people',13,2.1)+' '+room.players.filter(p=>!p.bot).length+(room.players.some(p=>p.bot)?'+'+room.players.filter(p=>p.bot).length:'');
+  if(pc.innerHTML!==pTxt)pc.innerHTML=pTxt;
   /* zone chip + alerts */
   const zc=$('chip-zone');
   const outZ=!!(m.pos&&!inZone(m.pos)&&ph!=='end'&&m.status==='alive');
   zc.classList.toggle('left',outZ);
-  zc.textContent=outZ?'⚠ left zone!':'📍 in zone';
+  zc.innerHTML=outZ?'⚠ left zone!':svgI('pin',13,2.2)+' in zone';
   const z=$('zone-banner');
   if(outZ){z.style.display='block';
     const el=ui.zoneOutSince?Math.floor((t-ui.zoneOutSince)/1000):0;
@@ -2537,19 +2579,19 @@ function renderGame(){
   const sb=$('slow-banner');
   if(m.slowUntil>t&&ph==='seek'){sb.style.display='block';
     const fast=(m.speed||0)>0.92;sb.classList.toggle('fast',fast);
-    sb.innerHTML=fast?'🐌 TOO FAST — max 3 km/h!':'🐌 slow-mo · max 3 km/h · '+Math.ceil((m.slowUntil-t)/1000)+'s';
+    sb.innerHTML=fast?svgI('slow',13)+' TOO FAST — max 3 km/h!':svgI('slow',13)+' slow-mo · max 3 km/h · '+Math.ceil((m.slowUntil-t)/1000)+'s';
   }else sb.style.display='none';
   /* active buff chips (in the top chips row) */
   const bc=$('buffChips');let bhtml='';
-  if((m.freezeUntil||0)>t)bhtml+='<button class="chip buff" data-note="🧊 frozen — position locked">🧊 frozen <span class="t">'+Math.ceil((m.freezeUntil-t)/1000)+'s</span></button>';
-  if(m.ghostUntil>t)bhtml+='<button class="chip buff" data-note="🌫️ ghost — invisible to radar, ring & scream">🌫️ ghost <span class="t">'+Math.ceil((m.ghostUntil-t)/1000)+'s</span></button>';
-  if(m.cloakUntil>t)bhtml+='<button class="chip buff" data-note="🙈 cloaked — no radar, no catch">🙈 cloak <span class="t">'+Math.ceil((m.cloakUntil-t)/1000)+'s</span></button>';
-  if(m.shiftReady&&ph!=='end')bhtml+='<button class="chip buff" data-act="shift">📍 shift ready</button>';
-  room.fx.forEach(f=>{if(f.until>t&&(f.forId===myId||(f.forId==='seekers'&&m.role==='seeker')))bhtml+='<button class="chip buff" data-note="'+esc(f.label||'active buff')+'">'+esc(f.label||'')+' <span class="t">'+Math.ceil((f.until-t)/1000)+'s</span></button>';});
+  if((m.freezeUntil||0)>t)bhtml+='<button class="chip buff" data-note="frozen — position locked">'+svgI('snow',13)+' frozen <span class="t">'+Math.ceil((m.freezeUntil-t)/1000)+'s</span></button>';
+  if(m.ghostUntil>t)bhtml+='<button class="chip buff" data-note="ghost — invisible to radar, ring & scream">'+svgI('mist',13)+' ghost <span class="t">'+Math.ceil((m.ghostUntil-t)/1000)+'s</span></button>';
+  if(m.cloakUntil>t)bhtml+='<button class="chip buff" data-note="cloaked — no radar, no catch">'+svgI('mist',13)+' cloak <span class="t">'+Math.ceil((m.cloakUntil-t)/1000)+'s</span></button>';
+  if(m.shiftReady&&ph!=='end')bhtml+='<button class="chip buff" data-act="shift">'+svgI('pin',13)+' shift ready</button>';
+  room.fx.forEach(f=>{if(f.until>t&&(f.forId===myId||(f.forId==='seekers'&&m.role==='seeker'))){const fl=fxLabel(f);bhtml+='<button class="chip buff" data-note="'+esc(fl)+'">'+svgI(fxIco(f),13)+' '+esc(fl)+' <span class="t">'+Math.ceil((f.until-t)/1000)+'s</span></button>';}});
   if(bc.innerHTML!==bhtml){bc.innerHTML=bhtml;
     Array.from(bc.children).forEach(el=>{
       el.onclick=()=>{
-        if(el.dataset.act==='shift'){const mm=me();if(mm&&(mm.freezeUntil||0)>now()){toast('🧊 frozen — you can\'t move','warn');return;}openOv('ov-shift');}
+        if(el.dataset.act==='shift'){const mm=me();if(mm&&(mm.freezeUntil||0)>now()){toast(ico('snow',13)+' frozen — you can\'t move','warn');return;}openOv('ov-shift');}
         else toast((el.dataset.note||el.textContent.trim())+' — active on you','silent');
       };
     });
@@ -2570,9 +2612,9 @@ function renderHiderPeek(m,ph,t){
   const title=$('hiderTitle'),sub=$('hiderSub'),hideB=$('btnHide');
   if(ph==='hide'){
     if(m.hidePos){title.textContent='Locked in.';sub.innerHTML='your spot is set — seekers released in <b>'+fmt(room.hideEndsAt-t)+'</b>. stay quiet, stay in the zone.';hideB.disabled=true;hideB.innerHTML='✓&nbsp; hidden — stay quiet';}
-    else{title.textContent='Find your spot.';sub.innerHTML='vanish inside the dashed zone — <b>'+fmt(room.hideEndsAt-t)+'</b> on the clock. move yourself on the map, then lock it in.';hideB.disabled=false;hideB.innerHTML='📍&nbsp; Hide here';}
+    else{title.textContent='Find your spot.';sub.innerHTML='vanish inside the dashed zone — <b>'+fmt(room.hideEndsAt-t)+'</b> on the clock. move yourself on the map, then lock it in.';hideB.disabled=false;hideB.innerHTML=ico('pin',14,2.2)+'&nbsp; Hide here';}
   }else if(ph==='seek'){
-    if(m.status==='alive'){title.textContent='Survive.';sub.innerHTML='seekers are hunting · <b>'+aliveHiders().length+'</b> hider'+(aliveHiders().length===1?'':'s')+' left — survive until <b>'+fmt(room.gameEndsAt-t)+'</b>.';hideB.disabled=true;hideB.innerHTML='🤫&nbsp; stay hidden';}
+    if(m.status==='alive'){title.textContent='Survive.';sub.innerHTML='seekers are hunting · <b>'+aliveHiders().length+'</b> hider'+(aliveHiders().length===1?'':'s')+' left — survive until <b>'+fmt(room.gameEndsAt-t)+'</b>.';hideB.disabled=true;hideB.innerHTML=ico('eyeoff',14,2.2)+'&nbsp; stay hidden';}
     else{title.textContent='Out.';sub.innerHTML='you are out this round — watch the map and cheer your side.';hideB.disabled=true;hideB.innerHTML='—';}
   }else{title.textContent='Round over.';sub.innerHTML='';hideB.disabled=true;hideB.innerHTML='—';}
 }
@@ -2581,11 +2623,11 @@ function renderSeekerPeek(m,ph,t){
   const cst=casinoCountTxt(m,t);
   const casTxt=cst?(cst.open?'casino open — spin now':('casino in <b>'+cst.txt+'</b>')):'no more casino windows';
   if(ph==='hide'){
-    title.textContent='Head start.';sub.innerHTML='hiders vanish until <b>'+fmt(room.hideEndsAt-t)+'</b> — then the hunt is on.';findB.disabled=true;findB.innerHTML='🙈&nbsp; hiders hiding…';
+    title.textContent='Head start.';sub.innerHTML='hiders vanish until <b>'+fmt(room.hideEndsAt-t)+'</b> — then the hunt is on.';findB.disabled=true;findB.innerHTML=ico('eyeoff',14,2.2)+'&nbsp; hiders hiding…';
   }else if(ph==='seek'&&m.status==='alive'){
     title.textContent='Hunt is on.';
     sub.innerHTML='<b>'+aliveHiders().length+'</b> hider'+(aliveHiders().length===1?'':'s')+' left · '+casTxt+'. tap a name below to catch.';
-    findB.disabled=false;findB.innerHTML='🕵️&nbsp; find &amp; catch';
+    findB.disabled=false;findB.innerHTML=ico('search',15,2.2)+'&nbsp; find &amp; catch';
   }else if(ph==='seek'){
     title.textContent='Out.';sub.innerHTML='you are out this round — watch the map and cheer your side.';findB.disabled=true;findB.innerHTML='—';
   }else{title.textContent='Round over.';sub.innerHTML='';findB.disabled=true;findB.innerHTML='—';}
@@ -2707,7 +2749,7 @@ function rosterBox(){
   return m.role==='seeker'?$('roster-s'):$('roster-h');
 }
 function heartStr(n){
-  let s='';for(let i=0;i<3;i++)s+='<span'+(i<n?'':' class="off"')+'>♥</span>';return s;
+  let s='';for(let i=0;i<3;i++)s+='<span'+(i<n?'':' class="off"')+'>'+heartIco(11)+'</span>';return s;
 }
 let lastRosterSig='';
 function renderSheet(){
@@ -2732,7 +2774,7 @@ function renderSheet(){
     const nm=esc(p.name)+(isMe?'<em> · you</em>':'');
     let catchBtn='';
     if(m.role==='seeker'&&m.status==='alive'&&p.role==='hider'&&p.status==='alive'&&p.id!==myId&&ph==='seek'){
-      catchBtn=(p.cloakUntil||0)>t?'<button class="gbtn catch" disabled>🫥 cloaked</button>':'<button class="gbtn catch" data-c="'+p.id+'">catch</button>';
+      catchBtn=(p.cloakUntil||0)>t?'<button class="gbtn catch" disabled>'+svgI('mist',13)+' cloaked</button>':'<button class="gbtn catch" data-c="'+p.id+'">catch</button>';
     }
     let extra='';
     if(!isMe&&m.status==='alive'&&ph!=='end')extra+='<button class="gbtn warn" data-r="'+p.id+'" title="report a rule break">⚠</button>';
@@ -2771,8 +2813,8 @@ function renderChat(){
   if(!msgs.length){
     html='<div class="chat-empty">'
       +(ui.chatTab==='team'
-        ?'<b>🤫</b>'+(role?'no '+pluralRole(role)+' chatter yet — coordinate here, the other side can\'t see it.':'your team channel unlocks when roles are dealt.')
-        :'<b>👋</b>no messages yet — say hi to the room.')
+        ?'<b>'+svgI('lock',15)+'</b>'+(role?'no '+pluralRole(role)+' chatter yet — coordinate here, the other side can\'t see it.':'your team channel unlocks when roles are dealt.')
+        :'<b>'+svgI('chat',15)+'</b>no messages yet — say hi to the room.')
       +'</div>';
   }
   msgs.forEach(m=>{
@@ -2897,20 +2939,20 @@ function renderEnd(){
   room.players.forEach(p=>{
     const s=p.stats||{catches:0,buffs:0,hiddenAt:0};
     const chips=[];
-    if(p.role==='seeker'&&s.catches>0)chips.push('🕵️ '+esc(p.name)+' · '+s.catches+' catch'+(s.catches===1?'':'es'));
-    if(p.role==='hider'&&s.hiddenAt)chips.push('🤫 '+esc(p.name)+' · hid at '+fmt(s.hiddenAt-room.startedAt));
-    if(s.buffs>0)chips.push('🎰 '+esc(p.name)+' · '+s.buffs+' spin'+(s.buffs===1?'':'s'));
+    if(p.role==='seeker'&&s.catches>0)chips.push(svgI('search',13)+' '+esc(p.name)+' · '+s.catches+' catch'+(s.catches===1?'':'es'));
+    if(p.role==='hider'&&s.hiddenAt)chips.push(svgI('eyeoff',13)+' '+esc(p.name)+' · hid at '+fmt(s.hiddenAt-room.startedAt));
+    if(s.buffs>0)chips.push(svgI('slot',13)+' '+esc(p.name)+' · '+s.buffs+' spin'+(s.buffs===1?'':'s'));
     chips.forEach(t=>{const el=document.createElement('span');el.className='stat-chip';el.innerHTML=t;statsBox.appendChild(el);});
   });
   const list=$('end-list');list.innerHTML='';
   room.players.forEach(p=>{
     const r=document.createElement('div');r.className='end-row';
-    const st=p.status==='alive'?'survived ♥'+p.hearts:p.status==='caught'?'caught':'out';
+    const st=p.status==='alive'?'survived '+heartIco(11)+p.hearts:p.status==='caught'?'caught':'out';
     let streak='';
     if(p.role==='hider'&&p.status==='alive')streak=' · survived the round';
     else if(p.role==='seeker'&&p.caughtBy===null&&p.status!=='alive')streak=' · flushed out';
     else if(p.caughtBy)streak=' · caught';
-    r.innerHTML='<span>'+esc(p.name)+(p.bot?' 🤖':'')+'</span><span class="tag-role '+p.role+'" style="margin-left:6px">'+p.role+'</span>'+
+    r.innerHTML='<span>'+esc(p.name)+(p.bot?svgI('bot',13):'')+'</span><span class="tag-role '+p.role+'" style="margin-left:6px">'+p.role+'</span>'+
       '<span class="st">'+st+esc(streak)+'</span>';
     list.appendChild(r);
   });
@@ -2935,7 +2977,7 @@ function renderAll(){
            another overlay ate the render) — enforce the penalty here, else the
            order is silently dodged. */
         if(!ui.screamOpen){
-          commit(r=>{const q=r.players.find(x=>x.id===myId);if(q&&q.pendingTask){q.pendingTask=null;logEvent('🙉 a scream order was ignored.');}});
+          commit(r=>{const q=r.players.find(x=>x.id===myId);if(q&&q.pendingTask){q.pendingTask=null;logEvent(ico('belloff',12)+' a scream order was ignored.');}});
           toast('scream failed — you lose a ♥','warn');loseHeart(myId,'ignored scream');
         }
       }else if(!ui.screamOpen)openScream(m.pendingTask);
@@ -2962,16 +3004,16 @@ function tick(){
       const cand=room.players.filter(p=>!p.bot && p.id!==room.hostId && p.status==='alive')
         .sort((a,b)=>(a.joinedAt||0)-(b.joinedAt||0))[0];
       if(cand && cand.id===myId){
-        room.hostId=myId; logEvent('👑 host migrated to '+escN(cand.name)+' (prev host dropped)');
+        room.hostId=myId; logEvent(ico('crown',12)+' host migrated to '+escN(cand.name)+' (prev host dropped)');
         ui.hostSeen=t; dirty=true;
       }
     }
   }
   if(room.phase==='hide'||room.phase==='seek'){
-    if(room.phase==='hide'&&t>=room.hideEndsAt){room.phase='seek';logEvent('🕵️ seekers released — the hunt begins!');dirty=true;sWarn();}
+    if(room.phase==='hide'&&t>=room.hideEndsAt){room.phase='seek';logEvent(ico('search',12)+' seekers released — the hunt begins!');dirty=true;sWarn();}
     if(room.phase==='seek'){
-      if(aliveHiders().length===0){room.phase='end';room.winner='seekers';logEvent('🏁 every hider found — seekers win.');dirty=true;}
-      else if(t>=room.gameEndsAt){room.phase='end';room.winner='hiders';logEvent('🏁 time up — hiders win.');dirty=true;}
+      if(aliveHiders().length===0){room.phase='end';room.winner='seekers';logEvent(ico('flag',12)+' every hider found — seekers win.');dirty=true;}
+      else if(t>=room.gameEndsAt){room.phase='end';room.winner='hiders';logEvent(ico('flag',12)+' time up — hiders win.');dirty=true;}
     }
     const before=room.fx.length;room.fx=room.fx.filter(f=>f.until>t);if(room.fx.length!==before)dirty=true;
     const w=casinoWinIdx();
@@ -2988,7 +3030,7 @@ function tick(){
     }
     const m=me();
     if(m&&m.ringUntil>t){if(!tick._ring){tick._ring=setInterval(sRing,650);vib([120,80,120,80,120]);
-      toast('🔔 your phone is ringing! honor rule: you can\'t silence it','warn',6000);} }
+      toast(ico('bell',13)+' your phone is ringing! honor rule: you can\'t silence it','warn',6000);} }
     else if(tick._ring){clearInterval(tick._ring);tick._ring=null;}
     if(m&&m.pos&&!inZone(m.pos)&&m.status==='alive'){
       // Phase 1 #5: escalating grace — 1st exit 20s, 2nd 12s, 3rd+ 6s.
@@ -3025,7 +3067,7 @@ function tick(){
       ui.botTick=t;let moved=false;
       room.players.forEach(p=>{
         if(!p.bot||p.status!=='alive')return;
-        if(p.pendingTask){p.pendingTask=null;logEvent('😱 a hider screamed');moved=true;}
+        if(p.pendingTask){p.pendingTask=null;logEvent(ico('mic',12)+' a hider screamed');moved=true;}
         /* hider bots: actually WALK to their hiding spot. Before this, a hider bot's
            live pos stayed at START forever, so every seeker saw it at 0 m and could
            tap-catch it instantly. Walk during hide AND seek (so a slip relocates by
@@ -3124,7 +3166,7 @@ $('btn-copy').onclick=()=>{
   $('sel-casino').onchange=e=>commit(r=>{r.casinoMin=+e.target.value;});
 $('btn-addbot').onclick=addBot;
 $('btn-start').onclick=()=>{ac();startGame();showScreen('game');};
-$('chip-casino').onclick=()=>{if(casinoOpenFor(me()))openCasino();else toast('casino not open yet — watch the 🎰 chip for the countdown','silent');};
+$('chip-casino').onclick=()=>{if(casinoOpenFor(me()))openCasino();else toast(ico('slot',13)+' casino not open yet — watch the chip for the countdown','silent');};
 $('btn-end-home').onclick=()=>{
   closeOv('ov-end');
   if(room){
@@ -3187,25 +3229,22 @@ $('fab-loc').onclick=recenterMap;
 /* peek primary actions */
 $('btnHide').onclick=()=>{const m=me();if(!m||m.role!=='hider'){toast('only hiders can set a hide spot','warn');return;}if(room.phase!=='hide'){toast('the hiding window is over','warn');return;}setHideSpot();};
 $('btnFind').onclick=()=>{const m=me();if(!m||m.role!=='seeker'){toast('only seekers hunt','warn');return;}openSheet();requestAnimationFrame(()=>{const b=$('seekerBody');if(b)b.scrollTop=0;});};
-const casinoGhost=()=>{if(casinoOpenFor(me()))openCasino();else toast('casino not open yet — watch the 🎰 chip for the countdown','silent');};
-$('btnCasinoH').onclick=casinoGhost;
-$('btnCasinoS').onclick=casinoGhost;
 /* hider buff tiles: real effects only exist via the casino, so tiles guide there */
-function hiderToolHint(emoji,name){
+function hiderToolHint(icon,name){
   const m=me();
-  if(!m||m.role!=='hider'){toast((m&&m.role?('you are the '+m.role+' — '):'')+emoji+' '+name+' is a hider tool','warn');return;}
-  toast(emoji+' '+name+' is won in the casino — spin when it opens','silent');
+  if(!m||m.role!=='hider'){toast((m&&m.role?('you are the '+m.role+' — '):'')+svgI(icon,13)+' '+name+' is a hider tool','warn');return;}
+  toast(svgI(icon,13)+' '+name+' is won in the casino — spin when it opens','silent');
   if(casinoOpenFor(m))openCasino();
 }
 $('tileShift').onclick=()=>{
   const m=me();
-  if(!m||m.role!=='hider'){hiderToolHint('📍','shift');return;}
-  if(m.shiftReady){if((m.freezeUntil||0)>now()){toast('🧊 frozen — you can\'t move','warn');return;}openOv('ov-shift');}
-  else hiderToolHint('📍','shift');
+  if(!m||m.role!=='hider'){hiderToolHint('pin','shift');return;}
+  if(m.shiftReady){if((m.freezeUntil||0)>now()){toast(ico('snow',13)+' frozen — you can\'t move','warn');return;}openOv('ov-shift');}
+  else hiderToolHint('pin','shift');
 };
-$('tileDecoy').onclick=()=>hiderToolHint('🎈','decoy');
-$('tileCloak').onclick=()=>hiderToolHint('🫥','cloak');
-$('tileMirage').onclick=()=>hiderToolHint('✨','mirage');
+$('tileDecoy').onclick=()=>hiderToolHint('decoy','decoy');
+$('tileCloak').onclick=()=>hiderToolHint('mist','cloak');
+$('tileMirage').onclick=()=>hiderToolHint('tri','mirage');
 /* re-layout when size / fonts settle */
 const relayoutGame=()=>{if(room&&ui.screen==='game')setTimeout(()=>layoutSheet(false),0);};
 window.addEventListener('resize',relayoutGame);
