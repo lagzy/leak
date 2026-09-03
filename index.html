@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>leak — hide & seek, but unfair</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 8 17 55a33 33 0 0 0 66 0z' fill='%23ff4d2a'/></svg>">
+<title>leak.</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='16' y='6' width='15' height='50' fill='%23111' stroke='white' stroke-width='5' paint-order='stroke'/><circle cx='47' cy='48.5' r='8' fill='%23ff4d2a'/></svg>">
 <link href="https://cdn.jsdelivr.net/fontsource/fonts/space-grotesk@latest/latin-400-normal.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/fontsource/fonts/space-grotesk@latest/latin-500-normal.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/fontsource/fonts/space-grotesk@latest/latin-700-normal.css" rel="stylesheet">
@@ -256,6 +256,7 @@ svg.i{vertical-align:-.15em;pointer-events:none;flex:none}
 .panel{background:var(--card);border-radius:26px;padding:26px;width:min(420px,100%);max-height:86vh;overflow-y:auto;
   box-shadow:0 24px 60px rgba(0,0,0,.35);transform:translateY(18px) scale(.97);transition:transform .35s cubic-bezier(.22,1.1,.36,1)}
 .ov.open .panel{transform:none}
+
 .panel h2{font-size:24px;letter-spacing:-.02em;margin-bottom:6px}
 .panel .sub{color:var(--ink-soft);font-size:14px;line-height:1.55;margin-bottom:18px}
 
@@ -558,6 +559,8 @@ svg.i{vertical-align:-.15em;pointer-events:none;flex:none}
 #dev-panel button{text-align:left;padding:8px 10px;border-radius:9px;font-size:12px;font-weight:500;background:#f4f4f1}
 #dev-panel button:active{background:#e8e8e3}
 #dev-panel .t{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--ink-soft);padding:2px 10px}
+#dev-panel #dev-pos{display:flex;align-items:center;gap:7px;width:100%}
+#dev-panel #dev-pos.on{background:var(--ink);color:#fff}
 
 /* end */
 #ov-end{z-index:120}
@@ -659,7 +662,6 @@ svg.i{vertical-align:-.15em;pointer-events:none;flex:none}
       </div>
     </div>
     <div class="chips">
-      <button class="chip" id="btn-posmode" aria-label="toggle position mode"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.6s-5.8-5.2-5.8-9.4a5.8 5.8 0 0 1 11.6 0c0 4.2-5.8 9.4-5.8 9.4z"/><circle cx="12" cy="11" r="2"/></svg> sim</button>
       <button class="chip" id="chip-casino" aria-label="open casino"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3.6" width="18" height="16.8" rx="2.6"/><rect x="6.6" y="8.4" width="4.4" height="5.6" rx=".7"/><rect x="13" y="8.4" width="4.4" height="5.6" rx=".7"/><path d="M9 15.6h6"/></svg>&nbsp;<b id="casinoChipT">—</b></button>
       <button class="chip" id="chip-players" aria-label="players list"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.2" r="3.4"/><path d="M2.8 20v-1.8a6.2 6.2 0 0 1 12.4 0V20"/><circle cx="17.2" cy="9.8" r="2.5"/><path d="M16.6 13.4a5.2 5.2 0 0 1 4.6 5V20"/></svg> 0</button>
       <button class="chip" id="chip-zone" aria-label="zone status"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.6s-5.8-5.2-5.8-9.4a5.8 5.8 0 0 1 11.6 0c0 4.2-5.8 9.4-5.8 9.4z"/><circle cx="12" cy="11" r="2"/></svg> in zone</button>
@@ -681,7 +683,6 @@ svg.i{vertical-align:-.15em;pointer-events:none;flex:none}
   <div class="menuPop" id="menuPop" hidden>
     <button class="mitem" id="miHow"><svg class="i" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.3 9.3a2.8 2.8 0 0 1 5.4 1c0 2-2.7 2.4-2.7 4"/><circle cx="12" cy="17.2" r="1.1" fill="currentColor" stroke="none"/></svg> how to play</button>
     <button class="mitem" id="miChat"><svg class="i" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 11.7a8.4 8.4 0 0 1-12.4 7.3L4 20.4l1.5-4.6a8.4 8.4 0 1 1 15.3-4.1z"/><path d="M8.2 11.6h7.6M8.2 14.6h4.6"/></svg> chat</button>
-    <button class="mitem" id="miDev">⚙ dev tools</button>
     <button class="mitem" id="miReset"><svg class="i" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></svg> reset room</button>
   </div>
 
@@ -767,18 +768,6 @@ svg.i{vertical-align:-.15em;pointer-events:none;flex:none}
   <button class="btn" id="sc-retry" style="display:none;margin-top:10px;background:rgba(255,255,255,.12);font-size:13px;padding:9px"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9.2" y="3.4" width="5.6" height="9.2" rx="2.8"/><path d="M6.4 11.2a5.6 5.6 0 0 0 11.2 0M12 16.8v3.4M9 20.2h6"/></svg> retry mic permission</button>
 </div></div>
 
-<div id="ov-shift" class="ov"><div class="panel">
-  <h2><svg class="i" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.6s-5.8-5.2-5.8-9.4a5.8 5.8 0 0 1 11.6 0c0 4.2-5.8 9.4-5.8 9.4z"/><circle cx="12" cy="11" r="2"/></svg>&nbsp;shift</h2>
-  <p class="sub">relocate your hiding spot — max <b>20 m</b> from where you are.</p>
-  <label class="sec-title" style="margin-top:0">direction — <span class="mono" id="sh-bv">180</span>°</label>
-  <input type="range" id="sh-bearing" min="0" max="359" value="180" style="width:100%">
-  <label class="sec-title">distance — <span class="mono" id="sh-dv">12</span> m</label>
-  <input type="range" id="sh-dist" min="1" max="20" value="12" style="width:100%">
-  <div style="height:16px"></div>
-  <button class="btn hider" id="btn-shift-ok">move there</button>
-  <div style="height:8px"></div>
-  <button class="btn ghost" id="btn-shift-cancel">cancel</button>
-</div></div>
 
 <div id="ov-mapedit" class="ov"><div class="panel">
   <h2>map edit</h2>
@@ -813,10 +802,10 @@ svg.i{vertical-align:-.15em;pointer-events:none;flex:none}
   <p class="sub">real-life hide &amp; seek around Root, with chaotic buffs.</p>
   <div class="how-list">
     <div><b>1 · start</b>everyone meets at the start corner. pick hider / seeker / random.</div>
-    <div><b>2 · hide</b>hiders get 10 minutes to hide inside the rectangle. seekers count down.</div>
+    <div><b>2 · hide</b>hiders get 10 minutes to hide inside the rectangle. once locked in, a hider may roam only 10 m from their spot (a circle on their map) — stray out and it's a warning, then a ♥.</div>
     <div><b>3 · seek</b>seekers hunt. find a hider in real life, then tap <i>catch</i> on their name.</div>
-    <div><b>4 · casino</b>every 12 minutes (host-set) a casino opens: spin, get 2 buff offers, keep one. seeker buffs sabotage hiders (scream orders, radar circles, ringing phones). hider buffs fight back (slow-mo, decoys, 20 m shifts).</div>
-    <div><b>5 · hearts</b>break a rule (leave the zone, ignore a scream, get reported) → lose 1 of 3 ♥. zero hearts = you lose automatically.</div>
+    <div><b>4 · casino</b>every 12 minutes (host-set) a casino opens: spin, get 2 buff offers, keep one. seeker buffs sabotage hiders (scream orders, radar circles, ringing phones). hider buffs fight back (slow-mo, decoys, a 2-minute 50 m relocation).</div>
+    <div><b>5 · hearts</b>break a rule (leave the zone, stray from your hide spot, ignore a scream, get reported) → lose 1 of 3 ♥. zero hearts = you lose automatically.</div>
     <div><b>6 · win</b>seekers win by catching every hider before time runs out. hiders win by surviving.</div>
   </div>
   <div style="height:16px"></div>
@@ -859,6 +848,7 @@ svg.i{vertical-align:-.15em;pointer-events:none;flex:none}
 <div id="dev">
   <div id="dev-panel">
     <div class="t">prototype tools</div>
+    <button id="dev-pos"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.6s-5.8-5.2-5.8-9.4a5.8 5.8 0 0 1 11.6 0c0 4.2-5.8 9.4-5.8 9.4z"/><circle cx="12" cy="11" r="2"/></svg> sim mode</button>
     <button id="dev-skip"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.6 5.4 13.4 12l-7.8 6.6zM12.6 5.4 20.4 12l-7.8 6.6z"/></svg> end hiding phase</button>
     <button id="dev-casino">open casino now</button>
     <button id="dev-heart"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.8 4.2 13A5 5 0 0 1 11 5.6l1 .9 1-.9a5 5 0 0 1 6.8 7.4z"/><path d="M9 15.8 11.4 13l1.5 1.7 1.6-2"/></svg> lose a heart</button>
@@ -994,7 +984,8 @@ let myId=LS.get('leak.id'); if(!myId){myId=uid();LS.set('leak.id',myId);}
 let myName=LS.get('leak.name')||'';
 let room=null, tickIv=null; // transport declared in the transport block
 let muted=false; /* sound is always on now — the mute button was removed */
-const ui={screen:'home',simMode:true,sheetOpen:false,chatOpen:false,chatSeenAt:0,chatTab:'general',screamOpen:false,lastCasinoWin:0,casDismissed:0,seenLog:new Set(),revealKey:'',lastSentPos:null,lastPosSend:0,zoneOutSince:0,lastZoneHit:0,botTick:0,lastMapUpd:0,seenReveal:new Set(),seenCaught:new Set(),zoneViolations:0,hostHeart:0,hostSeen:0,buffWarned:new Set(),reportCd:{},seenCasinoOnce:false,ambient:true,ambiT:0,lastFreezeToast:0,left:false};
+const ui={screen:'home',simMode:true,sheetOpen:false,chatOpen:false,chatSeenAt:0,chatTab:'general',screamOpen:false,lastCasinoWin:0,casDismissed:0,seenLog:new Set(),revealKey:'',lastSentPos:null,lastPosSend:0,zoneOutSince:0,lastZoneHit:0,botTick:0,lastMapUpd:0,seenReveal:new Set(),seenCaught:new Set(),zoneViolations:0,hostHeart:0,hostSeen:0,buffWarned:new Set(),reportCd:{},seenCasinoOnce:false,ambient:true,ambiT:0,lastFreezeToast:0,roamOut:0,roamWarned:false,roamHits:0,lastRoamHit:0,lastRoamTapWarn:0,left:false};
+let reloadBack=false; // reloading into a live round: skip the role reveal and drop straight back into the game
 if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)ui.ambient=false;
 
 const me=()=>room?room.players.find(p=>p.id===myId):null;
@@ -1054,7 +1045,11 @@ function mergeRoom(incoming){
 }
 function applyRoom(incoming){
   if(ui.left)return false; // we left the room — ignore our own broadcast echo / stale merges
-  if(!room){room=incoming;if(Array.isArray(room.zone))applyCorners(room.zone);return true;}
+  if(!room){room=incoming;if(Array.isArray(room.zone))applyCorners(room.zone);
+    /* first sight of a room: its existing log is history, not news — pre-seen,
+       so a reload/rejoin doesn't replay the whole round as toast spam. */
+    ui.seenLog=new Set((room.log||[]).map(l=>l.id));
+    return true;}
   return mergeRoom(incoming);
 }
 /* the host can kick players (see renderLobby/renderSheet); the kicked player's
@@ -1168,7 +1163,7 @@ function packPlayer(p){
   if(p.ringUntil)o.ru=p.ringUntil;
   if(p.freezeUntil)o.fu=p.freezeUntil;
   if(p.cloakUntil)o.cu=p.cloakUntil;
-  if(p.shiftReady)o.sr=1;
+  if(p.shiftUntil)o.sh=p.shiftUntil; // shift relocation window — must sync or merges cancel it
   if(p.pendingTask)o.pt={b:p.pendingTask.byId,d:p.pendingTask.deadline,h:p.pendingTask.holdMs,m:p.pendingTask.dbMin};
   if(p.caughtBy)o.cb=p.caughtBy;
   if(p.wander)o.wa=pPos(p.wander);
@@ -1182,7 +1177,7 @@ function unpackPlayer(o){
   return {id:o.i,name:o.n,bot:!!o.b,gzc:o.g?1:0,roleChoice:o.rc||'random',role:o.ro||null,hearts:o.ht!=null?o.ht:3,
     status:o.s||'alive',pos:o.o?{lat:o.o.a,lng:o.o.g}:null,speed:o.sp||0,hidePos:o.hp?{lat:o.hp.a,lng:o.hp.g}:null,
     casinoDone:o.cd||0,casinoForce:o.cf||0,slowUntil:o.su||0,ghostUntil:o.gu||0,ringUntil:o.ru||0,
-    freezeUntil:o.fu||0,cloakUntil:o.cu||0,shiftReady:!!o.sr,
+    freezeUntil:o.fu||0,cloakUntil:o.cu||0,shiftUntil:o.sh||0,
     pendingTask:o.pt?{byId:o.pt.b,deadline:o.pt.d,holdMs:o.pt.h,dbMin:o.pt.m}:null,
     caughtBy:o.cb||null,wander:o.wa?{lat:o.wa.a,lng:o.wa.g}:null,seq:o.q||0,joinedAt:o.ja||0,
     botMoves:o.bm||0,stats:o.st?{catches:o.st.c||0,buffs:o.st.b||0,hiddenAt:o.st.h||0}:{catches:0,buffs:0,hiddenAt:0}};
@@ -1545,7 +1540,7 @@ const BUFFS={
  hider:[
   {id:'slow', icon:'slow',name:'slow-mo', rarity:'rare',desc:'a seeker may only walk 3 km/h for the next 60 seconds.'},
   {id:'decoy',icon:'decoy',name:'decoy',   rarity:'common',desc:"a fake hider blip appears on every seeker's map for 60 seconds."},
-  {id:'shift',icon:'pin',name:'shift',   rarity:'uncommon',desc:'relocate your hiding spot by up to 20 meters.'},
+  {id:'shift',icon:'pin',name:'shift',   rarity:'uncommon',desc:'starts on its own: your 10 m roam circle becomes a 50 m one for 2 minutes — walk to a new spot and lock it (auto-locks where you stand when time is up).'},
   {id:'ghost',icon:'mist',name:'ghost',   rarity:'legendary',desc:'you become invisible to radar, ring and scream for 90 seconds.'},
   {id:'see',  icon:'eye',name:'seeker vision',rarity:'secret',desc:'see every live seeker position on your map for 60 seconds — planning time.'},
   {id:'trap', icon:'snow',name:'freeze seeker',rarity:'secret',desc:'the chosen seeker is welded to the ground for 2 whole minutes.'},
@@ -1563,8 +1558,8 @@ function casinoOpenFor(p){
 function genCode(){const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<4;i++)s+=A[Math.floor(Math.random()*A.length)];return s;}
 function newPlayer(name,bot){
   return {id:bot?uid():myId,name,bot:!!bot,gzc:bot?0:(HAS_GZIP?1:0),roleChoice:'random',role:null,hearts:3,status:'alive',
-    pos:{lat:START.lat,lng:START.lng},speed:0,hidePos:null,casinoDone:0,casinoForce:0,
-    slowUntil:0,ghostUntil:0,ringUntil:0,freezeUntil:0,cloakUntil:0,shiftReady:false,pendingTask:null,caughtBy:null,wander:null,seq:0,joinedAt:Date.now(),
+    pos:{lat:START.lat,lng:START.lng},speed:0,hidePos:null,shiftUntil:0,casinoDone:0,casinoForce:0,
+    slowUntil:0,ghostUntil:0,ringUntil:0,freezeUntil:0,cloakUntil:0,pendingTask:null,caughtBy:null,wander:null,seq:0,joinedAt:Date.now(),
     botMoves:0,stats:{catches:0,buffs:0,hiddenAt:0}};
 }
 function createRoom(){
@@ -1579,7 +1574,6 @@ function createRoom(){
   addRecent(room.code);
   if(!supaCfg.key){toast('set your Supabase key first','warn',5000);}
   chanFor(room.code,{host:true}); saveRoom(); ui.seenLog=new Set(); showScreen('lobby');
-  toast('room created — share code <b>'+room.code+'</b>'+(storageAvailable?'':'<br><small>(storage blocked here: state lives in memory)</small>'),'gold',5000);
 }
 function joinRoom(code){
   const name=myName.trim(); if(!name){toast('enter your name first','warn');return;}
@@ -1596,14 +1590,15 @@ function joinRoom(code){
     transport=null;
   }
   const finish=()=>{
-    ui.seenLog=new Set();
+    /* seenLog was already pre-seeded when the room first arrived (applyRoom);
+       resetting it here would re-open the toast-replay flood. */
     LS.set('leak.active',room.code); // reload recovery
     const existing=room.players.find(p=>p.id===myId);
     if(existing){
       // Phase 1 #3: reclaiming a seat (reopened tab / reconnect).
       if(room.phase!=='lobby' && existing.status==='spectate'){existing.status='alive';}
       existing.name=name; // name may have changed in another tab
-      saveRoom(); toast('reconnected to your seat','good');
+      saveRoom();
     }else{
       if(room.phase==='lobby'){room.players.push(newPlayer(name,false));}
       else{room.players.push(Object.assign(newPlayer(name,false),{status:'spectate'}));toast('game already running — joined as spectator','warn');}
@@ -1611,7 +1606,6 @@ function joinRoom(code){
     }
     showScreen(room.phase==='lobby'?'lobby':'game');
     addRecent(code);
-    toast('joined room '+room.code,'good');
   };
   chanFor(code,{host:false});
   /* The transport connects asynchronously (CDN load + websocket retries),
@@ -1648,7 +1642,7 @@ function startGame(){
     const hst=r.players.find(x=>x.id===r.hostId);
     const sp=(hst&&hst.pos&&isFinite(hst.pos.lat))?{lat:hst.pos.lat,lng:hst.pos.lng}:{lat:START.lat,lng:START.lng};
     r.players.forEach(p=>{ p.hearts=3;p.status='alive';p.pos={lat:sp.lat,lng:sp.lng};p.hidePos=null;
-      p.casinoDone=0;p.casinoForce=0;p.slowUntil=0;p.ghostUntil=0;p.ringUntil=0;p.freezeUntil=0;p.cloakUntil=0;p.shiftReady=false;p.pendingTask=null;p.caughtBy=null;
+      p.casinoDone=0;p.casinoForce=0;p.slowUntil=0;p.ghostUntil=0;p.ringUntil=0;p.freezeUntil=0;p.cloakUntil=0;p.shiftUntil=0;p.pendingTask=null;p.caughtBy=null;
       p.botMoves=0;p.stats={catches:0,buffs:0,hiddenAt:0};
       if(p.bot&&p.role==='hider'){p.hidePos=randInZone();p.botMoves=4;p.stats.hiddenAt=t;} });
     r.fx=[];r.log=[];r.chat=[];
@@ -1656,18 +1650,21 @@ function startGame(){
     r.phase='hide';r.winner=null;r.forceCasinoId=0;
     logEvent(ico('flag',12)+' game started — hiders, run!');
   });
+  reloadBack=false; // a brand-new round should show the reveal again
+  ui.roamOut=0;ui.roamWarned=false;ui.roamHits=0;ui.lastRoamHit=0;
 }
 function resetRoom(){
   commit(r=>{ r.phase='lobby';r.winner=null;r.fx=[];r.log=[];r.startedAt=0;r.forceCasinoId=0;
     /* keep positions in the lobby (live GPS keeps tracking); the next start
        snaps everyone to the host's spot anyway */
     r.players.forEach(p=>{p.role=null;p.hearts=3;p.status='alive';p.hidePos=null;if(p.bot)p.pos={lat:START.lat,lng:START.lng};
-      p.pendingTask=null;p.slowUntil=0;p.ghostUntil=0;p.ringUntil=0;p.freezeUntil=0;p.cloakUntil=0;p.shiftReady=false;p.casinoDone=0;p.casinoForce=0;p.botMoves=0;p.stats={catches:0,buffs:0,hiddenAt:0};});
+      p.pendingTask=null;p.slowUntil=0;p.ghostUntil=0;p.ringUntil=0;p.freezeUntil=0;p.cloakUntil=0;p.shiftUntil=0;p.casinoDone=0;p.casinoForce=0;p.botMoves=0;p.stats={catches:0,buffs:0,hiddenAt:0};});
     r.chat=[];});
   /* same per-game UI teardown as a rematch: without it the end overlay stayed
      open and stale scream/casino state leaked into the fresh lobby. */
   ui.seenLog=new Set();ui.seenReveal=new Set();ui.seenCaught=new Set();ui.zoneOutSince=0;ui.zoneViolations=0;
   ui.lastCasinoWin=0;ui.casDismissed=0;
+  ui.roamOut=0;ui.roamWarned=false;ui.roamHits=0;ui.lastRoamHit=0;
   if($('ov-casino').classList.contains('open'))casClose(); /* round ended with the casino up — tear it down */
   closeOv('ov-end');closeOv('ov-caught');
   if(ui.screamOpen)closeScream();
@@ -1689,7 +1686,7 @@ function rematchNow(){
     const hst=r.players.find(x=>x.id===r.hostId);
     const sp=(hst&&hst.pos&&isFinite(hst.pos.lat))?{lat:hst.pos.lat,lng:hst.pos.lng}:{lat:START.lat,lng:START.lng};
     r.players.forEach(p=>{ p.hearts=3;p.status='alive';p.pos={lat:sp.lat,lng:sp.lng};p.hidePos=null;
-      p.casinoDone=0;p.casinoForce=0;p.slowUntil=0;p.ghostUntil=0;p.ringUntil=0;p.freezeUntil=0;p.cloakUntil=0;p.shiftReady=false;p.pendingTask=null;p.caughtBy=null;
+      p.casinoDone=0;p.casinoForce=0;p.slowUntil=0;p.ghostUntil=0;p.ringUntil=0;p.freezeUntil=0;p.cloakUntil=0;p.shiftUntil=0;p.pendingTask=null;p.caughtBy=null;
       p.botMoves=0;p.stats={catches:0,buffs:0,hiddenAt:0};
       if(p.bot&&p.role==='hider'){p.hidePos=randInZone();p.botMoves=4;p.stats.hiddenAt=t;} });
     r.fx=[];r.log=[];r.chat=[];
@@ -1697,8 +1694,10 @@ function rematchNow(){
     r.phase='hide';r.winner=null;r.forceCasinoId=0;
     logEvent(ico('bolt',12)+' rematch — new roles, new round');
   });
+  reloadBack=false; // a brand-new round should show the reveal again
   ui.seenLog=new Set();ui.seenReveal=new Set();ui.seenCaught=new Set();ui.zoneOutSince=0;ui.zoneViolations=0;
   ui.lastCasinoWin=0;ui.casDismissed=0;
+  ui.roamOut=0;ui.roamWarned=false;ui.roamHits=0;ui.lastRoamHit=0;
   if($('ov-casino').classList.contains('open'))casClose(); /* rematch with the casino up — tear it down */
   closeOv('ov-end');
   closeGameSheetNow();
@@ -1764,8 +1763,10 @@ function casApply(bf,tgt){
     }else if(bf.id==='decoy'){
       commit(r=>{r.fx.push({id:uid(),kind:'fake',forId:'seekers',center:randInZone(),until:now()+60000});logEvent(ico('decoy',12)+' a decoy blip appeared');});
       toast(ico('decoy',13)+' fake hider planted on seeker maps','good');
-    }else if(bf.id==='shift'){
-      commit(r=>{me().shiftReady=true;}); toast(ico('pin',13)+' shift ready — tap it in your buff bar','good');
+    }else    if(bf.id==='shift'){
+      commit(r=>{const p=r.players.find(x=>x.id===myId);p.shiftUntil=now()+SHIFT_WINDOW_MS;});
+      logEvent(ico('pin',12)+' a hiding spot was unsealed — a hider may relocate');
+      toast(ico('pin',13)+' SHIFT — your roam circle is now <b>'+SHIFT_MAX_M+' m</b> · walk & lock a new spot · <b>2:00</b>','gold',6000);sGold();vib([50,60,50]);
     }else if(bf.id==='ghost'){
       commit(r=>{me().ghostUntil=now()+90000;}); toast(ico('mist',13)+' you are ghosted for 90 s','good');
     }else if(bf.id==='see'){
@@ -1791,7 +1792,7 @@ function setHideSpot(){
   if((m.freezeUntil||0)>now()){toast(ico('snow',13)+' frozen — you can\'t move','warn');return;}
   if(!inZone(p)){toast('you are outside the zone','warn');return;}
   commit(r=>{me().hidePos={lat:p.lat,lng:p.lng};const s=me().stats=me().stats||{catches:0,buffs:0,hiddenAt:0};s.hiddenAt=now();});
-  toast('hidden ✓ stay quiet','good'); vib(40);
+  vib(40);
 }
 function doCatch(pid){
   const tgt=room.players.find(p=>p.id===pid);
@@ -2249,17 +2250,8 @@ $('btn-how').onclick=()=>openOv('ov-how');
 $('btn-how-close').onclick=()=>closeOv('ov-how');
 $('btn-enter').onclick=()=>{closeOv('ov-reveal');};
 $('btn-caught-ok').onclick=()=>closeOv('ov-caught');
-$('btn-shift-cancel').onclick=()=>closeOv('ov-shift');
-$('sh-bearing').oninput=e=>{$('sh-bv').textContent=e.target.value;};
-$('sh-dist').oninput=e=>{$('sh-dv').textContent=e.target.value;};
-$('btn-shift-ok').onclick=()=>{
-  const m=me();
-  if((m.freezeUntil||0)>now()){toast(ico('snow',13)+' frozen — you can\'t move','warn');closeOv('ov-shift');return;}
-  const base=m.hidePos||m.pos||START;
-  const np=dest(base,+$('sh-bearing').value,+$('sh-dist').value);
-  commit(r=>{me().hidePos=np;me().shiftReady=false;});
-  closeOv('ov-shift');toast('shifted '+$('sh-dist').value+' m — new spot set','good');
-};
+/* shift is now fully automatic (buff win starts it; lock via the bottom-sheet
+   button or the 2-minute timeout). No dialog, no sliders. */
 $('cf-cancel').onclick=()=>closeOv('ov-confirm');
 
 /* ---------------- screens ---------------- */
@@ -2346,7 +2338,6 @@ $('btn-mapedit-ok').onclick=()=>{
   redrawZoneLayers();
   if(room)commit(r=>{r.zone=pts.map(p=>({lat:p.lat,lng:p.lng}));});
   closeOv('ov-mapedit');
-  toast('map updated — the zone now uses your corners','good');
 };
 function renderLobby(){
   if(!room||ui.screen!=='lobby')return;
@@ -2397,6 +2388,13 @@ function initGameMap(){
     if((m.freezeUntil||0)>now()){toast(ico('snow',13)+' frozen — you can\'t move','warn');return;}
     commit(r=>{me().pos={lat:e.latlng.lat,lng:e.latlng.lng};});
     if(!inZone(e.latlng))toast('⚠ that spot is outside the zone','warn');
+    /* roam-circle hint — suppressed while a shift window is open (the gold
+       50 m circle is legal ground) and throttled so it can't stack */
+    if(m.role==='hider'&&m.hidePos&&!(m.shiftUntil>now())&&distM({lat:e.latlng.lat,lng:e.latlng.lng},m.hidePos)>HIDE_ROAM_M
+       &&now()-(ui.lastRoamTapWarn||0)>5000){
+      ui.lastRoamTapWarn=now();
+      toast('⚠ beyond your '+HIDE_ROAM_M+' m roam circle — stay out and you lose a ♥','warn');
+    }
   });
   drawZoneStatic();
 }
@@ -2426,6 +2424,7 @@ function upsertLayer(key,make,update){
 function updateMap(){
   if(!gMap||!room||ui.screen!=='game')return;
   const t=now(),m=me();if(!m)return;
+  const shifting=m.role==='hider'&&m.shiftUntil&&t<m.shiftUntil;
   const want=new Set();
   const revealAll=m.status!=='alive'||room.phase==='end';
   /* secret buff: hider with 'seeker vision' sees every live seeker dot */
@@ -2450,6 +2449,22 @@ function updateMap(){
   if(m.role==='hider'&&m.hidePos){want.add('hide');
     upsertLayer('hide',()=>L.circleMarker([m.hidePos.lat,m.hidePos.lng],{radius:9,color:'#fff',weight:2,fillColor:'#12c98f',fillOpacity:.9}),
       ly=>ly.setLatLng([m.hidePos.lat,m.hidePos.lng]));}
+  /* shift window: the 10 m roam circle is GONE — instead a gold SHIFT_MAX_M
+     circle centered on the OLD spot shows where this hider may go */
+  if(m.role==='hider'&&m.status==='alive'&&shifting&&m.hidePos){
+    want.add('shiftZone');
+    upsertLayer('shiftZone',()=>L.circle([m.hidePos.lat,m.hidePos.lng],{radius:SHIFT_MAX_M,color:'#f0b429',weight:2,dashArray:'6 6',fillColor:'#f0b429',fillOpacity:.10,interactive:false}),
+      ly=>ly.setLatLng([m.hidePos.lat,m.hidePos.lng]));
+  }
+  /* the roam circle: how far this hider may wander from their locked spot —
+     green while inside, red the moment they stray out. Hidden entirely while
+     a shift window is open (the gold circle replaces it). */
+  if(m.role==='hider'&&m.hidePos&&m.status==='alive'&&(room.phase==='hide'||room.phase==='seek')&&!shifting){
+    const out=distM(m.pos||m.hidePos,m.hidePos)>HIDE_ROAM_M;
+    want.add('roam');
+    upsertLayer('roam',()=>L.circle([m.hidePos.lat,m.hidePos.lng],{radius:HIDE_ROAM_M,color:out?'#ff4d2a':'#12c98f',weight:2,dashArray:'4 6',fillColor:out?'#ff4d2a':'#12c98f',fillOpacity:.08,interactive:false}),
+      ly=>{ly.setLatLng([m.hidePos.lat,m.hidePos.lng]);ly.setStyle({color:out?'#ff4d2a':'#12c98f',fillColor:out?'#ff4d2a':'#12c98f'});});
+  }
   room.fx.forEach(f=>{
     if(f.until<t)return;
     if(!(f.forId===myId||(f.forId==='seekers'&&m.role==='seeker')))return;
@@ -2486,17 +2501,22 @@ let watchId=null;
    every fix so the map stays live, but only saves + broadcasts once the
    player has actually moved a few meters and a short cooldown has passed —
    stationary GPS jitter then sends nothing at all. */
+/* hide-spot leash: a locked-in hider may roam HIDE_ROAM_M meters around their
+   spot (shown as a circle on their map). Stray out → warning, then ♥ loss.
+   The shift buff replaces that circle with a SHIFT_MAX_M one for
+   SHIFT_WINDOW_MS — walk to a new spot, then lock it. */
+const HIDE_ROAM_M=10, SHIFT_MAX_M=50, SHIFT_WINDOW_MS=120000;
 const GPS_MOVE_M=5, GPS_MIN_MS=1000;
 /* one shared sim/GPS toggle across screens: the game chip and the lobby
    "my spot" button both flip it; posBtnText() updates whichever exists. */
 function posBtnText(){
-  const g=$('btn-posmode'),l=$('btn-spot');
-  if(g)g.innerHTML=ui.simMode?svgI('pin',13,2.2)+' sim':svgI('gps',13,2.2)+' gps';
+  const d=$('dev-pos'),l=$('btn-spot');
+  if(d){d.innerHTML=ui.simMode?svgI('pin',13,2.2)+' sim mode':svgI('gps',13,2.2)+' gps mode';d.classList.toggle('on',!ui.simMode);}
   if(l){l.innerHTML=ui.simMode?svgI('pin',13,2.2)+' my spot':svgI('gps',13,2.2)+' gps on';l.classList.toggle('on',!ui.simMode);}
 }
-function setPosMode(sim){
+function setPosMode(sim,quiet){
   ui.simMode=sim;posBtnText();
-  if(sim){if(watchId!=null){try{navigator.geolocation.clearWatch(watchId);}catch(e){}watchId=null;}toast('sim mode — tap the map to move','silent');}
+  if(sim){if(watchId!=null){try{navigator.geolocation.clearWatch(watchId);}catch(e){}watchId=null;}if(!quiet)toast('sim mode — tap the map to move','silent');}
   else{
     if(!navigator.geolocation){toast('no GPS here — staying in sim','warn');ui.simMode=true;posBtnText();return;}
     try{
@@ -2519,7 +2539,7 @@ function setPosMode(sim){
       toast(ico('walk',14)+' GPS mode — walk for real','silent');
     }catch(e){ui.simMode=true;posBtnText();}
   }
-}  $('btn-posmode').onclick=()=>setPosMode(!ui.simMode);
+}  $('dev-pos').onclick=()=>setPosMode(!ui.simMode);
 $('btn-spot').onclick=()=>setPosMode(!ui.simMode);
 
 /* ---------------- HUD render (maps-style UI) ---------------- */
@@ -2580,13 +2600,12 @@ function renderGame(){
   if((m.freezeUntil||0)>t)bhtml+='<button class="chip buff" data-note="frozen — position locked">'+svgI('snow',13)+' frozen <span class="t">'+Math.ceil((m.freezeUntil-t)/1000)+'s</span></button>';
   if(m.ghostUntil>t)bhtml+='<button class="chip buff" data-note="ghost — invisible to radar, ring & scream">'+svgI('mist',13)+' ghost <span class="t">'+Math.ceil((m.ghostUntil-t)/1000)+'s</span></button>';
   if(m.cloakUntil>t)bhtml+='<button class="chip buff" data-note="cloaked — no radar, no catch">'+svgI('mist',13)+' cloak <span class="t">'+Math.ceil((m.cloakUntil-t)/1000)+'s</span></button>';
-  if(m.shiftReady&&ph!=='end')bhtml+='<button class="chip buff" data-act="shift">'+svgI('pin',13)+' shift ready</button>';
+  if(m.shiftUntil&&t<m.shiftUntil&&ph!=='end')bhtml+='<button class="chip buff" data-note="shift — walk inside the gold circle, then lock your new spot">'+svgI('pin',13)+' shift <span class="t">'+Math.ceil((m.shiftUntil-t)/1000)+'s</span></button>';
   room.fx.forEach(f=>{if(f.until>t&&(f.forId===myId||(f.forId==='seekers'&&m.role==='seeker'))){const fl=fxLabel(f);bhtml+='<button class="chip buff" data-note="'+esc(fl)+'">'+svgI(fxIco(f),13)+' '+esc(fl)+' <span class="t">'+Math.ceil((f.until-t)/1000)+'s</span></button>';}});
   if(bc.innerHTML!==bhtml){bc.innerHTML=bhtml;
     Array.from(bc.children).forEach(el=>{
       el.onclick=()=>{
-        if(el.dataset.act==='shift'){const mm=me();if(mm&&(mm.freezeUntil||0)>now()){toast(ico('snow',13)+' frozen — you can\'t move','warn');return;}openOv('ov-shift');}
-        else toast((el.dataset.note||el.textContent.trim())+' — active on you','silent');
+        toast((el.dataset.note||el.textContent.trim())+' — active on you','silent');
       };
     });
   }
@@ -2599,11 +2618,22 @@ function renderGame(){
   if(m.role==='hider')renderHiderPeek(m,ph,t);
   else if(m.role==='seeker')renderSeekerPeek(m,ph,t);
   /* re-measure the sheet when its content size can change */
-  const key=m.role+'|'+ph+'|'+(m.hidePos?1:0)+'|'+m.status;
+  const key=m.role+'|'+ph+'|'+(m.hidePos?1:0)+'|'+m.status+'|'+(m.shiftUntil&&t<m.shiftUntil?'S':'');
   if(key!==gsheetKey){gsheetKey=key;setTimeout(()=>layoutSheet(false),0);}
 }
 function renderHiderPeek(m,ph,t){
   const title=$('hiderTitle'),sub=$('hiderSub'),hideB=$('btnHide');
+  const shifting=m.shiftUntil&&t<m.shiftUntil;
+  if(shifting){
+    const left=m.shiftUntil-t;
+    const done=m.hidePos&&m.pos&&distM(m.pos,m.hidePos)<=HIDE_ROAM_M;
+    title.textContent='Relocating — '+Math.floor(left/60000)+':'+String(Math.floor(left/1000)%60).padStart(2,'0');
+    sub.innerHTML=done
+      ?'you are within 10 m of your spot — tap to <b>lock it now</b>, or keep moving.'
+      :'move inside the <b>gold circle</b> (50 m from your old spot) — when the timer ends the spot locks where you stand.';
+    hideB.disabled=false;hideB.innerHTML=ico('pin',14,2.2)+'&nbsp; Lock new spot here';
+    return;
+  }
   if(ph==='hide'){
     if(m.hidePos){title.textContent='Locked in.';sub.innerHTML='your spot is set — seekers released in <b>'+fmt(room.hideEndsAt-t)+'</b>. stay quiet, stay in the zone.';hideB.disabled=true;hideB.innerHTML='✓&nbsp; hidden — stay quiet';}
     else{title.textContent='Find your spot.';sub.innerHTML='vanish inside the dashed zone — <b>'+fmt(room.hideEndsAt-t)+'</b> on the clock. move yourself on the map, then lock it in.';hideB.disabled=false;hideB.innerHTML=ico('pin',14,2.2)+'&nbsp; Hide here';}
@@ -2771,7 +2801,6 @@ function renderSheet(){
     const sub=[p.bot?'bot':p.role?p.role:'player'];
     if(isMe)sub.push('you');
     if(p.status!=='alive')sub.push(p.status==='caught'?(p.caughtBy?'caught by '+esc((room.players.find(x=>x.id===p.caughtBy)||{}).name||'—'):'gave up'):'out');
-    else if(p.role==='hider'&&ph==='seek'&&m.role==='seeker'&&m.pos&&p.pos)sub.push('≈'+Math.round(distM(m.pos,p.pos))+' m');
     else if(p.role==='hider'&&ph==='hide'&&m.role==='seeker')sub.push('hiding somewhere');
     const nm=esc(p.name)+(isMe?'<em> · you</em>':'');
     let catchBtn='';
@@ -2910,6 +2939,7 @@ function showCaughtOverlay(){
 function renderReveal(){
   const m=me();if(!m||!m.role)return;
   if(ui.kicked)return; // never overwrite the kicked screen with a reveal
+  if(reloadBack)return; // restored mid-round after a page reload — you already know your role
   const key='leak-reveal-'+room.code+':'+room.startedAt;
   // Phase 2 #14: guard with an in-memory set too, so the reveal shows exactly
   // once per game per tab even when storage is blocked (sandbox fallback).
@@ -3026,7 +3056,6 @@ function tick(){
     const casKey=(room&&room.forceCasinoId)||w;
     if(casinoOpenFor(me())&&!$('ov-casino').classList.contains('open')&&ui.casDismissed!==casKey){
       const first=!ui.seenCasinoOnce; ui.seenCasinoOnce=true;
-      toast(first?'casino time — pull the lever!':'casino time — grab a buff','gold',first?4500:3500);
       sGold(); vib([40,40,40]);
       openCasino(); // the machine appears on its own when the casino is possible
     }
@@ -3043,6 +3072,36 @@ function tick(){
         loseHeart(myId,'left the zone');
       }
     }else ui.zoneOutSince=0;
+    /* shift window auto-lock: when the 2-minute relocation window expires, the
+       spot locks wherever the hider currently stands. (commit only if the
+       timeout actually fired, so idle ticks don't broadcast.) */
+    if(m&&m.role==='hider'&&m.shiftUntil&&t>=m.shiftUntil&&m.status==='alive'){
+      const p=(m.pos&&isFinite(m.pos.lat))?m.pos:m.hidePos||m.pos||START;
+      commit(r=>{const q=r.players.find(x=>x.id===myId);q.hidePos={lat:p.lat,lng:p.lng};q.shiftUntil=0;const s=q.stats=q.stats||{catches:0,buffs:0,hiddenAt:0};if(!s.hiddenAt)s.hiddenAt=now();});
+      vib(40);toast(ico('pin',13)+' shift over — new spot locked where you stand','good');
+    }
+    /* hide-spot leash: once a hider locks a spot they may roam HIDE_ROAM_M
+       around it. Leaving it warns immediately; staying out (or leaving again
+       after a heart) costs a ♥ — escalating like the zone rule. Suppressed
+       while a shift window is open (the 50 m circle is legal ground). */
+    const shifting=m&&m.role==='hider'&&m.shiftUntil&&t<m.shiftUntil;
+    if(m&&m.role==='hider'&&m.hidePos&&m.status==='alive'&&(room.phase==='hide'||room.phase==='seek')
+       &&!shifting&&!((m.freezeUntil||0)>t)){
+      if(distM(m.pos||m.hidePos,m.hidePos)>HIDE_ROAM_M){
+        if(!ui.roamOut){ui.roamOut=t;ui.roamWarned=false;}
+        if(!ui.roamWarned){ui.roamWarned=true;sWarn();vib([60,40,60]);
+          toast(ico('pin',13)+' too far from your hide spot — get back within '+HIDE_ROAM_M+' m!','warn',5000);}
+        const rgrace=ui.roamHits>=1?10000:15000;
+        if(t-ui.roamOut>rgrace&&t-ui.lastRoamHit>5000){
+          ui.lastRoamHit=t;ui.roamOut=t;ui.roamWarned=false;ui.roamHits++;
+          loseHeart(myId,'left the hide spot');
+        }
+      }else{ui.roamOut=0;ui.roamWarned=false;}
+    }else{ui.roamOut=0;ui.roamWarned=false;}
+    /* shift window last-10-seconds cue, same style as other timed buffs */
+    if(shifting&&m.shiftUntil-t<=10000){const wk='shiftw:'+Math.ceil((m.shiftUntil-t)/1000);
+      if(!ui.buffWarned.has(wk)){ui.buffWarned.add(wk);sNotif();vib(30);}}
+    else for(const it of ui.buffWarned){if(it.startsWith('shiftw:'))ui.buffWarned.delete(it);}
     /* quiet ambience (seek only): tension pulse for hiders near a seeker, faint sweep for seekers */
     if(t-ui.ambiT>7000){ui.ambiT=t;
       if(ui.ambient&&m&&m.status==='alive'){
@@ -3143,7 +3202,7 @@ function renderRecent(){
   box.style.display=arr.length?'flex':'none';
 }
 renderRecent();
-$('btn-supa-set').onclick=()=>{if(promptSupabase())toast('Supabase key saved','good');};
+$('btn-supa-set').onclick=()=>{if(promptSupabase()){}};
 if(!supaCfg.key)setTimeout(()=>toast('tap "set Supabase key" once to enable cross-device','warn',6000),1200);
 $('btn-leave').onclick=()=>{
   if(room){
@@ -3183,7 +3242,7 @@ $('btn-rematch').onclick=()=>{closeOv('ov-end');resetRoom();};
 $('btn-rematch-now').onclick=rematchNow;
 $('dev-toggle').onclick=()=>$('dev').classList.toggle('open');
 $('dev-skip').onclick=()=>{if(room&&room.phase==='hide')commit(r=>{r.hideEndsAt=Date.now();});};
-$('dev-casino').onclick=()=>{if(room)commit(r=>{r.forceCasinoId=Date.now();});toast('casino forced for everyone','gold');};
+$('dev-casino').onclick=()=>{if(room)commit(r=>{r.forceCasinoId=Date.now();});};
 $('dev-heart').onclick=()=>loseHeart(myId,'dev testing');
 $('dev-end').onclick=()=>{if(room&&room.phase==='seek')commit(r=>{r.phase='end';r.winner=aliveHiders().length?'hiders':'seekers';});};
 $('dev-reset').onclick=()=>{if(room)resetRoom();};
@@ -3210,12 +3269,11 @@ function hideMenu(){if(menuPop)menuPop.hidden=true;}
 /* top card */
 $('zoneLine').innerHTML='Zone · Root, 6037 <small>— start at the host\'s spot</small>';
 $('btnBackTop').onclick=()=>{if(room)askConfirm('leave the game?','you will be removed from the room — the round continues without you.','leave',true,leaveToHome);};
-$('btnMenu').onclick=e=>{e.stopPropagation();if(menuPop)menuPop.hidden=!menuPop.hidden;};
+$('btnMenu').onclick=e=>{e.stopPropagation();if(menuPop){const resetItem=$('miReset');if(resetItem)resetItem.style.display=(room&&room.hostId===myId)?'':'none';menuPop.hidden=!menuPop.hidden;}};
 document.addEventListener('click',e=>{if(menuPop&&!menuPop.hidden&&!e.target.closest('#menuPop')&&!e.target.closest('#btnMenu'))menuPop.hidden=true;});
 $('miHow').onclick=()=>{hideMenu();openOv('ov-how');};
 $('miChat').onclick=()=>{hideMenu();ui.chatOpen?closeChat():openChat();};
-$('miDev').onclick=()=>{hideMenu();$('dev').classList.add('open');};
-$('miReset').onclick=()=>{hideMenu();if(room)askConfirm('reset room?','everyone returns to the lobby with fresh roles and hearts.','reset',true,()=>{resetRoom();});};
+$('miReset').onclick=()=>{hideMenu();if(!room||room.hostId!==myId){toast('only the host can reset the room','warn');return;}askConfirm('reset room?','everyone returns to the lobby with fresh roles and hearts.','reset',true,()=>{resetRoom();});};
 /* chips row */
 $('chip-players').onclick=()=>openSheet();
 $('chip-zone').onclick=()=>{if(!gMap)return;gMap.flyToBounds([[Z.minLat,Z.minLng],[Z.maxLat,Z.maxLng]],{padding:[50,50],duration:.7});};
@@ -3229,7 +3287,21 @@ $('fab-loc').onclick=recenterMap;
     toast('your role is fixed for this round — you are the '+(m.role==='hider'?'Hider':'Seeker'),'silent');};
 });
 /* peek primary actions */
-$('btnHide').onclick=()=>{const m=me();if(!m||m.role!=='hider'){toast('only hiders can set a hide spot','warn');return;}if(room.phase!=='hide'){toast('the hiding window is over','warn');return;}setHideSpot();};
+$('btnHide').onclick=()=>{
+  const m=me();if(!m||m.role!=='hider'){toast('only hiders can set a hide spot','warn');return;}
+  const t=now();
+  if(m.shiftUntil&&t<m.shiftUntil){ // relocation window open — this is the LOCK
+    const p=m.pos||START;
+    if(!m.hidePos){commit(r=>{const q=r.players.find(x=>x.id===myId);q.hidePos={lat:p.lat,lng:p.lng};q.shiftUntil=0;const s=q.stats=q.stats||{catches:0,buffs:0,hiddenAt:0};if(!s.hiddenAt)s.hiddenAt=now();});vib(40);toast('locked ✓ spot set — the 10 m circle is back','good');return;}
+    if(distM(p,m.hidePos)>SHIFT_MAX_M){toast('too far — the new spot must be within '+SHIFT_MAX_M+' m of the old one','warn');return;}
+    if(!inZone(p)){toast('you are outside the zone','warn');return;}
+    commit(r=>{const q=r.players.find(x=>x.id===myId);q.hidePos={lat:p.lat,lng:p.lng};q.shiftUntil=0;const s=q.stats=q.stats||{catches:0,buffs:0,hiddenAt:0};if(!s.hiddenAt)s.hiddenAt=now();});
+    vib(40);toast('locked ✓ new spot set — the 10 m circle is back','good');
+    return;
+  }
+  if(room.phase!=='hide'){toast('the hiding window is over','warn');return;}
+  setHideSpot();
+};
 $('btnFind').onclick=()=>{const m=me();if(!m||m.role!=='seeker'){toast('only seekers hunt','warn');return;}openSheet();requestAnimationFrame(()=>{const b=$('seekerBody');if(b)b.scrollTop=0;});};
 /* re-layout when size / fonts settle */
 const relayoutGame=()=>{if(room&&ui.screen==='game')setTimeout(()=>layoutSheet(false),0);};
@@ -3237,7 +3309,7 @@ window.addEventListener('resize',relayoutGame);
 window.addEventListener('load',relayoutGame);
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(relayoutGame);
 
-setPosMode(true);
+setPosMode(true,true); // quiet at boot: don't toast mode hints before "reconnected"
 tickIv=setInterval(tick,250);
 showScreen('home');
 /* deep-link join: leak.html?room=CODE — the QR in the lobby encodes this, so
@@ -3269,12 +3341,12 @@ showScreen('home');
     room=r;
     if(isLegacyDefault(r.zone)){r.zone=DEFAULT_CORNERS.map(c=>({lat:c.lat,lng:c.lng}));} // stale pre-move default
     if(Array.isArray(r.zone)&&r.zone.length===4)applyCorners(r.zone);
+    reloadBack=(r.phase==='hide'||r.phase==='seek'); // came back mid-round — skip the "you hide / you seek" reveal
     ui.hostSeen=Date.now(); // host heartbeat present (we might be the host)
-    ui.seenLog=new Set();
+    ui.seenLog=new Set((r.log||[]).map(l=>l.id)); // the saved log is history — only live events toast after the reload
     chanFor(r.code);
     saveRoom(); // bump seq + broadcast snapshot (flushed once subscribed) + re-track presence
     showScreen(room.phase==='lobby'?'lobby':'game');
-    toast('reconnected to room <b>'+r.code+'</b>','good',4000);
   }catch(e){LS.del('leak.active');}
 })();
 if(!storageAvailable){
