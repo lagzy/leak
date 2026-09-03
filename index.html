@@ -99,6 +99,10 @@ input,select{font-family:inherit;color:inherit}
 #btn-mapedit{position:absolute;top:10px;right:10px;z-index:1000;width:34px;height:34px;padding:0;
   font-size:15px;border-radius:50%;background:rgba(255,255,255,.94);color:var(--ink);border:1px solid rgba(20,21,24,.12);
   backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:0 2px 10px rgba(20,21,24,.2)}
+#btn-spot{position:absolute;top:10px;left:10px;z-index:1000;height:34px;padding:0 13px;border-radius:999px;
+  font-size:12px;font-weight:700;background:rgba(255,255,255,.94);color:var(--ink);border:1px solid rgba(20,21,24,.12);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:0 2px 10px rgba(20,21,24,.2)}
+#btn-spot.on{background:var(--ink);color:#fff}
 #edit-map{height:300px;border-radius:14px;border:1px solid var(--line);overflow:hidden;z-index:0}
 .plist{display:flex;flex-direction:column;gap:8px}
 .prow{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);
@@ -607,6 +611,7 @@ input,select{font-family:inherit;color:inherit}
     <div class="sec-title">play zone — Root, 6037</div>
     <div class="lobby-map-wrap">
       <div id="lobby-map"></div>
+      <button id="btn-spot" aria-label="set my starting spot (GPS, or tap the map in sim mode)">📍 my spot</button>
       <button id="btn-mapedit" class="btn" aria-label="edit play zone map"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>
     </div>
     <div class="sec-title">settings <span id="set-lock" style="text-transform:none;letter-spacing:0"></span></div>
@@ -620,7 +625,7 @@ input,select{font-family:inherit;color:inherit}
     <div style="height:10px"></div>
     <button id="btn-addbot" class="btn ghost" style="font-size:14px;padding:11px">＋ add test bot</button>
     <div class="lob-note" id="role-hint">tap a role chip to cycle hider → seeker → random</div>
-    <div class="lob-note">everyone starts at corner <b>1</b> (editable via map edit) · roles are picked or random ·
+    <div class="lob-note">the game starts at the host's spot — host taps 📍 my spot for GPS · roles are picked or random ·
     nobody may leave the rectangle · breaking rules costs a ♥</div>
   </div>
   <div class="lob-actions">
@@ -1601,7 +1606,12 @@ function startGame(){
     if(r.players.every(p=>p.role==='hider'))r.players[r.players.length-1].role='seeker';
     if(r.players.every(p=>p.role==='seeker'))r.players[r.players.length-1].role='hider';
     const t=now();
-    r.players.forEach(p=>{ p.hearts=3;p.status='alive';p.pos={lat:START.lat,lng:START.lng};p.hidePos=null;
+    /* the start point is the HOST's location at the moment the game starts:
+       everyone (humans and bots) spawns at the meeting point where the host
+       is standing. Falls back to corner 1 if the host has no position yet. */
+    const hst=r.players.find(x=>x.id===r.hostId);
+    const sp=(hst&&hst.pos&&isFinite(hst.pos.lat))?{lat:hst.pos.lat,lng:hst.pos.lng}:{lat:START.lat,lng:START.lng};
+    r.players.forEach(p=>{ p.hearts=3;p.status='alive';p.pos={lat:sp.lat,lng:sp.lng};p.hidePos=null;
       p.casinoDone=0;p.casinoForce=0;p.slowUntil=0;p.ghostUntil=0;p.ringUntil=0;p.freezeUntil=0;p.cloakUntil=0;p.shiftReady=false;p.pendingTask=null;p.caughtBy=null;
       p.botMoves=0;p.stats={catches:0,buffs:0,hiddenAt:0};
       if(p.bot&&p.role==='hider'){p.hidePos=randInZone();p.botMoves=4;p.stats.hiddenAt=t;} });
@@ -1613,7 +1623,9 @@ function startGame(){
 }
 function resetRoom(){
   commit(r=>{ r.phase='lobby';r.winner=null;r.fx=[];r.log=[];r.startedAt=0;r.forceCasinoId=0;
-    r.players.forEach(p=>{p.role=null;p.hearts=3;p.status='alive';p.hidePos=null;p.pos={lat:START.lat,lng:START.lng};
+    /* keep positions in the lobby (live GPS keeps tracking); the next start
+       snaps everyone to the host's spot anyway */
+    r.players.forEach(p=>{p.role=null;p.hearts=3;p.status='alive';p.hidePos=null;if(p.bot)p.pos={lat:START.lat,lng:START.lng};
       p.pendingTask=null;p.slowUntil=0;p.ghostUntil=0;p.ringUntil=0;p.freezeUntil=0;p.cloakUntil=0;p.shiftReady=false;p.casinoDone=0;p.casinoForce=0;p.botMoves=0;p.stats={catches:0,buffs:0,hiddenAt:0};});
     r.chat=[];});
   /* same per-game UI teardown as a rematch: without it the end overlay stayed
@@ -1635,7 +1647,12 @@ function rematchNow(){
     if(r.players.every(p=>p.role==='hider'))r.players[r.players.length-1].role='seeker';
     if(r.players.every(p=>p.role==='seeker'))r.players[r.players.length-1].role='hider';
     const t=now();
-    r.players.forEach(p=>{ p.hearts=3;p.status='alive';p.pos={lat:START.lat,lng:START.lng};p.hidePos=null;
+    /* the start point is the HOST's location at the moment the game starts:
+       everyone (humans and bots) spawns at the meeting point where the host
+       is standing. Falls back to corner 1 if the host has no position yet. */
+    const hst=r.players.find(x=>x.id===r.hostId);
+    const sp=(hst&&hst.pos&&isFinite(hst.pos.lat))?{lat:hst.pos.lat,lng:hst.pos.lng}:{lat:START.lat,lng:START.lng};
+    r.players.forEach(p=>{ p.hearts=3;p.status='alive';p.pos={lat:sp.lat,lng:sp.lng};p.hidePos=null;
       p.casinoDone=0;p.casinoForce=0;p.slowUntil=0;p.ghostUntil=0;p.ringUntil=0;p.freezeUntil=0;p.cloakUntil=0;p.shiftReady=false;p.pendingTask=null;p.caughtBy=null;
       p.botMoves=0;p.stats={catches:0,buffs:0,hiddenAt:0};
       if(p.bot&&p.role==='hider'){p.hidePos=randInZone();p.botMoves=4;p.stats.hiddenAt=t;} });
@@ -2224,6 +2241,13 @@ function initLobbyMap(){
   try{
     lobbyMap=L.map('lobby-map',{zoomControl:false,attributionControl:false,scrollWheelZoom:false,dragging:false});
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19}).addTo(lobbyMap);
+    /* pin your starting spot in sim mode: tap the lobby map to drop your position */
+    lobbyMap.on('click',e=>{
+      if(!room||ui.simMode===false)return; // GPS mode: the watch drives the position
+      const m=me();if(!m)return;
+      commit(r=>{me().pos={lat:e.latlng.lat,lng:e.latlng.lng};});
+      toast('📍 starting spot set — tap again to move it','silent');
+    });
     drawLobbyZone();
   }catch(e){}
 }
@@ -2231,7 +2255,11 @@ function drawLobbyZone(){
   if(!lobbyMap)return;
   lobbyZoneLayers.forEach(l=>{try{lobbyMap.removeLayer(l);}catch(e){}});lobbyZoneLayers=[];
   lobbyZoneLayers.push(L.polygon(ZONE_POLY,{color:'#fff',weight:2,dashArray:'6 6',fill:false}).addTo(lobbyMap));
-  lobbyZoneLayers.push(L.marker([START.lat,START.lng],{icon:L.divIcon({className:'',html:'<div class="mk"><div class="d" style="background:#f0b429"></div><div class="lbl">start</div></div>',iconSize:[16,16],iconAnchor:[8,8]})}).addTo(lobbyMap));
+  lobbyZoneLayers.push(L.marker([START.lat,START.lng],{icon:L.divIcon({className:'',html:'<div class="mk"><div class="d" style="background:#f0b429"></div><div class="lbl">corner 1</div></div>',iconSize:[16,16],iconAnchor:[8,8]})}).addTo(lobbyMap));
+  /* your own starting spot, once set (moved away from the default corner) */
+  const m=me();
+  if(m&&m.pos&&isFinite(m.pos.lat)&&distM(m.pos,START)>2)lobbyZoneLayers.push(L.marker([m.pos.lat,m.pos.lng],
+    {icon:L.divIcon({className:'',html:'<div class="mk"><div class="d" style="background:#4d8dff"></div><div class="lbl">you</div></div>',iconSize:[16,16],iconAnchor:[8,8]})}).addTo(lobbyMap));
   lobbyMap.fitBounds([[Z.minLat,Z.minLng],[Z.maxLat,Z.maxLng]],{padding:[14,14]});
 }
 
@@ -2312,6 +2340,7 @@ function renderLobby(){
       rm.onclick=()=>commit(r=>{r.removed=(r.removed||[]).concat(p.id);r.players=r.players.filter(x=>x.id!==p.id);});row.appendChild(rm);}
     box.appendChild(row);
   });
+  if(lobbyMap)drawLobbyZone(); // reflect pin/GPS moves on the lobby map
 }
 function esc(s){return String(s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));}
 const escN=esc; // name-safe alias — logEvent/toasts referenced escN but it was never defined,
@@ -2343,8 +2372,6 @@ function drawZoneStatic(){
   gZoneLayers.push(L.polygon(ZONE_POLY,{color:'#fff',weight:2,dashArray:'7 7',fill:false,interactive:false}).addTo(gMap));
   CORNERS.forEach((c,i)=>{gZoneLayers.push(L.marker([c.lat,c.lng],{icon:L.divIcon({className:'',html:'<div class="corner-dot"></div>',iconSize:[11,11],iconAnchor:[5,5]}),interactive:true})
     .addTo(gMap).bindTooltip('corner '+(i+1)+' · 6037 Root',{direction:'top',offset:[0,-6]}));});
-  gZoneLayers.push(L.marker([START.lat,START.lng],{icon:L.divIcon({className:'',html:'<div style="font-size:19px;text-shadow:0 2px 4px #000">🏁</div>',iconSize:[20,20],iconAnchor:[10,10]})})
-    .addTo(gMap).bindTooltip('start · corner 1',{direction:'top'}));
 }
 /* redrawZoneLayers: called after the zone is edited so lobby + game maps
    instantly reflect the new shape (also fires when a merge brings a new zone). */
@@ -2424,11 +2451,18 @@ let watchId=null;
    player has actually moved a few meters and a short cooldown has passed —
    stationary GPS jitter then sends nothing at all. */
 const GPS_MOVE_M=5, GPS_MIN_MS=1000;
+/* one shared sim/GPS toggle across screens: the game chip and the lobby
+   "my spot" button both flip it; posBtnText() updates whichever exists. */
+function posBtnText(){
+  const g=$('btn-posmode'),l=$('btn-spot');
+  if(g)g.textContent=ui.simMode?'📍 sim':'🛰 gps';
+  if(l){l.textContent=ui.simMode?'📍 my spot':'🛰 gps on';l.classList.toggle('on',!ui.simMode);}
+}
 function setPosMode(sim){
-  ui.simMode=sim;$('btn-posmode').textContent=sim?'📍 sim':'🛰 gps';
+  ui.simMode=sim;posBtnText();
   if(sim){if(watchId!=null){try{navigator.geolocation.clearWatch(watchId);}catch(e){}watchId=null;}toast('sim mode — tap the map to move','silent');}
   else{
-    if(!navigator.geolocation){toast('no GPS here — staying in sim','warn');ui.simMode=true;$('btn-posmode').textContent='📍 sim';return;}
+    if(!navigator.geolocation){toast('no GPS here — staying in sim','warn');ui.simMode=true;posBtnText();return;}
     try{
       watchId=navigator.geolocation.watchPosition(pos=>{
         const p=me(); if(!p)return;
@@ -2437,6 +2471,7 @@ function setPosMode(sim){
            so our own screen tracks the phone even between broadcasts */
         const lat=pos.coords.latitude,lng=pos.coords.longitude;
         p.pos={lat,lng}; p.speed=pos.coords.speed||0;
+        if(ui.screen==='lobby'&&lobbyMap)drawLobbyZone(); // keep the lobby map live while setting your spot
         /* broadcast only on real movement (≥GPS_MOVE_M since the last send)
            and at most GPS_MIN_MS apart */
         const moved=ui.lastSentPos?distM(ui.lastSentPos,{lat,lng}):1e9;
@@ -2446,10 +2481,10 @@ function setPosMode(sim){
         }
       },()=>{toast('GPS denied — back to sim mode (tap map)','warn');setPosMode(true);},{enableHighAccuracy:true,maximumAge:2000});
       toast('GPS mode — walk for real 🚶','silent');
-    }catch(e){ui.simMode=true;$('btn-posmode').textContent='📍 sim';}
+    }catch(e){ui.simMode=true;posBtnText();}
   }
-}
-$('btn-posmode').onclick=()=>setPosMode(!ui.simMode);
+}  $('btn-posmode').onclick=()=>setPosMode(!ui.simMode);
+$('btn-spot').onclick=()=>setPosMode(!ui.simMode);
 
 /* ---------------- HUD render (maps-style UI) ---------------- */
 function casinoCountTxt(m,t){
@@ -3129,7 +3164,7 @@ function recenterMap(){
 const menuPop=$('menuPop');
 function hideMenu(){if(menuPop)menuPop.hidden=true;}
 /* top card */
-$('zoneLine').innerHTML='Zone · Root, 6037 <small>— corner 1 start</small>';
+$('zoneLine').innerHTML='Zone · Root, 6037 <small>— start at the host\'s spot</small>';
 $('btnBackTop').onclick=()=>{if(room)askConfirm('leave the game?','you will be removed from the room — the round continues without you.','leave',true,leaveToHome);};
 $('btnMenu').onclick=e=>{e.stopPropagation();if(menuPop)menuPop.hidden=!menuPop.hidden;};
 document.addEventListener('click',e=>{if(menuPop&&!menuPop.hidden&&!e.target.closest('#menuPop')&&!e.target.closest('#btnMenu'))menuPop.hidden=true;});
