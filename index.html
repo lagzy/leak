@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>leak.</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='16' y='6' width='15' height='50' fill='%23111' stroke='white' stroke-width='5' paint-order='stroke'/><circle cx='47' cy='48.5' r='8' fill='%23ff4d2a'/></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='18' y='6' width='11' height='50' fill='%23111' stroke='white' stroke-width='5' paint-order='stroke'/><circle cx='47' cy='48.5' r='8' fill='%23ff4d2a'/></svg>">
 <link href="https://cdn.jsdelivr.net/fontsource/fonts/space-grotesk@latest/latin-400-normal.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/fontsource/fonts/space-grotesk@latest/latin-500-normal.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/fontsource/fonts/space-grotesk@latest/latin-700-normal.css" rel="stylesheet">
@@ -447,18 +447,70 @@ svg.i{vertical-align:-.15em;pointer-events:none;flex:none}
 #ov-casino #cas-token{background:#111;color:#fff}
 #ov-casino .mcard{box-shadow:0 24px 60px rgba(20,21,24,.35)}
 
-/* scream */
-#ov-scream .panel{background:#141518;color:#fff;text-align:center;border:1px solid rgba(255,77,42,.5)}
-#sc-time{font-family:'JetBrains Mono',monospace;font-size:46px;font-weight:700;color:var(--seeker);margin:4px 0 2px}
-#sc-btn{width:168px;height:168px;border-radius:50%;margin:20px auto;background:var(--seeker);color:#fff;
+/* scream — light panel, prototype feel: prep ring countdown → live meter → progress */
+#ov-scream .panel{background:var(--card);color:var(--ink);text-align:center;border:1px solid rgba(255,77,42,.45);
+  box-shadow:0 24px 60px rgba(255,77,42,.16),0 10px 30px rgba(20,21,24,.16)}
+#ov-scream .panel h2{color:var(--seeker-dark)}
+#ov-scream .sub b{color:var(--seeker-dark)}
+.sc-badge{width:46px;height:46px;border-radius:50%;background:rgba(255,77,42,.12);color:var(--seeker-dark);
+  display:flex;align-items:center;justify-content:center;margin:0 auto 10px}
+#ov-scream .panel.live .sc-badge{animation:scPulse 1.1s ease-out infinite}
+@keyframes scPulse{0%{box-shadow:0 0 0 0 rgba(255,77,42,.3)}100%{box-shadow:0 0 0 14px rgba(255,77,42,0)}}
+.sc-ringwrap{position:relative;width:176px;height:176px;margin:10px auto 8px}
+.sc-ringwrap svg{transform:rotate(-90deg);display:block;width:100%;height:100%}
+.sc-ring-bg{fill:none;stroke:#eef1f5;stroke-width:6}
+.sc-ring-fg{fill:none;stroke:var(--seeker);stroke-width:6;stroke-linecap:round;stroke-dasharray:339.3;stroke-dashoffset:339.3;transition:stroke-dashoffset .3s linear}
+.sc-ringnum{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+.sc-ringnum b{font-family:'JetBrains Mono',monospace;font-size:54px;font-weight:700;letter-spacing:-.03em;line-height:1;color:var(--ink)}
+.sc-ringnum span{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft)}
+/* stage toggling: prep shows the ring, live shows countdown + hold button */
+#ov-scream .panel.prep .live-el{display:none}
+#ov-scream .panel.live .prep-el{display:none}
+#sc-time{font-family:'JetBrains Mono',monospace;font-size:44px;font-weight:700;color:var(--seeker-dark);margin:6px 0 0}
+#sc-btn{width:168px;height:168px;border-radius:50%;margin:16px auto 6px;background:var(--seeker);color:#fff;
   font-size:19px;font-weight:700;line-height:1.3;display:flex;align-items:center;justify-content:center;
   box-shadow:0 10px 40px rgba(255,77,42,.4);transition:transform .12s;user-select:none;touch-action:none}
 #sc-btn.held{transform:scale(.92);box-shadow:0 4px 18px rgba(255,77,42,.55)}
-.sc-meter{height:12px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;margin:4px 0 8px}
+.sc-meter{position:relative;height:12px;border-radius:99px;background:#eef1f5;overflow:hidden;margin:10px 0 6px}
 .sc-meter i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--seeker),var(--gold));transition:width .12s}
-#sc-db{font-family:'JetBrains Mono',monospace;font-size:13px;opacity:.7}
-.sc-prog{height:8px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;margin-top:14px}
-.sc-prog i{display:block;height:100%;width:0%;background:var(--hider);transition:width .15s}
+.sc-meter s{position:absolute;top:0;bottom:0;width:2px;background:rgba(20,21,24,.45);left:44%;text-decoration:none} /* 65 dB on the 38–99 scale */
+#sc-state{font-size:12px;font-weight:700;color:var(--ink-soft);margin:0 0 4px}
+#sc-state.up{color:var(--hider-dark)}
+#sc-db{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink-soft)}
+.sc-prog{height:8px;border-radius:99px;background:#eef1f5;overflow:hidden;margin-top:12px}
+.sc-prog i{display:block;height:100%;width:0%;background:var(--hider-dark);transition:width .15s}
+
+/* seeker-side live scream popup — white card mirroring the target's run */
+#screamPop{position:absolute;left:10px;right:10px;bottom:calc(340px + env(safe-area-inset-bottom));z-index:35;
+  background:#fff;border-radius:18px;box-shadow:0 10px 34px rgba(0,0,0,.42);padding:12px 14px;cursor:pointer;
+  opacity:0;transform:translateY(10px);transition:opacity .22s,transform .22s;pointer-events:none}
+#screamPop.in{opacity:1;transform:none;pointer-events:auto}
+.sp-hd{display:flex;align-items:center;gap:8px}
+.sp-hd b{flex:1;min-width:0;font-size:13px;font-weight:800;letter-spacing:-.01em;color:#16181d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sp-dot{width:8px;height:8px;border-radius:50%;flex:none}
+.sp-dot.amber{background:var(--gold)}
+.sp-dot.red{background:var(--seeker);box-shadow:0 0 0 3px rgba(255,77,42,.18)}
+.sp-dot.grn{background:var(--hider-dark)}
+.sp-t{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:#5f6368}
+.sp-ic{font-size:14px;font-weight:800;color:#5f6368}
+.sp-big{font-family:'JetBrains Mono',monospace;font-size:36px;font-weight:700;text-align:center;color:var(--ink);line-height:1;margin:10px 0 2px}
+.sp-sub{font-size:11.5px;font-weight:500;color:#5f6368;text-align:center;line-height:1.45;margin-top:2px}
+.sp-db{font-size:26px;font-weight:700;text-align:center;color:var(--ink);line-height:1;margin:8px 0 2px}
+.sp-db span{font-size:11px;font-weight:500;color:#5f6368}
+.sp-meter{position:relative;height:6px;border-radius:99px;background:#eef1f5;margin:8px 2px 2px}
+.sp-meter i{display:block;height:100%;border-radius:99px;background:var(--seeker);transition:width .25s linear}
+.sp-meter i.up{background:var(--hider-dark)}
+.sp-meter s{position:absolute;top:-3px;bottom:-3px;width:2px;background:rgba(20,21,24,.4);left:44%;text-decoration:none}
+.sp-row{display:flex;justify-content:space-between;align-items:baseline;margin-top:8px;font-size:11.5px;font-weight:600;color:#5f6368}
+.sp-row b{color:#16181d;font-family:'JetBrains Mono',monospace}
+.sp-state{font-weight:700;color:#9aa3af}
+.sp-state.up{color:var(--hider-dark)}
+.sp-prog{height:5px;border-radius:99px;background:#eef1f5;margin-top:7px;overflow:hidden}
+.sp-prog i{display:block;height:100%;border-radius:99px;background:var(--hider-dark);transition:width .25s linear}
+.sp-res{font-size:12.5px;font-weight:500;line-height:1.55;color:#5f6368;margin-top:6px}
+.sp-res b{font-family:'JetBrains Mono',monospace}
+.sp-res.ok,.sp-res.ok b{color:var(--hider-dark)}
+.sp-res.bad,.sp-res.bad b{color:#c62f34}
 
 /* sheet */
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:90;background:var(--card);border-radius:26px 26px 0 0;
@@ -754,19 +806,40 @@ svg.i{vertical-align:-.15em;pointer-events:none;flex:none}
   <div id="cas-targets"></div>
 </div>
 
-<div id="ov-scream" class="ov"><div class="panel">
-  <h2 style="color:var(--seeker)"><svg class="i" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9.2" y="3.4" width="5.6" height="9.2" rx="2.8"/><path d="M6.4 11.2a5.6 5.6 0 0 0 11.2 0M12 16.8v3.4M9 20.2h6"/></svg>&nbsp;scream order!</h2>
-  <p class="sub" style="color:rgba(255,255,255,.6)">a seeker played a buff on you. scream at <b>65</b>+ dB
+<div id="ov-scream" class="ov"><div class="panel prep" id="sc-panel">
+  <div class="sc-badge"><svg class="i" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9.2" y="3.4" width="5.6" height="9.2" rx="2.8"/><path d="M6.4 11.2a5.6 5.6 0 0 0 11.2 0M12 16.8v3.4M9 20.2h6"/></svg></div>
+  <h2>scream order!</h2>
+  <p class="sub">a seeker played a buff on you. scream at <b>65</b>+ dB
   for <b>4 seconds</b>. fail or ignore = <b>lose a ♥</b>.</p>
-  <div id="sc-time">30</div>
-  <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.5;margin-bottom:6px">seconds left</div>
-  <div id="sc-btn">HOLD<br>TO SCREAM</div>
-  <div class="sc-meter"><i id="sc-fill"></i></div>
-  <div id="sc-db">-- dB</div>
-  <div class="sc-prog"><i id="sc-prog"></i></div>
-  <div style="font-size:11px;opacity:.5;margin-top:8px">screamed so far: <span class="mono" id="sc-held">0.0</span>s / 4s</div>
-  <button class="btn" id="sc-retry" style="display:none;margin-top:10px;background:rgba(255,255,255,.12);font-size:13px;padding:9px"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9.2" y="3.4" width="5.6" height="9.2" rx="2.8"/><path d="M6.4 11.2a5.6 5.6 0 0 0 11.2 0M12 16.8v3.4M9 20.2h6"/></svg> retry mic permission</button>
+  <!-- prep stage: ring counts down to GO -->
+  <div class="sc-ringwrap prep-el">
+    <svg viewBox="0 0 120 120">
+      <circle class="sc-ring-bg" cx="60" cy="60" r="54"/>
+      <circle class="sc-ring-fg" id="sc-ring" cx="60" cy="60" r="54"/>
+    </svg>
+    <div class="sc-ringnum"><b id="sc-prepnum">15</b><span>get ready</span></div>
+  </div>
+  <p class="sub prep-el" id="sc-prepcap" style="margin-top:2px;margin-bottom:6px">breathe. lungs ready. the meter arms when the ring hits zero.</p>
+  <!-- live stage: window countdown + hold button + meters -->
+  <div class="live-el">
+    <div id="sc-time">30</div>
+    <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px">seconds left</div>
+    <div id="sc-btn">HOLD<br>TO SCREAM</div>
+    <div class="sc-meter"><i id="sc-fill"></i><s></s></div>
+    <div id="sc-state">too quiet — get louder</div>
+    <div id="sc-db">-- dB</div>
+    <div class="sc-prog"><i id="sc-prog"></i></div>
+    <div style="font-size:11px;color:var(--ink-soft);margin-top:8px">screamed so far: <span class="mono" id="sc-held">0.0</span>s / 4s</div>
+  </div>
+  <button class="btn ghost" id="sc-retry" style="display:none;margin-top:10px;font-size:13px;padding:9px"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9.2" y="3.4" width="5.6" height="9.2" rx="2.8"/><path d="M6.4 11.2a5.6 5.6 0 0 0 11.2 0M12 16.8v3.4M9 20.2h6"/></svg> retry mic permission</button>
 </div></div>
+
+<!-- seeker-side live scream popup: white card mirroring the target's run (one
+     shared room state drives it — this is what separate phones would show) -->
+<div id="screamPop" role="status">
+  <div class="sp-hd"><span class="sp-dot amber" id="sp-dot"></span><b id="sp-name">scream</b><span class="sp-t" id="sp-t">0:15</span><span class="sp-ic" id="sp-x">✕</span></div>
+  <div id="sp-body"></div>
+</div>
 
 
 <div id="ov-mapedit" class="ov"><div class="panel">
@@ -851,6 +924,7 @@ svg.i{vertical-align:-.15em;pointer-events:none;flex:none}
     <button id="dev-pos"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.6s-5.8-5.2-5.8-9.4a5.8 5.8 0 0 1 11.6 0c0 4.2-5.8 9.4-5.8 9.4z"/><circle cx="12" cy="11" r="2"/></svg> sim mode</button>
     <button id="dev-skip"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.6 5.4 13.4 12l-7.8 6.6zM12.6 5.4 20.4 12l-7.8 6.6z"/></svg> end hiding phase</button>
     <button id="dev-casino">open casino now</button>
+    <button id="dev-scream">play scream order on a bot</button>
     <button id="dev-heart"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.8 4.2 13A5 5 0 0 1 11 5.6l1 .9 1-.9a5 5 0 0 1 6.8 7.4z"/><path d="M9 15.8 11.4 13l1.5 1.7 1.6-2"/></svg> lose a heart</button>
     <button id="dev-end"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 21.2V3.5"/><path d="M6.5 3.5h11.4l-2.8 3 2.8 3H6.5"/></svg> end game now</button>
     <button id="dev-reset"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></svg> reset room</button>
@@ -1164,7 +1238,7 @@ function packPlayer(p){
   if(p.freezeUntil)o.fu=p.freezeUntil;
   if(p.cloakUntil)o.cu=p.cloakUntil;
   if(p.shiftUntil)o.sh=p.shiftUntil; // shift relocation window — must sync or merges cancel it
-  if(p.pendingTask)o.pt={b:p.pendingTask.byId,d:p.pendingTask.deadline,h:p.pendingTask.holdMs,m:p.pendingTask.dbMin};
+  if(p.pendingTask)o.pt={b:p.pendingTask.byId,d:p.pendingTask.deadline,h:p.pendingTask.holdMs,m:p.pendingTask.dbMin}; // .p (live progress beacon) is deliberately NOT packed — it's a local publish
   if(p.caughtBy)o.cb=p.caughtBy;
   if(p.wander)o.wa=pPos(p.wander);
   if(p.seq)o.q=p.seq;
@@ -1732,7 +1806,7 @@ function casApply(bf,tgt){
   if(me().role==='seeker'){
     if(bf.id==='scream'){
       if(tgt.bot){ commit(()=>{logEvent(ico('mic',12)+' a hider screamed their lungs out');}); toast(ico('mic',13)+' '+tgt.name+' screamed!','good'); }
-      else commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.pendingTask={byId:myId,deadline:now()+30000,holdMs:4000,dbMin:65};logEvent(ico('mic',12)+' a scream order was played');});
+      else commit(r=>{const p=r.players.find(x=>x.id===tgt.id);p.pendingTask={byId:myId,deadline:now()+30000+SCREAM_PREP_MS,holdMs:4000,dbMin:65};logEvent(ico('mic',12)+' a scream order was played');});
     }else if(bf.id==='radar'){
       const radius=50+Math.random()*70;
       const center=tgt.hidePos||tgt.pos||randInZone();
@@ -2192,16 +2266,33 @@ function micRms(){
   let s=0;for(let i=0;i<micData.length;i++){const v=(micData[i]-128)/128;s+=v*v;}
   return Math.sqrt(s/micData.length);
 }
-/* Phase 1 #6: closeScream centralizes all scream-modal teardown so any path
-   (phase→end, host reset, task expired elsewhere) can stop the interval and
-   detach listeners without duplicating the cleanup. */
+/* scream prototype stages: the seeker fires the order → SCREAM_PREP_MS of
+   breathing room (the hider's ring counts down) → the live window opens.
+   Live progress is written to room state ~4×/s so the seeker's white popup
+   mirrors the target's run — exactly what separate phones would show. */
+const SCREAM_PREP_MS=15000;
+let scStage=''; // '' | 'prep' | 'live' — which pane of the hider overlay is up
+/* hider → seekers progress beacon: fused into pendingTask (never a commit of
+   its own) and trimmed from packPlayer — only the playing target needs it. */
+function scPub(heldMs,db,loud){
+  const m=me();
+  if(m&&m.pendingTask){m.pendingTask.p={h:Math.round(heldMs),d:db,l:loud?1:0};}
+}
 function closeScream(){
   if(scIv){clearInterval(scIv);scIv=null;}
   const btn=$('sc-btn'); if(btn&&btn._clean)btn._clean();
-  ui.screamOpen=false; closeOv('ov-scream');
+  scStage=''; ui.screamOpen=false; closeOv('ov-scream');
 }
 function openScream(task){
-  ui.screamOpen=true;openOv('ov-scream');ensureMic();
+  ui.screamOpen=true;ensureMic();
+  /* stage 1 — prep ring (skipped if the window already opened on another tab) */
+  const toLive=()=>{ if(!ui.screamOpen)return; scStage='live';
+    const p=$('sc-panel'); if(p){p.classList.remove('prep');p.classList.add('live');} };
+  if(task.deadline-now()>0){
+    scStage='prep';
+    const p=$('sc-panel'); if(p){p.classList.add('prep');p.classList.remove('live');}
+  }else toLive();
+  openOv('ov-scream');
   let heldMs=0,holding=false,lastT=now();
   const btn=$('sc-btn');
   const down=e=>{e.preventDefault();holding=true;btn.classList.add('held');};
@@ -2212,12 +2303,24 @@ function openScream(task){
   if(retry)retry.onclick=async()=>{micDenied=false; await ensureMic();};
   clearInterval(scIv);
   scIv=setInterval(()=>{
-    const left=task.deadline-now();
-    $('sc-time').textContent=Math.max(0,Math.ceil(left/1000));
+    const winLeft=task.deadline-now();
+    /* prep pane: sweep the ring; at zero, swap to the live pane */
+    if(scStage==='prep'){
+      const pLeft=task.deadline-SCREAM_PREP_MS-now();
+      const fr=clamp(pLeft/SCREAM_PREP_MS,0,1);
+      const ring=$('sc-ring'); if(ring)ring.style.strokeDashoffset=String(339.3*fr);
+      const num=$('sc-prepnum'); if(num)num.textContent=String(Math.max(0,Math.ceil(pLeft/1000)));
+      if(winLeft>0&&pLeft<=0)toLive();
+    }
+    if(scStage!=='live')return;
+    $('sc-time').textContent=Math.max(0,Math.ceil(winLeft/1000));
     const rms=micRms();
     const loud=micReady?rms>0.055:true; // fallback: holding alone counts
     const db=micReady?Math.round(clamp(38+rms*520,38,99)):Math.round(holding?66+Math.random()*6:40);
     $('sc-fill').style.width=(clamp(rms*8,0,1)*100)+'%';
+    const above=db>=task.dbMin;
+    const st=$('sc-state');
+    if(st){st.textContent=above?'above threshold — keep going':'too quiet — get louder';st.classList.toggle('up',above);}
     // Phase 1 #7: surface a clear degraded mic state, not a buried footnote.
     const degraded=micDenied||(!micReady&&!micDenied&&navigator.mediaDevices);
     $('sc-db').textContent=db+' dB '+(micReady?'':degraded?'· mic blocked — hold counts (honor fallback)':'· mic off — holding counts');
@@ -2226,10 +2329,12 @@ function openScream(task){
     if(holding&&loud){heldMs+=dt;vib(8);}
     $('sc-held').textContent=(heldMs/1000).toFixed(1);
     $('sc-prog').style.width=clamp(heldMs/task.holdMs*100,0,100)+'%';
+    scPub(heldMs,db,holding&&loud); // → the seeker's popup card
     if(heldMs>=task.holdMs){finishScream(true);}
-    else if(left<=0){finishScream(false);}
+    else if(winLeft<=0){finishScream(false);}
   },100);
   function finishScream(ok){
+    scPub(heldMs,ok?99:0,ok); // freeze the popup on the final numbers
     closeScream();
     commit(r=>{me().pendingTask=null;logEvent(ok?ico('mic',12)+' scream delivered.':ico('belloff',12)+' a scream order was ignored.');});
     if(ok){toast('scream delivered ✓','good');sGold();}
@@ -2824,7 +2929,51 @@ function renderSheet(){
   box.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{closeSheet();commit(r=>{r.removed=(r.removed||[]).concat(b.dataset.x);r.players=r.players.filter(x=>x.id!==b.dataset.x);});});
 }
 
-/* ---------------- room chat (general = everyone · team = your role) ---------------- */
+/* ---------------- seeker-side scream popup (prototype feel) ----------------
+   One shared room state drives both sides — on separate phones the seeker's
+   screen shows exactly this white card while their target is screaming. */
+let lastPopSig='';
+function renderScreamPop(){
+  const box=$('screamPop');
+  if(!room||ui.screen!=='game'||!box){return;}
+  const m=me();
+  const task=(m&&m.role==='seeker'&&m.status==='alive')
+    ?room.players.find(p=>p.role==='hider'&&p.status==='alive'&&p.pendingTask&&p.pendingTask.byId===myId)
+    :null;
+  const tgt=task?room.players.find(p=>p.pendingTask===task):null; // the hider being ordered
+  if(!task){ lastPopSig='';box.classList.remove('in');box.querySelector('#sp-body').innerHTML='';return; }
+  let body='';
+  const winLeft=task.deadline-now();
+  const prepLeft=task.deadline-SCREAM_PREP_MS-now();
+  const nm=tgt?esc(tgt.name||'hider'):'a hider';
+  const p=task.p||{};
+  const held=(p.h||0)/1000;
+  const db=p.d||0;
+  const loud=!!p.l;
+  const sig=[task.deadline,prepLeft>0?'prep':'live',p.h||0,p.d||0,p.l||0].join('|');
+  if(prepLeft>0){
+    body='<div class="sp-big">'+Math.ceil(prepLeft/1000)+'</div>'
+      +'<div class="sp-sub">'+nm+' is getting ready — they scream when the ring hits zero.</div>'
+      +'<div class="sp-meter"><i style="width:'+(100-clamp(prepLeft/SCREAM_PREP_MS,0,1)*100)+'%"></i><s></s></div>'
+      +'<div class="sp-row"><span>'+SCREAM_PREP_MS/1000+' s to prepare</span><span class="sp-state">prep</span></div>';
+  }else{
+    body='<div class="sp-db">'+db+'<span> dB</span></div>'
+      +'<div class="sp-meter"><i class="'+(loud?'up':'')+'" style="width:'+clamp(db/99,0,1)*100+'%"></i><s></s></div>'
+      +'<div class="sp-row"><span>screamed <b>'+held.toFixed(1)+'</b> / '+(task.holdMs/1000).toFixed(1)+' s</span><span class="sp-state'+(loud?' up':'')+'">'+(loud?'above threshold':'too quiet')+'</span></div>'
+      +'<div class="sp-prog"><i style="width:'+clamp(held/(task.holdMs/1000),0,1)*100+'%"></i></div>';
+  }
+  const sig2=sig+'|'+body;
+  if(sig2!==lastPopSig){
+    $('sp-name').textContent='scream · '+nm;
+    box.querySelector('#sp-body').innerHTML=body;
+    lastPopSig=sig2;
+  }
+  $('sp-t').textContent=fmt(winLeft);
+  const dot=$('sp-dot');
+  dot.className='sp-dot '+(prepLeft>0?'amber':loud?'grn':'red');
+  box.classList.add('in');
+}
+
 const pluralRole=r=>r==='hider'?'hiders':r==='seeker'?'seekers':'';
 const roleCol=r=>r==='hider'?'#0a8f66':r==='seeker'?'#d13a1a':'';
 const myChatRole=()=>{const m=me();return m&&(m.role==='hider'||m.role==='seeker')?m.role:null;};
@@ -3011,8 +3160,12 @@ function renderAll(){
         if(!ui.screamOpen){
           commit(r=>{const q=r.players.find(x=>x.id===myId);if(q&&q.pendingTask){q.pendingTask=null;logEvent(ico('belloff',12)+' a scream order was ignored.');}});
           toast('scream failed — you lose a ♥','warn');loseHeart(myId,'ignored scream');
+        }else if(m.pendingTask.deadline>now()+SCREAM_PREP_MS){
+          /* modal is open but stale (missed the prep→live swap while another
+             overlay ate renders) — relaunch into the remaining live window */
+          closeScream();openScream(m.pendingTask);
         }
-      }else if(!ui.screamOpen)openScream(m.pendingTask);
+      }else if(!ui.screamOpen||((scStage==='prep')&&m.pendingTask.deadline-now()<=0))openScream(m.pendingTask);
     }
     if((!m||!m.pendingTask)&&ui.screamOpen)closeScream(); // #6: tear down if task cleared elsewhere
     if(room.phase==='end')renderEnd();else closeOv('ov-end');
@@ -3154,6 +3307,7 @@ function tick(){
       if(moved)dirty=true;
     }
     renderGame();
+    renderScreamPop();
     if(t-ui.lastMapUpd>1200){ui.lastMapUpd=t;updateMap();renderSheet();}
   }
   if(dirty){saveRoom();renderAll();}
@@ -3243,6 +3397,16 @@ $('btn-rematch-now').onclick=rematchNow;
 $('dev-toggle').onclick=()=>$('dev').classList.toggle('open');
 $('dev-skip').onclick=()=>{if(room&&room.phase==='hide')commit(r=>{r.hideEndsAt=Date.now();});};
 $('dev-casino').onclick=()=>{if(room)commit(r=>{r.forceCasinoId=Date.now();});};
+/* prototype helper: fire a real scream order at a live hider bot so the two-sided
+   flow (hider ring → seeker popup) can be felt without spinning the casino */
+$('dev-scream').onclick=()=>{
+  const t=room&&room.phase;
+  if(t!=='seek'&&t!=='hide'){toast('start the round first','warn');return;}
+  const bot=room.players.find(p=>p.bot&&p.role==='hider'&&p.status==='alive');
+  if(!bot){toast('no live hider bot — add one in the lobby','warn');return;}
+  commit(r=>{const p=r.players.find(x=>x.id===bot.id);p.pendingTask={byId:myId,deadline:now()+30000+SCREAM_PREP_MS,holdMs:4000,dbMin:65};logEvent(ico('mic',12)+' a scream order was played');});
+  toast(ico('mic',13)+' scream order on '+esc(bot.name),'good');
+};
 $('dev-heart').onclick=()=>loseHeart(myId,'dev testing');
 $('dev-end').onclick=()=>{if(room&&room.phase==='seek')commit(r=>{r.phase='end';r.winner=aliveHiders().length?'hiders':'seekers';});};
 $('dev-reset').onclick=()=>{if(room)resetRoom();};
