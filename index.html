@@ -480,14 +480,54 @@ input,select{font-family:inherit;color:inherit}
 .sbtn.warn{color:var(--danger);border-color:rgba(255,59,48,.4)}
 .sbtn.quit{color:var(--ink-soft)}
 
-/* chat */
-.chat-input-row{display:flex;gap:8px;padding:12px 0 4px;flex:none}
-.chat-input-row .field{flex:1}
-.chat-msg{padding:9px 4px;border-bottom:1px solid var(--line);font-size:14px;line-height:1.45}
-.chat-msg:last-child{border:none}
-.chat-msg .who{display:flex;align-items:center;gap:6px;font-weight:700;font-size:12px;margin-bottom:2px}
-.chat-msg .dd{width:7px;height:7px;border-radius:50%;flex:none}
-/* chat unread dot now lives on the hud chips row (#chip-chat) */
+/* chat — maps-style messenger, two channels: general (everyone) + team (your role) */
+.chatScrim{position:fixed;inset:0;z-index:89;background:rgba(8,10,14,.42);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
+  opacity:0;pointer-events:none;transition:opacity .3s}
+.chatScrim.on{opacity:1;pointer-events:auto}
+#chat{font-family:'Inter',system-ui,sans-serif;color:#16181d;background:#fff;padding:0 0 env(safe-area-inset-bottom);min-height:min(46vh,430px)}
+#chat .grab{width:44px;height:5px;background:#dfe3e8;margin:12px auto 4px}
+.chat-hd{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:2px 16px 10px}
+.chat-ttl{font-size:18px;font-weight:800;letter-spacing:-.03em;color:#16181d}
+.chat-seg{display:flex;background:#eef1f5;border-radius:999px;padding:3px;flex:none}
+.chat-seg .segbtn{padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;color:#5f6368;background:none;border:0;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px}
+.chat-seg .segbtn:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+.chat-seg .segbtn .segdot{width:6px;height:6px;border-radius:50%;background:#9aa3af;flex:none;transition:background .2s}
+.chat-seg .segbtn.on{background:#111;color:#fff;box-shadow:0 3px 8px rgba(0,0,0,.25)}
+.chat-seg .segbtn.on .segdot{background:var(--hider)}
+.chat-seg .segbtn[data-ch="team"].on .segdot{background:var(--seeker)}
+.chat-meta{flex:none;display:flex;align-items:center;gap:8px;margin:0 14px 6px;padding:8px 12px;background:#f6f7f9;border-radius:12px;font-size:11.5px;font-weight:500;color:#5f6368;line-height:1.4}
+.chat-meta b{font-weight:800;color:#16181d}
+.chat-meta .cmdot{width:7px;height:7px;border-radius:50%;flex:none;background:#9aa0a8}
+.chat-meta .cmdot.hider{background:var(--hider);box-shadow:0 0 0 3px rgba(18,201,143,.16)}
+.chat-meta .cmdot.seeker{background:var(--seeker);box-shadow:0 0 0 3px rgba(255,77,42,.15)}
+.chat-list{flex:1 1 auto;min-height:0;overflow-y:auto;border-top:1px solid #f0f2f5;padding:12px 14px 8px;overscroll-behavior:contain}
+#chat .chat-list::-webkit-scrollbar{width:5px}
+#chat .chat-list::-webkit-scrollbar-thumb{background:#d9dde3;border-radius:99px}
+.chat-empty{padding:30px 10px 34px;text-align:center;font-size:12.5px;font-weight:500;color:#9aa3af;line-height:1.65}
+.chat-empty b{display:block;font-size:24px;font-weight:400;margin-bottom:7px}
+.crow{display:flex;gap:9px;margin-bottom:14px;align-items:flex-start}
+.crow:last-child{margin-bottom:4px}
+.crow .cav{flex:none;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;margin-top:1px;user-select:none}
+.crow .cav.hider{background:rgba(18,201,143,.16);color:#0a8f66}
+.crow .cav.seeker{background:rgba(255,77,42,.13);color:#d13a1a}
+.crow .cav.ghost{background:#eef1f5;color:#9aa3af}
+.crow .ccol{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start}
+.crow .cmeta{display:flex;align-items:center;gap:6px;margin:0 0 4px 2px;max-width:100%}
+.crow .cmeta b{font-size:12px;font-weight:800;color:#16181d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crow .tag-role{font-size:8.5px;padding:2px 7px;border-radius:6px;letter-spacing:.08em;text-transform:uppercase;flex:none}
+.crow .cbubble{display:inline-block;max-width:min(84%,460px);padding:9px 13px;border-radius:4px 16px 16px 16px;background:#f2f4f7;font-size:13.5px;line-height:1.45;color:#16181d;word-break:break-word;white-space:pre-wrap;overflow-wrap:anywhere}
+.crow.mine{justify-content:flex-end}
+.crow.mine .ccol{align-items:flex-end}
+.crow.mine .cbubble{background:#111;color:#fff;border-radius:16px 4px 16px 16px}
+.crow .ctime{font-size:10px;font-weight:500;color:#9aa3af;margin:3px 2px 0}
+.chat-compose{flex:none;display:flex;align-items:center;gap:9px;padding:8px 14px 12px;border-top:1px solid #f0f2f5;background:#fff}
+#chat .chat-input{flex:1;min-width:0;border:1px solid transparent;background:#f2f4f7;border-radius:999px;padding:11px 16px;font-size:13.5px;color:#16181d;outline:none;transition:background .2s,border .2s}
+#chat .chat-input:focus{background:#fff;border-color:rgba(20,21,24,.3)}
+#chat .chat-input::placeholder{color:#9aa3af}
+.chat-send{flex:none;width:40px;height:40px;border-radius:50%;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.25);transition:transform .12s,opacity .2s}
+.chat-send:active{transform:scale(.9)}
+.chat-send[disabled]{opacity:.32;box-shadow:none;pointer-events:none}
+/* chat unread dot lives on the hud chips row (#chip-chat) */
 
 /* toasts */
 #toasts{position:fixed;top:calc(14px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:300;
@@ -616,7 +656,7 @@ input,select{font-family:inherit;color:inherit}
       <button class="chip" id="chip-casino" aria-label="open casino">🎰&nbsp;<b id="casinoChipT">—</b></button>
       <button class="chip" id="chip-players" aria-label="players list">👥 0</button>
       <button class="chip" id="chip-zone" aria-label="zone status">📍 in zone</button>
-      <button class="chip" id="chip-chat" aria-label="room chat">💬</button>
+      <button class="chip" id="chip-chat" aria-label="chat — general &amp; team">💬 chat</button>
       <span class="chipGroup" id="buffChips"></span>
     </div>
   </div>
@@ -633,7 +673,7 @@ input,select{font-family:inherit;color:inherit}
   <!-- menu popover -->
   <div class="menuPop" id="menuPop" hidden>
     <button class="mitem" id="miHow">❓ how to play</button>
-    <button class="mitem" id="miChat">💬 room chat</button>
+    <button class="mitem" id="miChat">💬 chat</button>
     <button class="mitem" id="miDev">⚙ dev tools</button>
     <button class="mitem" id="miReset">🧹 reset room</button>
   </div>
@@ -796,11 +836,25 @@ input,select{font-family:inherit;color:inherit}
   <button class="btn ghost" id="btn-end-home">back to home</button>
 </div></div>
 
-<div class="sheet" id="chat">
+<div class="chatScrim" id="chatScrim"></div>
+
+<div class="sheet" id="chat" aria-label="chat">
   <div class="grab"></div>
-  <div class="sec-title" style="margin-top:0">room chat</div>
-  <div class="sheet-body" id="chat-list"></div>
-  <div class="chat-input-row"><input id="chat-input" class="field" maxlength="140" placeholder="message the room…" autocomplete="off"><button id="chat-send" class="btn small" style="width:auto;flex:none">send</button></div>
+  <div class="chat-hd">
+    <div class="chat-ttl">chat</div>
+    <div class="chat-seg" id="chatSeg">
+      <button class="segbtn on" data-ch="general" aria-label="general chat — everyone in the room"><span class="segdot"></span>general</button>
+      <button class="segbtn" data-ch="team" aria-label="team chat — only your role"><span class="segdot"></span>team</button>
+    </div>
+  </div>
+  <div class="chat-meta" id="chatMeta"></div>
+  <div class="chat-list" id="chat-list"></div>
+  <div class="chat-compose">
+    <input id="chat-input" class="chat-input" maxlength="140" autocomplete="off" enterkeyhint="send" placeholder="message everyone…" aria-label="chat message">
+    <button class="chat-send" id="chat-send" aria-label="send message" disabled>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+    </button>
+  </div>
 </div>
 
 <div id="dev">
@@ -941,7 +995,7 @@ let myId=LS.get('leak.id'); if(!myId){myId=uid();LS.set('leak.id',myId);}
 let myName=LS.get('leak.name')||'';
 let room=null, tickIv=null; // transport declared in the transport block
 let muted=false; /* sound is always on now — the mute button was removed */
-const ui={screen:'home',simMode:true,sheetOpen:false,chatOpen:false,chatSeenAt:0,screamOpen:false,lastCasinoWin:0,casDismissed:0,seenLog:new Set(),revealKey:'',lastPosWrite:0,zoneOutSince:0,lastZoneHit:0,botTick:0,lastMapUpd:0,seenReveal:new Set(),seenCaught:new Set(),zoneViolations:0,hostHeart:0,hostSeen:0,buffWarned:new Set(),reportCd:{},seenCasinoOnce:false,ambient:true,ambiT:0,lastFreezeToast:0,left:false};
+const ui={screen:'home',simMode:true,sheetOpen:false,chatOpen:false,chatSeenAt:0,chatTab:'general',screamOpen:false,lastCasinoWin:0,casDismissed:0,seenLog:new Set(),revealKey:'',lastSentPos:null,lastPosSend:0,zoneOutSince:0,lastZoneHit:0,botTick:0,lastMapUpd:0,seenReveal:new Set(),seenCaught:new Set(),zoneViolations:0,hostHeart:0,hostSeen:0,buffWarned:new Set(),reportCd:{},seenCasinoOnce:false,ambient:true,ambiT:0,lastFreezeToast:0,left:false};
 if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)ui.ambient=false;
 
 const me=()=>room?room.players.find(p=>p.id===myId):null;
@@ -1013,7 +1067,7 @@ function bootRoom(){
   try{transport&&transport.close();}catch(e){}
   transport=null;room=null;
   ui.seenLog=new Set();ui.seenReveal=new Set();ui.sheetOpen=false;ui.chatOpen=false;ui.screamOpen=false;ui.left=false;
-  closeGameSheetNow();$('chat').classList.remove('open');
+  closeGameSheetNow();closeChat();
   setPeerStatus('connecting');
   ui.kicked=true; // stop any running join poll (see joinRoom)
   showKickedOverlay();
@@ -1085,18 +1139,190 @@ function setPeerStatus(st){
   else if(st==='error'){el.textContent='off';el.className='sync-off';}
   else{el.textContent='connecting…';el.className='';}
 }
+
+/* ---------------- wire codec: shrink snapshots before the websocket ---------------- */
+/* Every commit re-broadcasts the whole room, and GPS moves fire commits
+   several times per second — so most of each message's bytes are key names
+   and long float digits. packRoom() shrinks a snapshot at the transport
+   boundary (1-2 char keys, coordinates quantized to 6 decimals ≈ 0.1 m,
+   fields left at their defaults omitted) and unpackRoom() restores the full
+   shape before mergeRoom/applyRoom sees it. Every client runs the same
+   codec, so send and receive stay symmetric; snapshots that don't have the
+   packed shape (e.g. from an older tab) pass through untouched. */
+const Q6=v=>Math.round(v*1e6)/1e6;
+const pPos=p=>p?{a:Q6(p.lat),g:Q6(p.lng)}:null;
+function packPlayer(p){
+  const o={i:p.id,n:p.name};
+  if(p.gzc)o.g=1;
+  if(p.bot)o.b=1;
+  if(p.roleChoice&&p.roleChoice!=='random')o.rc=p.roleChoice;
+  if(p.role)o.ro=p.role;
+  if(p.hearts!==3)o.ht=p.hearts;
+  if(p.status&&p.status!=='alive')o.s=p.status;
+  o.o=pPos(p.pos);
+  if(p.speed)o.sp=p.speed;
+  if(p.hidePos)o.hp=pPos(p.hidePos);
+  if(p.casinoDone)o.cd=p.casinoDone;
+  if(p.casinoForce)o.cf=p.casinoForce;
+  if(p.slowUntil)o.su=p.slowUntil;
+  if(p.ghostUntil)o.gu=p.ghostUntil;
+  if(p.ringUntil)o.ru=p.ringUntil;
+  if(p.freezeUntil)o.fu=p.freezeUntil;
+  if(p.cloakUntil)o.cu=p.cloakUntil;
+  if(p.shiftReady)o.sr=1;
+  if(p.pendingTask)o.pt={b:p.pendingTask.byId,d:p.pendingTask.deadline,h:p.pendingTask.holdMs,m:p.pendingTask.dbMin};
+  if(p.caughtBy)o.cb=p.caughtBy;
+  if(p.wander)o.wa=pPos(p.wander);
+  if(p.seq)o.q=p.seq;
+  if(p.joinedAt)o.ja=p.joinedAt;
+  if(p.botMoves)o.bm=p.botMoves;
+  if(p.stats&&(p.stats.catches||p.stats.buffs||p.stats.hiddenAt))o.st={c:p.stats.catches,b:p.stats.buffs,h:p.stats.hiddenAt};
+  return o;
+}
+function unpackPlayer(o){
+  return {id:o.i,name:o.n,bot:!!o.b,gzc:o.g?1:0,roleChoice:o.rc||'random',role:o.ro||null,hearts:o.ht!=null?o.ht:3,
+    status:o.s||'alive',pos:o.o?{lat:o.o.a,lng:o.o.g}:null,speed:o.sp||0,hidePos:o.hp?{lat:o.hp.a,lng:o.hp.g}:null,
+    casinoDone:o.cd||0,casinoForce:o.cf||0,slowUntil:o.su||0,ghostUntil:o.gu||0,ringUntil:o.ru||0,
+    freezeUntil:o.fu||0,cloakUntil:o.cu||0,shiftReady:!!o.sr,
+    pendingTask:o.pt?{byId:o.pt.b,deadline:o.pt.d,holdMs:o.pt.h,dbMin:o.pt.m}:null,
+    caughtBy:o.cb||null,wander:o.wa?{lat:o.wa.a,lng:o.wa.g}:null,seq:o.q||0,joinedAt:o.ja||0,
+    botMoves:o.bm||0,stats:o.st?{catches:o.st.c||0,buffs:o.st.b||0,hiddenAt:o.st.h||0}:{catches:0,buffs:0,hiddenAt:0}};
+}
+const packFx=f=>{
+  const o={i:f.id,k:f.kind,u:f.until};
+  if(f.forId)o.f=f.forId;
+  if(f.targetId)o.t=f.targetId;
+  if(f.center)o.c=pPos(f.center);
+  if(f.radius)o.r=f.radius;
+  if(f.label)o.l=f.label;
+  return o;
+};
+const unpackFx=o=>{
+  const f={id:o.i,kind:o.k,until:o.u};
+  if(o.f)f.forId=o.f;
+  if(o.t)f.targetId=o.t;
+  if(o.c)f.center={lat:o.c.a,lng:o.c.g};
+  if(o.r)f.radius=o.r;
+  if(o.l)f.label=o.l;
+  return f;
+};
+const packChat=m=>({i:m.id,f:m.fromId,n:m.fromName,r:m.fromRole||void 0,c:m.ch,t:m.text,a:m.at});
+const unpackChat=o=>({id:o.i,fromId:o.f,fromName:o.n,fromRole:o.r||null,ch:o.c||'general',text:o.t,at:o.a});
+function packRoom(r,lean){
+  const o={c:r.code,h:r.hostId,ph:r.phase,q:r.seq||0};
+  if(r.hideMin!=null)o.hm=r.hideMin;
+  if(r.totalMin!=null)o.tm=r.totalMin;
+  if(r.casinoMin!=null)o.cm=r.casinoMin;
+  if(r.startedAt)o.sa=r.startedAt;
+  if(r.hideEndsAt)o.he=r.hideEndsAt;
+  if(r.gameEndsAt)o.ge=r.gameEndsAt;
+  if(r.winner)o.w=r.winner;
+  if(r.forceCasinoId)o.fc=r.forceCasinoId;
+  if(Array.isArray(r.zone))o.z=r.zone.map(c=>({a:c.lat,g:c.lng})); // zone keeps full precision: mergeRoom string-compares it
+  o.p=(r.players||[]).map(packPlayer);
+  if(r.removed&&r.removed.length)o.r=r.removed;
+  if(!lean){
+    if(r.fx&&r.fx.length)o.f=r.fx.map(packFx);
+    if(r.log&&r.log.length)o.l=r.log.map(l=>({i:l.id,t:l.text}));
+    if(r.chat&&r.chat.length)o.m=r.chat.map(packChat);
+  }
+  return o;
+}
+function unpackRoom(o){
+  return {code:o.c,hostId:o.h,phase:o.ph,seq:o.q||0,
+    hideMin:o.hm!=null?o.hm:10,totalMin:o.tm!=null?o.tm:45,casinoMin:o.cm!=null?o.cm:12,
+    startedAt:o.sa||0,hideEndsAt:o.he||0,gameEndsAt:o.ge||0,winner:o.w||null,forceCasinoId:o.fc||0,
+    zone:Array.isArray(o.z)?o.z.map(c=>({lat:c.a,lng:c.g})):null,
+    players:(o.p||[]).map(unpackPlayer),removed:o.r||[],fx:(o.f||[]).map(unpackFx),
+    log:(o.l||[]).map(l=>({id:l.i,text:l.t})),chat:(o.m||[]).map(unpackChat)};
+}
+const isPackedRoom=r=>!!(r&&r.c&&Array.isArray(r.p));
+
+/* ---- gzip layer (on top of the packed JSON) ---- */
+/* Built-in CompressionStream gzip is supported on Chrome/Edge 80+, Firefox
+   113+ and Safari/iOS 16.4+ — older iOS (pre-2023) lacks it. So gzip is used
+   only when the device actually has it; otherwise the plain packed snapshot
+   is sent instead. A marker on the wire ({gz:1, room:"<base64>"}) lets
+   gzip and non-gzip devices play in the same room — each side understands
+   both formats. Everything stays inline; no external libraries. */
+const HAS_GZIP=typeof CompressionStream==='function'&&typeof DecompressionStream==='function';
+const B64='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+function bytesToBase64(bytes){
+  let out='',i=0;
+  for(;i+2<bytes.length;i+=3){
+    const n=(bytes[i]<<16)|(bytes[i+1]<<8)|bytes[i+2];
+    out+=B64[(n>>18)&63]+B64[(n>>12)&63]+B64[(n>>6)&63]+B64[n&63];
+  }
+  const rem=bytes.length-i;
+  if(rem===1){const n=bytes[i]<<16;out+=B64[(n>>18)&63]+B64[(n>>12)&63]+'==';}
+  else if(rem===2){const n=(bytes[i]<<16)|(bytes[i+1]<<8);out+=B64[(n>>18)&63]+B64[(n>>12)&63]+B64[(n>>6)&63]+'=';}
+  return out;
+}
+function base64ToBytes(b64){
+  const clean=b64.replace(/=+$/,'');
+  const bytes=new Uint8Array(Math.floor(clean.length*3/4));
+  let i=0,o=0;
+  for(;i+3<clean.length;i+=4){
+    const n=(B64.indexOf(clean[i])<<18)|(B64.indexOf(clean[i+1])<<12)|(B64.indexOf(clean[i+2])<<6)|B64.indexOf(clean[i+3]);
+    bytes[o++]=(n>>16)&255;bytes[o++]=(n>>8)&255;bytes[o++]=n&255;
+  }
+  const rem=clean.length-i;
+  if(rem===2){const n=(B64.indexOf(clean[i])<<18)|(B64.indexOf(clean[i+1])<<12);bytes[o++]=(n>>16)&255;}
+  else if(rem===3){const n=(B64.indexOf(clean[i])<<18)|(B64.indexOf(clean[i+1])<<12)|(B64.indexOf(clean[i+2])<<6);bytes[o++]=(n>>16)&255;bytes[o++]=(n>>8)&255;}
+  return bytes;
+}
+/* compressRoom returns the send envelope: gzipped base64 when supported,
+   plain packed JSON otherwise. decompressRoom reverses it. Both are pure
+   and async so they can also run in the node tests below. */
+const compressRoom=r=>{
+  const packed=packRoom(r);
+  /* Only gzip when EVERY human player in the room advertises gzip support
+     (gzc, carried on the player entry) — a device without DecompressionStream
+     can't read a gzipped snapshot, so any old device keeps the room plain.
+     Join handshake replies are additionally forced plain (see the ask
+     handler) so joining never depends on gzip. */
+  const gzOk=HAS_GZIP&&r.players&&r.players.length>0&&r.players.every(p=>p.bot||p.gzc);
+  if(!gzOk)return Promise.resolve({type:'broadcast',event:'room',payload:{room:packed}});
+  const cs=new CompressionStream('gzip');
+  const w=cs.writable.getWriter(); w.write(new TextEncoder().encode(JSON.stringify(packed))); w.close();
+  return new Response(cs.readable).arrayBuffer().then(buf=>
+    ({type:'broadcast',event:'room',payload:{gz:1,room:bytesToBase64(new Uint8Array(buf))}}));
+};
+const decompressRoom=r=>{
+  const ds=new DecompressionStream('gzip');
+  const w=ds.writable.getWriter(); w.write(base64ToBytes(r.room)); w.close();
+  return new Response(ds.readable).arrayBuffer().then(buf=>
+    unpackRoom(JSON.parse(new TextDecoder().decode(buf))));
+};
 function SupabaseTransport(code){
   const ch='leak-'+code;
   let client=null,chan=null,ready=false,pendingRoom=null,retryT=null,attempts=0;
   /* send() is safe before the channel is subscribed: messages are dropped
      until SUBSCRIBED, then the pending room snapshot (if any) is flushed. */
   const send=msg=>{ if(!ready||!chan)return false; try{chan.send(msg);return true;}catch(e){return false;} };
-  const flush=()=>{ if(ready&&pendingRoom){const r=pendingRoom;pendingRoom=null;send({type:'broadcast',event:'room',payload:{room:r}});} };
-  /* Keep the presence payload lean: envelope + players only (log/fx are
-     cosmetic and arrive with the full-room broadcast/ask refresh). */
-  const compactRoom=r=>({code:r.code,hostId:r.hostId,phase:r.phase,hideMin:r.hideMin,totalMin:r.totalMin,
-    casinoMin:r.casinoMin,startedAt:r.startedAt,hideEndsAt:r.hideEndsAt,gameEndsAt:r.gameEndsAt,
-    winner:r.winner,forceCasinoId:r.forceCasinoId,seq:r.seq,zone:r.zone,players:r.players,removed:r.removed,log:[],fx:[],chat:[]});
+  /* Room snapshots are packed + gzipped before send (see the wire codec
+     above). Gzip is async, so sends are serialized and coalesced: if a
+     snapshot is still compressing when another arrives, the newer one
+     replaces it — only the latest room state matters, so intermediate
+     snapshots are dropped for free. If the channel isn't subscribed yet,
+     the snapshot is kept as pendingRoom for the flush on SUBSCRIBED. */
+  let gzInFlight=false,gzQueued=null;
+  function sendRoom(r){
+    if(gzInFlight){gzQueued=r;return;}
+    gzInFlight=true;
+    compressRoom(r).then(env=>{
+      if(ready&&chan){ try{chan.send(env);return;}catch(e){} }
+      pendingRoom=r;
+    }).catch(()=>{
+      /* gzip hiccup (e.g. blocked on file://) — fall back to plain packed */
+      try{ if(ready&&chan)chan.send({type:'broadcast',event:'room',payload:{room:packRoom(r)}}); else pendingRoom=r; }
+      catch(e){ pendingRoom=r; }
+    }).then(()=>{
+      gzInFlight=false;
+      if(gzQueued){const q=gzQueued;gzQueued=null;sendRoom(q);}
+    });
+  }
+  const flush=()=>{ if(ready&&pendingRoom){const r=pendingRoom;pendingRoom=null;sendRoom(r);} };
   /* Presence-based room discovery: the host (and any room member) keeps the
      latest room in its realtime presence state, which the server caches per
      channel. A joiner reads it on subscribe — no live host answer needed. */
@@ -1120,13 +1346,15 @@ function SupabaseTransport(code){
       for(const key in st){
         const list=st[key]; if(!list)continue;
         const arr=Array.isArray(list)?list:(Array.isArray(list.metas)?list.metas:[list]);
-        for(const m of arr){ if(m&&m.room&&applyRoom(m.room))changed=true; }
+        for(const m of arr){ if(m&&m.room&&applyRoom(isPackedRoom(m.room)?unpackRoom(m.room):m.room))changed=true; }
       }
       if(changed)renderAll();
       checkRemoved();
     }catch(e){}
   }
-  const trackRoom=r=>{ if(ready&&chan){try{chan.track({room:compactRoom(r)});}catch(e){}} };
+  /* Keep the presence payload lean: packed envelope + players only (log/fx
+     are cosmetic and arrive with the full-room broadcast/ask refresh). */
+  const trackRoom=r=>{ if(ready&&chan){try{chan.track({room:packRoom(r,true)});}catch(e){}} };
   /* Bind all handlers to a fresh channel. Rebuilding per attempt avoids
      stale state after a failed join. */
   function bindChan(){
@@ -1136,12 +1364,15 @@ function SupabaseTransport(code){
        falling back to the pre-envelope inline shape older bundles used. */
     chan.on('broadcast',{event:'room'},payload=>{
       const r=payload&&payload.payload&&payload.payload.room?payload.payload.room:(payload&&payload.room);
-      if(r){ if(applyRoom(r))renderAll(); checkRemoved(); }
+      if(!r)return;
+      /* gzipped snapshot → decompress on the receiving device, then merge */
+      if(r.gz===1&&typeof r.room==='string'){ decompressRoom(r).then(x=>{ if(applyRoom(x))renderAll(); checkRemoved(); }).catch(()=>{}); return; }
+      if(applyRoom(isPackedRoom(r)?unpackRoom(r):r))renderAll(); checkRemoved();
     });
     chan.on('broadcast',{event:'presence'},()=>{ ui.hostSeen=Date.now(); });
     chan.on('broadcast',{event:'ask'},payload=>{
       const c=payload&&payload.payload&&payload.payload.code?payload.payload.code:(payload&&payload.code);
-      if(room&&room.code===code&&c)send({type:'broadcast',event:'room',payload:{room}});
+      if(room&&room.code===code&&c)send({type:'broadcast',event:'room',payload:{room:packRoom(room)}});
     });
     ['sync','join','update'].forEach(ev=>chan.on('presence',{event:ev},syncRoom));
     return chan;
@@ -1197,7 +1428,7 @@ function SupabaseTransport(code){
   };
   document.addEventListener('visibilitychange',onVis);
   return {
-    broadcast(room){ if(!send({type:'broadcast',event:'room',payload:{room}}))pendingRoom=room; },
+    broadcast(room){ sendRoom(room); },
     trackRoom,
     ask(code){ send({type:'broadcast',event:'ask',payload:{code}}); },
     presence(){ send({type:'broadcast',event:'presence',payload:{}}); },
@@ -1290,7 +1521,7 @@ function casinoOpenFor(p){
 /* ---------------- room lifecycle ---------------- */
 function genCode(){const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<4;i++)s+=A[Math.floor(Math.random()*A.length)];return s;}
 function newPlayer(name,bot){
-  return {id:bot?uid():myId,name,bot:!!bot,roleChoice:'random',role:null,hearts:3,status:'alive',
+  return {id:bot?uid():myId,name,bot:!!bot,gzc:bot?0:(HAS_GZIP?1:0),roleChoice:'random',role:null,hearts:3,status:'alive',
     pos:{lat:START.lat,lng:START.lng},speed:0,hidePos:null,casinoDone:0,casinoForce:0,
     slowUntil:0,ghostUntil:0,ringUntil:0,freezeUntil:0,cloakUntil:0,shiftReady:false,pendingTask:null,caughtBy:null,wander:null,seq:0,joinedAt:Date.now(),
     botMoves:0,stats:{catches:0,buffs:0,hiddenAt:0}};
@@ -1393,6 +1624,7 @@ function resetRoom(){
   closeOv('ov-end');closeOv('ov-caught');
   if(ui.screamOpen)closeScream();
   closeGameSheetNow();
+  closeChat();
   showScreen('lobby');
 }
 
@@ -1417,6 +1649,7 @@ function rematchNow(){
   if($('ov-casino').classList.contains('open'))casClose(); /* rematch with the casino up — tear it down */
   closeOv('ov-end');
   closeGameSheetNow();
+  closeChat();
 }
 
 /* ---------------- hearts / rules ---------------- */
@@ -2184,6 +2417,13 @@ function updateMap(){
 
 /* ---------------- geolocation ---------------- */
 let watchId=null;
+/* GPS fixes arrive several times per second; a full-room broadcast on every
+   fix is the game's biggest bandwidth cost (each fix re-sends the whole room
+   snapshot to every player). The handler below updates the LOCAL position on
+   every fix so the map stays live, but only saves + broadcasts once the
+   player has actually moved a few meters and a short cooldown has passed —
+   stationary GPS jitter then sends nothing at all. */
+const GPS_MOVE_M=5, GPS_MIN_MS=1000;
 function setPosMode(sim){
   ui.simMode=sim;$('btn-posmode').textContent=sim?'📍 sim':'🛰 gps';
   if(sim){if(watchId!=null){try{navigator.geolocation.clearWatch(watchId);}catch(e){}watchId=null;}toast('sim mode — tap the map to move','silent');}
@@ -2191,9 +2431,19 @@ function setPosMode(sim){
     if(!navigator.geolocation){toast('no GPS here — staying in sim','warn');ui.simMode=true;$('btn-posmode').textContent='📍 sim';return;}
     try{
       watchId=navigator.geolocation.watchPosition(pos=>{
-        commit(r=>{const p=me();
-          if(p&&(p.freezeUntil||0)>now()){if(now()-(ui.lastFreezeToast||0)>8000){ui.lastFreezeToast=now();toast('🧊 frozen — position locked','warn');}return;}
-          if(p){p.pos={lat:pos.coords.latitude,lng:pos.coords.longitude};p.speed=pos.coords.speed||0;}});
+        const p=me(); if(!p)return;
+        if((p.freezeUntil||0)>now()){if(now()-(ui.lastFreezeToast||0)>8000){ui.lastFreezeToast=now();toast('🧊 frozen — position locked','warn');}return;}
+        /* apply the fix locally right away — tick() re-renders the map/HUD,
+           so our own screen tracks the phone even between broadcasts */
+        const lat=pos.coords.latitude,lng=pos.coords.longitude;
+        p.pos={lat,lng}; p.speed=pos.coords.speed||0;
+        /* broadcast only on real movement (≥GPS_MOVE_M since the last send)
+           and at most GPS_MIN_MS apart */
+        const moved=ui.lastSentPos?distM(ui.lastSentPos,{lat,lng}):1e9;
+        if(moved>=GPS_MOVE_M&&now()-(ui.lastPosSend||0)>=GPS_MIN_MS){
+          ui.lastSentPos={lat,lng}; ui.lastPosSend=now();
+          saveRoom(); // bump seq + broadcast + refresh presence, no full re-render needed
+        }
       },()=>{toast('GPS denied — back to sim mode (tap map)','warn');setPosMode(true);},{enableHighAccuracy:true,maximumAge:2000});
       toast('GPS mode — walk for real 🚶','silent');
     }catch(e){ui.simMode=true;$('btn-posmode').textContent='📍 sim';}
@@ -2466,28 +2716,94 @@ function renderSheet(){
   box.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{closeSheet();commit(r=>{r.removed=(r.removed||[]).concat(b.dataset.x);r.players=r.players.filter(x=>x.id!==b.dataset.x);});});
 }
 
-/* ---------------- room chat ---------------- */
+/* ---------------- room chat (general = everyone · team = your role) ---------------- */
+const pluralRole=r=>r==='hider'?'hiders':r==='seeker'?'seekers':'';
+const roleCol=r=>r==='hider'?'#0a8f66':r==='seeker'?'#d13a1a':'';
+const myChatRole=()=>{const m=me();return m&&(m.role==='hider'||m.role==='seeker')?m.role:null;};
+const chatTime=t=>{try{return new Date(t).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}catch(e){return'';}};
+/* a message is visible when it's room-wide (incl. legacy messages) or when the
+   sender shares the reader's role — team chatter never leaks to the other side. */
+const chatCanSee=m=>{if(!m.ch||m.ch==='general')return true;return m.ch==='team'&&!!m.fromRole&&m.fromRole===myChatRole();};
 function renderChat(){
   if(!room||ui.screen!=='game')return;
   const box=$('chat-list');if(!box)return;
   if(!room.chat)room.chat=[];
+  const role=myChatRole();
+  /* general tab = room-wide msgs (incl. legacy, which have no channel);
+     team tab = only messages sent to your role's channel */
+  const msgs=room.chat.filter(m=>chatCanSee(m)&&(ui.chatTab==='team')===(m.ch==='team'));
   let html='';
-  room.chat.forEach(msg=>{
-    const from=room.players.find(p=>p.id===msg.fromId);
-    const col=from?(from.role==='seeker'?'var(--seeker)':from.role==='hider'?'var(--hider)':'#9aa0a8'):'#9aa0a8';
-    html+='<div class="chat-msg"><div class="who"><span class="dd" style="background:'+col+'"></span>'+esc(msg.fromName||'?')+'</div><div>'+esc(msg.text)+'</div></div>';
+  if(!msgs.length){
+    html='<div class="chat-empty">'
+      +(ui.chatTab==='team'
+        ?'<b>🤫</b>'+(role?'no '+pluralRole(role)+' chatter yet — coordinate here, the other side can\'t see it.':'your team channel unlocks when roles are dealt.')
+        :'<b>👋</b>no messages yet — say hi to the room.')
+      +'</div>';
+  }
+  msgs.forEach(m=>{
+    const mine=m.fromId===myId;
+    const from=room.players.find(p=>p.id===m.fromId);
+    const fr=m.fromRole||(from&&from.role)||null;
+    const cav=fr==='hider'?'hider':fr==='seeker'?'seeker':'ghost';
+    const tm=chatTime(m.at);
+    if(mine){
+      html+='<div class="crow mine"><div class="ccol"><div class="cbubble">'+esc(m.text)+'</div><div class="ctime">'+tm+'</div></div></div>';
+    }else{
+      html+='<div class="crow"><span class="cav '+cav+'">'+esc((m.fromName||'?').slice(0,1).toUpperCase())+'</span>'
+        +'<div class="ccol"><div class="cmeta"><b>'+esc(m.fromName||'?')+'</b>'
+        +(ui.chatTab==='general'&&(fr==='hider'||fr==='seeker')?'<span class="tag-role '+fr+'">'+fr+'</span>':'')
+        +'</div><div class="cbubble">'+esc(m.text)+'</div><div class="ctime">'+tm+'</div></div></div>';
+    }
   });
-  box.innerHTML=html||'<div style="color:var(--ink-soft);font-size:13px;padding:10px 4px">no messages yet — say hi to the room.</div>';
-  const unread=room.chat.filter(m=>m.at>(ui.chatSeenAt||0)&&m.fromId!==myId).length;
+  const stick=box.scrollHeight-box.scrollTop-box.clientHeight<80;
+  box.innerHTML=html;
+  if(ui.chatOpen&&(stick||ui._chatForceBottom))box.scrollTop=box.scrollHeight;
+  ui._chatForceBottom=false;
+  syncChatComposer();
+  const unread=room.chat.filter(m=>m.at>(ui.chatSeenAt||0)&&m.fromId!==myId&&chatCanSee(m)).length;
   $('chip-chat').classList.toggle('unread',unread>0);
-  if(ui.chatOpen){ui.chatSeenAt=now();box.scrollTop=box.scrollHeight;}
+  if(ui.chatOpen)ui.chatSeenAt=now();
 }
-function openChat(){ui.chatOpen=true;ui.chatSeenAt=now();$('chat').classList.add('open');renderChat();}
-function closeChat(){ui.chatOpen=false;$('chat').classList.remove('open');renderChat();}
+function syncChatComposer(){
+  const role=myChatRole();
+  const locked=ui.chatTab==='team'&&!role;
+  const inp=$('chat-input'),send=$('chat-send'),meta=$('chatMeta'),seg=$('chatSeg');
+  if(seg)seg.querySelectorAll('.segbtn').forEach(b=>b.classList.toggle('on',b.dataset.ch===ui.chatTab));
+  if(meta){
+    if(ui.chatTab==='team'){
+      if(role){
+        const n=(room.players||[]).filter(p=>p.role===role).length;
+        const c=roleCol(role);
+        meta.innerHTML='<span class="cmdot '+(role==='hider'?'hider':'seeker')+'"></span>your team — only <b style="color:'+c+'">'+pluralRole(role)+'</b> see this · <b>'+n+'</b> on your side';
+      }else{
+        meta.innerHTML='<span class="cmdot"></span>team chatter unlocks once roles are dealt — check back after the round starts';
+      }
+    }else{
+      meta.innerHTML='<span class="cmdot"></span>room-wide — <b>everyone</b> in this room reads and writes general';
+    }
+  }
+  if(inp)inp.placeholder=locked?'roles unlock at the start of the round':ui.chatTab==='team'?'message your team…':'message everyone…';
+  if(send)send.disabled=locked;
+}
+function openChat(){ui.chatOpen=true;ui.chatSeenAt=now();ui._chatForceBottom=true;
+  $('chat').classList.add('open');$('chatScrim').classList.add('on');renderChat();
+  const inp=$('chat-input');if(inp)setTimeout(()=>{if(ui.chatOpen&&inp)inp.focus();},90);}
+function closeChat(){ui.chatOpen=false;
+  $('chat').classList.remove('open');const sc=$('chatScrim');if(sc)sc.classList.remove('on');
+  renderChat();}
+function setChatTab(ch){
+  if(ch!=='general'&&ch!=='team')return;
+  ui.chatTab=ch;ui._chatForceBottom=true;renderChat();
+  const inp=$('chat-input');if(inp&&ui.chatOpen)inp.focus();
+}
 function sendChat(){
-  const inp=$('chat-input');const txt=inp.value.trim();if(!txt)return;
-  const nm=(me()&&me().name)||myName||'—';
-  commit(r=>{r.chat=r.chat||[];r.chat.push({id:uid(),fromId:myId,fromName:nm,text:txt,at:now()});if(r.chat.length>200)r.chat=r.chat.slice(-200);});
+  const inp=$('chat-input');if(!inp)return;
+  const txt=inp.value.trim();if(!txt)return;
+  const ch=ui.chatTab==='team'?'team':'general';
+  const m=me();
+  if(ch==='team'&&!myChatRole()){toast('your team is decided when the round starts','warn');return;}
+  const nm=(m&&m.name)||myName||'—';
+  commit(r=>{r.chat=r.chat||[];r.chat.push({id:uid(),fromId:myId,fromName:nm,fromRole:(m&&m.role)||null,ch,text:txt,at:now()});if(r.chat.length>200)r.chat=r.chat.slice(-200);});
   inp.value='';
 }
 
@@ -2713,11 +3029,13 @@ $('home-code').addEventListener('keydown',e=>{if(e.key==='Enter')joinRoom($('hom
 $('btn-create').onclick=()=>{ac();createRoom();};
 $('btn-join').onclick=()=>{ac();joinRoom($('home-code').value);};
 $('btn-how').onclick=()=>openOv('ov-how');
-/* room chat */
+/* room chat — general (everyone) / team (only your role) */
 $('chip-chat').onclick=()=>ui.chatOpen?closeChat():openChat();
 $('chat-send').onclick=sendChat;
-$('chat-input').addEventListener('keydown',e=>{if(e.key==='Enter')sendChat();});
-$('chat').addEventListener('click',e=>{if(e.target===$('chat'))closeChat();});
+$('chat-input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing)sendChat();});
+$('chatScrim').addEventListener('click',closeChat);
+$('chatSeg').addEventListener('click',e=>{const b=e.target.closest('.segbtn');if(b)setChatTab(b.dataset.ch);});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&ui.chatOpen)closeChat();});
 /* join QR — encodes this page's URL + the room code; degrades to the URL as text */
 let qrShown='';
 function openQr(){
@@ -2759,7 +3077,7 @@ $('btn-leave').onclick=()=>{
   ui.left=true; // ignore our own removal broadcast + any late merges
   room=null; try{transport&&transport.close();}catch(e){} transport=null; setPeerStatus('connecting');
   ui.seenLog=new Set(); ui.seenReveal=new Set(); ui.sheetOpen=false; ui.chatOpen=false; ui.screamOpen=false;
-  closeGameSheetNow(); $('chat').classList.remove('open'); showScreen('home');};
+  closeGameSheetNow(); closeChat(); showScreen('home');};
 $('btn-copy').onclick=()=>{
   const c=room&&room.code||''; if(!c)return;
   if(navigator.clipboard&&navigator.clipboard.writeText){
@@ -2779,7 +3097,7 @@ $('btn-end-home').onclick=()=>{
     LS.del(roomKey(room.code));LS.del('leak.active');
   }
   ui.left=true; // leave the room for good (same as the lobby ← button)
-  ui.chatOpen=false;$('chat').classList.remove('open');closeGameSheetNow();
+  closeChat();closeGameSheetNow();
   room=null; try{transport&&transport.close();}catch(e){} transport=null; setPeerStatus('connecting');
   showScreen('home');};
 $('btn-rematch').onclick=()=>{closeOv('ov-end');resetRoom();};
@@ -2797,7 +3115,7 @@ function leaveToHome(){
     LS.del(roomKey(room.code));LS.del('leak.active');
   }
   ui.left=true; ui.sheetOpen=false; ui.chatOpen=false; ui.screamOpen=false; ui.kicked=false;
-  closeGameSheetNow(); $('chat').classList.remove('open');
+  closeGameSheetNow(); closeChat();
   room=null; try{transport&&transport.close();}catch(e){} transport=null; setPeerStatus('connecting');
   ui.seenLog=new Set(); ui.seenReveal=new Set(); ui.seenCaught=new Set();
   showScreen('home');
