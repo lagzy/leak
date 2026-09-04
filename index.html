@@ -3766,6 +3766,8 @@ const LIVE={
   nodes:new Map(),     // pid -> .ltile element in the grid
   sig:'',              // last grid signature (players / roles / media)
   retryAt:new Map(),   // pid -> ms before a failed peer may retry
+  _ice:{},             // pid -> buffered ICE candidates (batched, see flushIce)
+  _st:{},              // pid -> latest RTCPeerConnection state for the deck
   warnT:0,
   lastT:0
 };
@@ -3844,22 +3846,31 @@ function peerFor(pid){
     pc=new RTCPeerConnection({iceServers:rtcIceServers()});
   }catch(e){return null;}
   LIVE.peers.set(pid,pc);
-  pc.onicecandidate=e=>{if(e.candidate)liveOut(pid,{t:'ice',c:e.candidate});};
+  /* candidates are buffered per peer and flushed as ONE message (flushIce) —
+     trickling one broadcast per candidate could exceed the channel's ~10
+     events/s cap and silently drop candidates mid-call */
+  pc.onicecandidate=e=>{if(e&&e.candidate)(LIVE._ice[pid]=LIVE._ice[pid]||[]).push(e.candidate);};
   pc.ontrack=e=>{
     LIVE.remotes.set(pid,(e.streams&&e.streams[0])||new MediaStream([e.track]));
     if(LIVE.open)renderLive();
   };
-  pc.onconnectionstatechange=()=>{
-    const st=pc.connectionState;
-    if(st==='connected'){if(LIVE.open)renderLive();}
-    else if(st==='failed'||st==='disconnected'){
-      setTimeout(()=>{
-        if(LIVE.peers.get(pid)!==pc)return;
-        if(!room||!room.players.some(p=>p.id===pid&&!p.bot))return;
-        dropPeer(pid);
-        if(liveRound())peerFor(pid);
-      },3600);
-    }
+  const setState=()=>{LIVE._st[pid]=pc.connectionState;if(LIVE.open)renderLive();};
+  pc.onconnectionstatechange=setState;
+  pc.oniceconnectionstatechange=()=>{
+    const st=pc.iceConnectionState;
+    if(st==='failed'||st==='disconnected'){
+      /* rebuild the peer (caller re-offers) instead of waiting on a half-
+         dead connection; backoff so a truly dead peer isn't churned */
+      if(!LIVE.retryAt.has(pid)||now()>LIVE.retryAt.get(pid)){
+        LIVE.retryAt.set(pid,now()+4000);
+        setTimeout(()=>{
+          if(LIVE.peers.get(pid)!==pc)return;
+          if(!room||!room.players.some(p=>p.id===pid&&!p.bot))return;
+          dropPeer(pid);
+          if(liveRound())peerFor(pid);
+        },600);
+      }
+    }else setState();
   };
   pc.onnegotiationneeded=()=>{if(isCaller(pid)&&!pc._negotiating)sendOffer(pid);};
   if(liveRound())pushLocal(pid);
@@ -3869,14 +3880,46 @@ function dropPeer(pid){
   const pc=LIVE.peers.get(pid);
   if(pc){try{pc.close();}catch(e){}}
   LIVE.peers.delete(pid);LIVE.remotes.delete(pid);
+  delete LIVE._ice[pid];delete LIVE._st[pid];
 }
+function flushIce(){
+  for(const pid in LIVE._ice){
+    const c=LIVE._ice[pid];
+    delete LIVE._ice[pid];
+    if(c&&c.length&&LIVE.peers.has(pid))liveOut(pid,{t:'ice',c});
+  }
+}
+function addIce(pc,c){
+  if(!pc||!c)return;
+  if(pc.remoteDescription){try{pc.addIceCandidate(c);}catch(e){}}
+  else (pc._iceBuf=pc._iceBuf||[]).push(c); // candidates can arrive before the remote SDP lands
+}
+function drainIce(pc){
+  if(!pc||!pc.remoteDescription||!pc._iceBuf)return;
+  const buf=pc._iceBuf;pc._iceBuf=null;
+  buf.forEach(c=>{try{pc.addIceCandidate(c);}catch(e){}});
+}
+/* Runs on every liveTick (~1/s): keeps the roster in step, pushes the local
+   camera into any peer created before the camera came up — the old flow only
+   offered once at connection creation, so when the caller's getUserMedia
+   resolved late NO offer was ever sent and the far phone sat on "waiting for
+   feed" forever — re-offers until a call lands, and flushes batched ICE. */
 function syncPeers(){
   if(!liveRound()||!room)return;
-  const want=liveHumans().map(p=>p.id);
-  const have=[];
-  LIVE.peers.forEach((pc,pid)=>have.push(pid));
-  want.forEach(pid=>{if(!LIVE.peers.has(pid))peerFor(pid);});
-  have.forEach(pid=>{if(!want.includes(pid))dropPeer(pid);});
+  const t=now();
+  liveHumans().forEach(p=>{
+    const pid=p.id;
+    let pc=LIVE.peers.get(pid);
+    if(!pc)pc=peerFor(pid);
+    if(!pc)return;
+    pushLocal(pid); // late camera / rejoin — adds tracks + (re)negotiates
+    if(isCaller(pid)&&pc.connectionState!=='connected'&&!pc._negotiating
+       &&t-(pc._lastOfferAt||0)>3500){
+      sendOffer(pid); // retry until the peer answers (dropped msgs, races, late join)
+    }
+  });
+  [...LIVE.peers.keys()].forEach(pid=>{if(!liveHumans().some(p=>p.id===pid))dropPeer(pid);});
+  flushIce();
 }
 function pushLocal(pid){
   const pc=LIVE.peers.get(pid);
@@ -3886,12 +3929,12 @@ function pushLocal(pid){
   LIVE.local.getTracks().forEach(tr=>{try{pc.addTrack(tr,LIVE.local);}catch(e){}});
   pc._tracks=n;
   if(isCaller(pid))sendOffer(pid);
-  else if(pc._established)liveOut(pid,{t:'ren'}); // cam came up late — ask the caller to renegotiate
+  else if(pc._established)liveOut(pid,{t:'ren'}); // my cam came up late — ask the caller to renegotiate
 }
 function sendOffer(pid){
   const pc=LIVE.peers.get(pid);
   if(!pc||pc._negotiating)return;
-  pc._negotiating=true;
+  pc._negotiating=true;pc._lastOfferAt=now();
   pc.createOffer().then(o=>pc.setLocalDescription({type:'offer',sdp:tightenSdp(o.sdp)}))
     .then(()=>{if(LIVE.peers.get(pid)===pc)liveOut(pid,{t:'offer',s:pc.localDescription.sdp});})
     .catch(()=>{}).then(()=>{if(LIVE.peers.get(pid)===pc)pc._negotiating=false;});
@@ -3932,23 +3975,34 @@ function recvSig(from,m){
   const pc=peerFor(from);
   if(!pc)return;
   if(m.t==='offer'){
+    if(pc.signalingState!=='stable'&&pc.signalingState!=='have-remote-offer')return;
     pc._negotiating=true;
-    pc.setRemoteDescription({type:'offer',sdp:m.s}).then(()=>pc.createAnswer())
+    pc.setRemoteDescription({type:'offer',sdp:m.s}).then(()=>{drainIce(pc);return pc.createAnswer();})
       .then(a=>pc.setLocalDescription({type:'answer',sdp:tightenSdp(a.sdp)}))
       .then(()=>{if(LIVE.peers.get(from)===pc)liveOut(from,{t:'answer',s:pc.localDescription.sdp});pc._established=true;})
       .catch(()=>{}).then(()=>{if(LIVE.peers.get(from)===pc)pc._negotiating=false;});
   }else if(m.t==='answer'){
     if(pc.signalingState==='have-local-offer'){
-      pc.setRemoteDescription({type:'answer',sdp:m.s}).then(()=>{pc._established=true;}).catch(()=>{});
+      pc.setRemoteDescription({type:'answer',sdp:m.s}).then(()=>{pc._established=true;drainIce(pc);}).catch(()=>{});
     }
   }else if(m.t==='ice'){
-    try{pc.addIceCandidate(m.c);}catch(e){}
+    const list=Array.isArray(m.c)?m.c:[m.c];
+    list.forEach(c=>addIce(pc,c));
   }else if(m.t==='ren'){
     if(isCaller(from))sendOffer(from);
   }
 }
 /* ---- deck UI ---- */
 const liveVidHtml=pid=>'<video autoplay playsinline'+(pid===myId?' muted':'')+'></video>';
+/* live status text for a remote human tile — reflects the actual peer state,
+   not just "waiting", so a stalled handshake is visible */
+function peerState(pid){
+  const st=LIVE._st[pid]||((LIVE.peers.get(pid)||{}).connectionState)||'new';
+  if(st==='connected'||st==='completed')return '● live';
+  if(st==='connecting'||st==='checking')return 'connecting…';
+  if(st==='failed'||st==='disconnected')return 'retrying…';
+  return 'waiting';
+}
 function liveTile(p){
   const pid=p.id,isMe=pid===myId,isBot=!!p.bot;
   const role=p.role||(isBot?'bot':'player');
@@ -3966,7 +4020,9 @@ function liveTile(p){
   const tag=isMe?'<span class="tag you">you</span>':'<span class="tag '+(role==='hider'?'hider':role==='seeker'?'seeker':'ghost')+'">'+role+'</span>';
   const st=isBot
     ?'<span class="st sim">sim</span>'
-    :(liveOn?'<span class="st live">● live</span>':(isMe&&LIVE.denied?'<span class="st off">denied</span>':'<span class="st">waiting</span>'));
+    :(liveOn?'<span class="st live">● live</span>'
+      :(isMe?'<span class="st'+(LIVE.denied?' off':'')+'">'+(LIVE.denied?'denied':'cam off')+'</span>'
+        :'<span class="st'+(peerState(pid)==='retrying…'?' off':'')+'">'+peerState(pid)+'</span>'));
   return '<div class="ltile" data-pid="'+pid+'"><div class="lvid'+(isMe?' mirror':'')+'">'+v+'</div><div class="lcap"><b>'+esc(p.name)+'</b>'+tag+st+'</div></div>';
 }
 function attachMedia(){
@@ -3983,7 +4039,9 @@ function attachMedia(){
 function liveSig(){
   if(!room)return '';
   const parts=room.players.map(p=>p.id+':'+(p.role||'?')+':'+p.status+':'+(p.bot?1:0)).join('|');
-  return parts+'|L'+(LIVE.local?1:0)+'|D'+(LIVE.denied?1:0)+'|O'+(LIVE.open?1:0)+'|R'+[...LIVE.remotes.keys()].sort().join(',');
+  return parts+'|L'+(LIVE.local?1:0)+'|D'+(LIVE.denied?1:0)+'|O'+(LIVE.open?1:0)
+    +'|R'+[...LIVE.remotes.keys()].sort().join(',')
+    +'|S'+[...LIVE._st.entries()].map(e=>e[0]+':'+e[1]).join(',');
 }
 function renderLive(){
   if(!room||ui.screen!=='game')return;
@@ -4050,6 +4108,7 @@ function liveTick(){
     LIVE.localTried=true;
     camStart();
   }
+  syncPeers();
   if(LIVE.open)renderLive();
   /* gentle mandatory-cam nudge */
   if(m&&m.role&&m.status==='alive'&&!LIVE.local&&!$('ov-reveal').classList.contains('open')&&t-(LIVE.warnT||0)>25000){
