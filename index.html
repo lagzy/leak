@@ -1176,25 +1176,66 @@ const roomKey=c=>'leak-room-'+c;
 
 /* mergeRoom: per-field merge of an incoming room into our local room, so two
    tabs that commit near-simultaneously don't clobber each other (Phase 1 #1).
-   Players/fx/log union by id; newer per-element seq wins; envelope scalars
-   (phase, timestamps, hostId, winner) follow the higher room seq. */
-function mergeRoom(incoming){
+   Players/fx/log/chat union by id (newer element seq wins). Envelope scalars
+   are adopted PER WRITER: every device raises its own seq on each commit, so
+   the old single "higher seq wins" rule let one GPS-heavy device starve the
+   host — the host's commits (settings edits, game start, resets) were ignored
+   and joined players never left the lobby. Broadcast/presence snapshots carry
+   the writer id (meta.w); a message is accepted when it is newer than the last
+   one from the SAME writer. Phase/timers then use forward-only rules so
+   interleaved writers can't regress a running round. */
+function mergeRoom(incoming,meta){
   if(!room||!incoming||incoming.code!==room.code){return false;}
   if(!room.removed)room.removed=[]; // legacy saved rooms
+  if(!room._wl)room._wl={}; // writerId -> last accepted seq from that writer
   let changed=false;
-  if((incoming.seq||0)>=(room.seq||0)){
-    if(room.phase!==incoming.phase){room.phase=incoming.phase;changed=true;}
-    if((room.startedAt||0)!==(incoming.startedAt||0)){room.startedAt=incoming.startedAt;changed=true;}
-    room.hideMin=incoming.hideMin; room.totalMin=incoming.totalMin; room.casinoMin=incoming.casinoMin; room.gameMod=incoming.gameMod||'classic';
-    room.hideEndsAt=Math.max(room.hideEndsAt||0,incoming.hideEndsAt||0);
-    room.gameEndsAt=Math.max(room.gameEndsAt||0,incoming.gameEndsAt||0);
+  const w=(meta&&meta.w)?meta.w:null;
+  const inSeq=incoming.seq||0;
+  const mySeq=room.seq||0;
+  /* freshness: our own echo is never newer; unknown-writer paths (legacy
+     presence entries from before this change) keep the global seq rule */
+  let fresh;
+  if(w===myId)fresh=inSeq>mySeq;
+  else if(w)fresh=(room._wl[w]==null)||inSeq>=room._wl[w];
+  else fresh=inSeq>=mySeq;
+  if(fresh){
+    if(w&&w!==myId)room._wl[w]=Math.max(room._wl[w]||0,inSeq);
+    if(inSeq>mySeq)room.seq=inSeq;
+    const ip=incoming.phase||room.phase;
+    const rank={lobby:0,hide:1,seek:2,end:3};
+    const reset=ip==='lobby'&&!incoming.startedAt;      // explicit reset to the lobby
+    const newRound=(incoming.startedAt||0)>(room.startedAt||0); // rematch / fresh start
+    const fwd=(rank[ip]||0)>(rank[room.phase]||0);       // hide→seek→end
+    /* start / reset are host actions: honor them only from the host (or a
+       writerless legacy snapshot), so a lobby-bound guest's own concurrent
+       commit can't yank a running room back to the lobby */
+    const hostAuth=!w||w===room.hostId;
+    if((reset||newRound)&&hostAuth){
+      /* adopt the whole round envelope exactly (reset/rematch supersede the
+         previous round's timers — max() would keep stale, longer ones) */
+      if(room.phase!==ip){room.phase=ip;changed=true;}
+      if((room.startedAt||0)!==(incoming.startedAt||0)){room.startedAt=incoming.startedAt||0;changed=true;}
+      if((room.hideEndsAt||0)!==(incoming.hideEndsAt||0)){room.hideEndsAt=incoming.hideEndsAt||0;changed=true;}
+      if((room.gameEndsAt||0)!==(incoming.gameEndsAt||0)){room.gameEndsAt=incoming.gameEndsAt||0;changed=true;}
+      if((room.winner||null)!==(incoming.winner||null)){room.winner=incoming.winner||null;changed=true;}
+    }else if(fwd){
+      if(room.phase!==ip){room.phase=ip;changed=true;}
+      if(!room.startedAt&&(incoming.startedAt||0)){room.startedAt=incoming.startedAt;changed=true;}
+      /* same round: timers may only extend */
+      if((incoming.hideEndsAt||0)>(room.hideEndsAt||0)){room.hideEndsAt=incoming.hideEndsAt;changed=true;}
+      if((incoming.gameEndsAt||0)>(room.gameEndsAt||0)){room.gameEndsAt=incoming.gameEndsAt;changed=true;}
+      if(ip==='end'&&incoming.winner&&room.winner!==incoming.winner){room.winner=incoming.winner;changed=true;}
+    }
+    /* settings are host-authored; a fresh snapshot always wins (last write wins) */
+    if(room.hideMin!==incoming.hideMin){room.hideMin=incoming.hideMin;changed=true;}
+    if(room.totalMin!==incoming.totalMin){room.totalMin=incoming.totalMin;changed=true;}
+    if(room.casinoMin!==incoming.casinoMin){room.casinoMin=incoming.casinoMin;changed=true;}
+    if((room.gameMod||'classic')!==(incoming.gameMod||'classic')){room.gameMod=incoming.gameMod||'classic';changed=true;}
     room.forceCasinoId=Math.max(room.forceCasinoId||0,incoming.forceCasinoId||0);
     if(Array.isArray(incoming.zone)&&incoming.zone.length===4&&JSON.stringify(incoming.zone)!==JSON.stringify(room.zone||null)){
       room.zone=incoming.zone.map(c=>({lat:c.lat,lng:c.lng}));applyCorners(room.zone);redrawZoneLayers();changed=true;
     }
     if(room.hostId!==incoming.hostId){room.hostId=incoming.hostId;changed=true;}
-    if(room.winner!==incoming.winner){room.winner=incoming.winner;changed=true;}
-    room.seq=incoming.seq; changed=true;
   }
   const byId=new Map(room.players.map(p=>[p.id,p]));
   incoming.players.forEach(ip=>{const cur=byId.get(ip.id);
@@ -1224,14 +1265,14 @@ function mergeRoom(incoming){
   if(room.chat.length>200)room.chat=room.chat.slice(-200);
   return changed;
 }
-function applyRoom(incoming){
+function applyRoom(incoming,meta){
   if(ui.left)return false; // we left the room — ignore our own broadcast echo / stale merges
   if(!room){room=incoming;if(Array.isArray(room.zone))applyCorners(room.zone);
     /* first sight of a room: its existing log is history, not news — pre-seen,
        so a reload/rejoin doesn't replay the whole round as toast spam. */
     ui.seenLog=new Set((room.log||[]).map(l=>l.id));
     return true;}
-  return mergeRoom(incoming);
+  return mergeRoom(incoming,meta);
 }
 /* the host can kick players (see renderLobby/renderSheet); the kicked player's
    device learns about it through the tombstone arriving on any merge and shows
@@ -1524,11 +1565,12 @@ function SupabaseTransport(code){
     if(gzInFlight){gzQueued=r;return;}
     gzInFlight=true;
     compressRoom(r).then(env=>{
+      if(env&&env.payload)env.payload.w=myId; // writer tag → per-writer merge freshness
       if(ready&&chan){ try{chan.send(env);return;}catch(e){} }
       pendingRoom=r;
     }).catch(()=>{
       /* gzip hiccup (e.g. blocked on file://) — fall back to plain packed */
-      try{ if(ready&&chan)chan.send({type:'broadcast',event:'room',payload:{room:packRoom(r)}}); else pendingRoom=r; }
+      try{ if(ready&&chan)chan.send({type:'broadcast',event:'room',payload:{room:packRoom(r),w:myId}}); else pendingRoom=r; }
       catch(e){ pendingRoom=r; }
     }).then(()=>{
       gzInFlight=false;
@@ -1559,7 +1601,7 @@ function SupabaseTransport(code){
       for(const key in st){
         const list=st[key]; if(!list)continue;
         const arr=Array.isArray(list)?list:(Array.isArray(list.metas)?list.metas:[list]);
-        for(const m of arr){ if(m&&m.room&&applyRoom(isPackedRoom(m.room)?unpackRoom(m.room):m.room))changed=true; }
+        for(const m of arr){ if(m&&m.room&&applyRoom(isPackedRoom(m.room)?unpackRoom(m.room):m.room,{w:m.w}))changed=true; }
       }
       if(changed)renderAll();
       checkRemoved();
@@ -1567,7 +1609,7 @@ function SupabaseTransport(code){
   }
   /* Keep the presence payload lean: packed envelope + players only (log/fx
      are cosmetic and arrive with the full-room broadcast/ask refresh). */
-  const trackRoom=r=>{ if(ready&&chan){try{chan.track({room:packRoom(r,true)});}catch(e){}} };
+  const trackRoom=r=>{ if(ready&&chan){try{chan.track({room:packRoom(r,true),w:myId});}catch(e){}} };
   /* Bind all handlers to a fresh channel. Rebuilding per attempt avoids
      stale state after a failed join. */
   function bindChan(){
@@ -1576,16 +1618,18 @@ function SupabaseTransport(code){
        to broadcast callbacks, not the inner payload — unwrap it defensively,
        falling back to the pre-envelope inline shape older bundles used. */
     chan.on('broadcast',{event:'room'},payload=>{
-      const r=payload&&payload.payload&&payload.payload.room?payload.payload.room:(payload&&payload.room);
+      const pl=payload&&payload.payload?payload.payload:(payload||{});
+      const r=pl.room||(payload&&payload.room);
       if(!r)return;
+      const meta={w:pl.w||null};
       /* gzipped snapshot → decompress on the receiving device, then merge */
-      if(r.gz===1&&typeof r.room==='string'){ decompressRoom(r).then(x=>{ if(applyRoom(x))renderAll(); checkRemoved(); }).catch(()=>{}); return; }
-      if(applyRoom(isPackedRoom(r)?unpackRoom(r):r))renderAll(); checkRemoved();
+      if(r.gz===1&&typeof r.room==='string'){ decompressRoom(r).then(x=>{ if(applyRoom(x,meta))renderAll(); checkRemoved(); }).catch(()=>{}); return; }
+      if(applyRoom(isPackedRoom(r)?unpackRoom(r):r,meta))renderAll(); checkRemoved();
     });
     chan.on('broadcast',{event:'presence'},()=>{ ui.hostSeen=Date.now(); });
     chan.on('broadcast',{event:'ask'},payload=>{
       const c=payload&&payload.payload&&payload.payload.code?payload.payload.code:(payload&&payload.code);
-      if(room&&room.code===code&&c)send({type:'broadcast',event:'room',payload:{room:packRoom(room)}});
+      if(room&&room.code===code&&c)send({type:'broadcast',event:'room',payload:{room:packRoom(room),w:myId}});
     });
     chan.on('broadcast',{event:'sig'},payload=>{
       /* WebRTC signaling envelope: {from,to,m} — see the LIVE module's liveOut */
@@ -3470,6 +3514,24 @@ function renderEnd(){
 /* ---------------- master render ---------------- */
 function renderAll(){
   if(!room)return;
+  /* The host's start / reset moves the whole room between phases, but only the
+     host ever calls showScreen itself — joined players must follow: when the
+     host starts the round everyone leaves the lobby, and a reset brings them
+     back. (Screen follows room.phase on every merge; cheap when unchanged.) */
+  const want=room.phase==='lobby'?'lobby':(room.phase==='hide'||room.phase==='seek'||room.phase==='end')?'game':ui.screen;
+  if(want!==ui.screen&&ui.screen!=='home'){
+    if(want==='lobby'&&ui.screen==='game'){
+      /* leave-game teardown (same set as resetRoom's) so overlays/sheets from
+         the round don't linger above the fresh lobby */
+      try{ if($('ov-casino').classList.contains('open'))casClose(); }catch(e){}
+      closeOv('ov-end');closeOv('ov-caught');closeOv('ov-reveal');
+      if(ui.screamOpen)closeScream();
+      closeGameSheetNow();closeChat();
+      if(LIVE.open)closeLive();
+      ui.sheetOpen=false;ui.screamOpen=false;ui.popDismissed=0;
+    }
+    showScreen(want);
+  }
   flushLog();
   if(ui.screen==='lobby')renderLobby();
   if(ui.screen==='game'){
