@@ -2959,7 +2959,10 @@ function renderGame(){
   if(pc.innerHTML!==pTxt)pc.innerHTML=pTxt;
   /* camera-mod LIVE chip: everyone's feeds are on during the round */
   const lc=$('chip-live');
-  if(camMod()&&m.role&&m.status!=='spectate'&&(ph==='hide'||ph==='seek')){
+  /* the live room is open to EVERYONE in a camera-mod round — participants
+     stream in, spectators (joined mid-game) can watch the feeds too, so a
+     phone that landed in the room as spectator still gets its LIVE button */
+  if(camMod()&&m&&(ph==='hide'||ph==='seek')){
     lc.style.display='';
     const humans=liveParticipants();
     const on=humans.reduce((a,p)=>a+(p.id===myId?(LIVE.local?1:0):(LIVE.remotes.has(p.id)?1:0)),0);
@@ -4009,11 +4012,14 @@ function liveTile(p){
   const pid=p.id,isMe=pid===myId,isBot=!!p.bot;
   const role=p.role||(isBot?'bot':'player');
   const liveOn=isMe?!!LIVE.local:LIVE.remotes.has(pid);
+  const spectating=isMe&&!p.role; // spectator (joined mid-game): watch-only, no camera duty
   let v='';
   if(isBot){
     v='<div class="ph sim">'+camVidIco+'<b>sim feed</b><span>test bot — no camera</span></div>';
   }else if(liveOn){
     v=liveVidHtml(pid);
+  }else if(spectating){
+    v='<div class="ph camoff">'+camVidIco+'<b>spectating</b><span>you joined mid-round — watching the live room</span></div>';
   }else{
     v=isMe
       ?'<div class="ph camoff">'+camVidIco+'<b>your cam is off</b><span>cameras are mandatory in camera mod</span><button class="camgo">enable camera</button></div>'
@@ -4023,8 +4029,9 @@ function liveTile(p){
   const st=isBot
     ?'<span class="st sim">sim</span>'
     :(liveOn?'<span class="st live">● live</span>'
-      :(isMe?'<span class="st'+(LIVE.denied?' off':'')+'">'+(LIVE.denied?'denied':'cam off')+'</span>'
-        :'<span class="st'+(peerState(pid)==='retrying…'?' off':'')+'">'+peerState(pid)+'</span>'));
+      :(spectating?'<span class="st">watch</span>'
+        :(isMe?'<span class="st'+(LIVE.denied?' off':'')+'">'+(LIVE.denied?'denied':'cam off')+'</span>'
+          :'<span class="st'+(peerState(pid)==='retrying…'?' off':'')+'">'+peerState(pid)+'</span>')));
   return '<div class="ltile" data-pid="'+pid+'"><div class="lvid'+(isMe?' mirror':'')+'">'+v+'</div><div class="lcap"><b>'+esc(p.name)+'</b>'+tag+st+'</div></div>';
 }
 function attachMedia(){
