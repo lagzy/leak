@@ -528,6 +528,54 @@ svg.i{vertical-align:-.15em;pointer-events:none;flex:none}
 .sp-res.ok,.sp-res.ok b{color:var(--hider-dark)}
 .sp-res.bad,.sp-res.bad b{color:#c62f34}
 
+/* camera mod — live room deck */
+.settings label.off{opacity:.45}
+.settings label.off select{pointer-events:none}
+#chip-live{background:#111!important;color:#fff!important}
+#chip-live .live-dot{width:7px;height:7px;border-radius:50%;background:var(--seeker);box-shadow:0 0 0 0 rgba(255,59,48,.5);flex:none;animation:liveDot 1.4s infinite}
+#chip-live .live-dot.on{background:var(--hider);box-shadow:none;animation:none}
+#chip-live.all{background:var(--hider-dark)!important}
+@keyframes liveDot{0%{box-shadow:0 0 0 0 rgba(255,59,48,.55)}70%{box-shadow:0 0 0 6px rgba(255,59,48,0)}100%{box-shadow:0 0 0 0 rgba(255,59,48,0)}}
+#ov-live{padding:0;background:rgba(13,15,16,.5)}
+#ov-live .live-panel{background:#fff;color:#16181d;display:flex;flex-direction:column;flex:1;width:100%;max-width:560px;margin:0 auto;
+  padding:calc(12px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom))}
+.live-hd{display:flex;align-items:center;gap:8px}
+.live-hd .live-ttl{flex:1;min-width:0;font-size:16px;font-weight:800;letter-spacing:-.02em;display:flex;align-items:center;gap:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.live-hd .live-dot{width:9px;height:9px;border-radius:50%;flex:none;background:var(--seeker);box-shadow:0 0 0 0 rgba(255,59,48,.5);animation:liveDot 1.4s infinite}
+.live-hd .live-ttl.all .live-dot{background:var(--hider);box-shadow:none;animation:none}
+.live-cams{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:#5f6368;flex:none}
+.live-sub{font-size:11px;color:#9aa3af;font-weight:500;line-height:1.5;margin:2px 2px 10px}
+.live-grid{flex:1;min-height:0;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(136px,1fr));gap:8px;align-content:start;padding:2px 2px 24px}
+.ltile{background:#f6f7f9;border-radius:12px;overflow:hidden;border:1px solid #eceef1;animation:fadeUp .3s both}
+.lvid{position:relative;aspect-ratio:16/9;background:#0d0f10}
+.lvid video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.lvid.mirror video{transform:scaleX(-1)}
+.lvid .ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:rgba(255,255,255,.66);text-align:center;padding:6px}
+.lvid .ph svg{opacity:.55}
+.lvid .ph b{font-size:9px;font-weight:800;letter-spacing:.13em;text-transform:uppercase}
+.lvid .ph span{font-size:8.5px;color:rgba(255,255,255,.42);line-height:1.3;max-width:120px}
+.lvid .ph button{margin-top:5px;background:rgba(255,255,255,.94);color:#16181d;border:0;border-radius:999px;padding:5px 11px;font-size:9.5px;font-weight:800;cursor:pointer}
+.lvid .ph.sim{background:linear-gradient(135deg,#101418,#1b2228 55%,#101418);overflow:hidden}
+.lvid .ph.sim:after{content:'';position:absolute;inset:-80% -25%;background:repeating-linear-gradient(115deg,transparent 0 14px,rgba(255,255,255,.04) 14px 28px);animation:simMove 1.2s linear infinite}
+.lvid .ph.camoff{background:#23272c}
+@keyframes simMove{from{transform:translateX(0)}to{transform:translateX(34px)}}
+.ltile .lcap{display:flex;align-items:center;gap:5px;padding:5px 7px}
+.ltile .lcap b{flex:1;min-width:0;font-size:11px;font-weight:700;color:#16181d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ltile .lcap .tag{flex:none;font-size:8px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;border-radius:5px;padding:2px 6px}
+.ltile .lcap .tag.hider{background:rgba(18,201,143,.16);color:#0a8f66}
+.ltile .lcap .tag.seeker{background:rgba(255,77,42,.14);color:#d13a1a}
+.ltile .lcap .tag.you{background:#111;color:#fff}
+.ltile .lcap .st{flex:none;font-size:8px;font-weight:800;letter-spacing:.06em;max-width:76px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ltile .lcap .st.live{color:var(--hider-dark)}
+.ltile .lcap .st.off{color:#c62f34}
+.ltile .lcap .st.sim{color:#5f6368}
+/* connection settings (Supabase key + optional TURN relay) */
+#ov-conn .secTag{margin:0 0 6px}
+#ov-conn .field{font-size:14px;padding:11px 13px}
+#ov-conn .mono-in{font-family:'JetBrains Mono',monospace;font-size:13px}
+#ov-conn .conn-row{display:flex;gap:10px;margin-top:10px}
+#ov-conn .conn-row .field{flex:1;min-width:0}
+
 /* sheet */
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:90;background:var(--card);border-radius:26px 26px 0 0;
   box-shadow:0 -14px 40px rgba(0,0,0,.2);transform:translateY(105%);transition:transform .4s cubic-bezier(.22,1,.36,1);
@@ -692,6 +740,7 @@ svg.i{vertical-align:-.15em;pointer-events:none;flex:none}
       <label>hide time<select id="sel-hide"><option value="5">5 min</option><option value="10" selected>10 min</option><option value="15">15 min</option></select></label>
       <label>game length<select id="sel-total"><option value="30">30 min</option><option value="45" selected>45 min</option><option value="60">60 min</option></select></label>
       <label>casino<select id="sel-casino"><option value="10">10 min</option><option value="12" selected>12 min</option><option value="15">15 min</option><option value="20">20 min</option><option value="30">30 min</option></select></label>
+      <label>game mod<select id="sel-mod"><option value="classic" selected>classic</option><option value="camera">camera mod</option></select></label>
     </div>
     <div class="sec-title">players <span id="pcount" style="text-transform:none;letter-spacing:0"></span></div>
     <div class="plist" id="lobby-players"></div>
@@ -731,6 +780,7 @@ svg.i{vertical-align:-.15em;pointer-events:none;flex:none}
     </div>
     <div class="chips">
       <button class="chip" id="chip-casino" aria-label="open casino"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3.6" width="18" height="16.8" rx="2.6"/><rect x="6.6" y="8.4" width="4.4" height="5.6" rx=".7"/><rect x="13" y="8.4" width="4.4" height="5.6" rx=".7"/><path d="M9 15.6h6"/></svg>&nbsp;<b id="casinoChipT">—</b></button>
+      <button class="chip" id="chip-live" style="display:none" aria-label="live room — everyone on camera"><span class="live-dot"></span> LIVE <b id="liveChipT">0</b></button>
       <button class="chip" id="chip-players" aria-label="players list"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.2" r="3.4"/><path d="M2.8 20v-1.8a6.2 6.2 0 0 1 12.4 0V20"/><circle cx="17.2" cy="9.8" r="2.5"/><path d="M16.6 13.4a5.2 5.2 0 0 1 4.6 5V20"/></svg> 0</button>
       <button class="chip" id="chip-zone" aria-label="zone status"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.6s-5.8-5.2-5.8-9.4a5.8 5.8 0 0 1 11.6 0c0 4.2-5.8 9.4-5.8 9.4z"/><circle cx="12" cy="11" r="2"/></svg> in zone</button>
       <button class="chip" id="chip-chat" aria-label="chat — general &amp; team"><svg class="i" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 11.7a8.4 8.4 0 0 1-12.4 7.3L4 20.4l1.5-4.6a8.4 8.4 0 1 1 15.3-4.1z"/><path d="M8.2 11.6h7.6M8.2 14.6h4.6"/></svg> chat</button>
@@ -868,6 +918,18 @@ svg.i{vertical-align:-.15em;pointer-events:none;flex:none}
 </div>
 
 
+<div id="ov-live" class="ov" role="dialog" aria-label="live room camera feeds">
+  <div class="live-panel">
+    <div class="live-hd">
+      <div class="live-ttl"><span class="live-dot" id="liveDot"></span> live room · camera mod</div>
+      <span class="live-cams" id="liveCams">0/0 cams</span>
+      <button class="iconbtn" id="live-close" aria-label="close live room" style="margin-right:-8px">✕</button>
+    </div>
+    <p class="live-sub" id="liveSub"></p>
+    <div class="live-grid" id="live-grid"></div>
+  </div>
+</div>
+
 <div id="ov-mapedit" class="ov"><div class="panel">
   <h2>map edit</h2>
   <p class="sub">drag the 4 corners to reshape the play zone — the whole game runs inside that shape. corner <b>1</b> is the start point.</p>
@@ -894,6 +956,25 @@ svg.i{vertical-align:-.15em;pointer-events:none;flex:none}
   <button class="btn" id="cf-ok">confirm</button>
   <div style="height:8px"></div>
   <button class="btn ghost" id="cf-cancel">cancel</button>
+</div></div>
+
+<div id="ov-conn" class="ov"><div class="panel">
+  <h2>connection settings</h2>
+  <p class="sub">room sync runs on your Supabase project. camera-mod video calls use STUN by default — add a TURN server so phones on strict mobile networks (no P2P) can still relay feeds.</p>
+  <div class="secTag" style="margin:0 0 6px">supabase — room sync</div>
+  <input id="conn-key" class="field" placeholder="sb_publishable_..." autocomplete="off" spellcheck="false">
+  <div style="height:14px"></div>
+  <div class="secTag" style="margin:0 0 6px">TURN relay — camera-mod calls (optional)</div>
+  <input id="conn-turn" class="field mono-in" placeholder="turn:your-host:3478   (blank = STUN only)" autocomplete="off" spellcheck="false">
+  <div class="conn-row">
+    <input id="conn-turn-user" class="field" placeholder="username (optional)" autocomplete="off" spellcheck="false">
+    <input id="conn-turn-pass" class="field" type="password" placeholder="password (optional)" autocomplete="off" spellcheck="false">
+  </div>
+  <p class="fine" style="margin-top:10px">accepted: <b>turn:</b>host:port, <b>turns:</b>host:port or a plain <b>stun:</b> URL. coturn or free relays (e.g. OpenRelay) work — keep the port open over UDP/TCP.</p>
+  <div style="height:14px"></div>
+  <button class="btn" id="conn-save">save</button>
+  <div style="height:8px"></div>
+  <button class="btn ghost" id="conn-close">cancel</button>
 </div></div>
 
 <div id="ov-how" class="ov"><div class="panel">
@@ -1104,7 +1185,7 @@ function mergeRoom(incoming){
   if((incoming.seq||0)>=(room.seq||0)){
     if(room.phase!==incoming.phase){room.phase=incoming.phase;changed=true;}
     if((room.startedAt||0)!==(incoming.startedAt||0)){room.startedAt=incoming.startedAt;changed=true;}
-    room.hideMin=incoming.hideMin; room.totalMin=incoming.totalMin; room.casinoMin=incoming.casinoMin;
+    room.hideMin=incoming.hideMin; room.totalMin=incoming.totalMin; room.casinoMin=incoming.casinoMin; room.gameMod=incoming.gameMod||'classic';
     room.hideEndsAt=Math.max(room.hideEndsAt||0,incoming.hideEndsAt||0);
     room.gameEndsAt=Math.max(room.gameEndsAt||0,incoming.gameEndsAt||0);
     room.forceCasinoId=Math.max(room.forceCasinoId||0,incoming.forceCasinoId||0);
@@ -1191,6 +1272,10 @@ function showKickedOverlay(){
    Incoming updates arrive via the shared onIncomingRoom/onPresence hooks
    (applyRoom/renderAll), set up once below. */
 let transport=null;
+/* camera-mod signaling inbox: WebRTC offers/answers/ICE ride the same
+   Supabase Realtime channel as the room sync (event 'sig'). The LIVE module
+   installs itself here; see SupabaseTransport's broadcast handler. */
+let sigHandler=null;
 
 
 function saveRoom(){
@@ -1217,13 +1302,34 @@ function loadSupabase(){return new Promise((res,rej)=>{
   sc.onerror=()=>rej(new Error('Supabase load failed'));
   document.head.appendChild(sc);
 });}
-function promptSupabase(){
-  const k=prompt('Supabase publishable key (sb_publishable_... - from Settings > API):',supaCfg.key);
-  if(k===null)return false; supaCfg.key=(k||'').trim();
-  if(!supaCfg.key){toast('need the publishable key','warn');return false;}
-  LS.set('leak.supa_key',supaCfg.key);
-  return true;
+/* ---- connection settings popover ----
+   Two things live here: the Supabase publishable key (room sync) and an
+   optional TURN server for camera-mod video calls. STUN-only meshes work
+   on permissive networks, but phones behind strict mobile NATs need a
+   TURN relay to reach each other — configured here and read by
+   rtcIceServers() (LIVE module) when each peer connection is created. */
+const TURN_KEY='leak.turn';
+function loadTurn(){try{const r=LS.get(TURN_KEY);if(r){const t=JSON.parse(r);if(t&&t.url)return t;}}catch(e){} return null;}
+function saveTurn(t){try{LS.set(TURN_KEY,JSON.stringify(t));}catch(e){}}
+function openConn(){
+  $('conn-key').value=supaCfg.key||'';
+  const t=loadTurn()||{};
+  $('conn-turn').value=t.url||'';
+  $('conn-turn-user').value=t.user||'';
+  $('conn-turn-pass').value=t.pass||'';
+  openOv('ov-conn');
 }
+$('conn-save').onclick=()=>{
+  const k=$('conn-key').value.trim();
+  if(!k){toast('need the Supabase publishable key','warn');return;}
+  supaCfg.key=k;LS.set('leak.supa_key',k);
+  const url=$('conn-turn').value.trim();
+  if(url)saveTurn({url,user:$('conn-turn-user').value.trim(),pass:$('conn-turn-pass').value});
+  else try{LS.del(TURN_KEY);}catch(e){}
+  closeOv('ov-conn');
+  toast(url?'saved — TURN will relay new camera-mod calls':'saved — camera calls will use STUN only','good',3600);
+};
+$('conn-close').onclick=()=>closeOv('ov-conn');
 /* live sync status on the home screen — makes a dead Supabase connection
    visible instead of a mystery "room not found" */
 function setPeerStatus(st){
@@ -1319,6 +1425,7 @@ function packRoom(r,lean){
   if(r.hideMin!=null)o.hm=r.hideMin;
   if(r.totalMin!=null)o.tm=r.totalMin;
   if(r.casinoMin!=null)o.cm=r.casinoMin;
+  if(r.gameMod)o.gm=r.gameMod;
   if(r.startedAt)o.sa=r.startedAt;
   if(r.hideEndsAt)o.he=r.hideEndsAt;
   if(r.gameEndsAt)o.ge=r.gameEndsAt;
@@ -1336,7 +1443,7 @@ function packRoom(r,lean){
 }
 function unpackRoom(o){
   return {code:o.c,hostId:o.h,phase:o.ph,seq:o.q||0,
-    hideMin:o.hm!=null?o.hm:10,totalMin:o.tm!=null?o.tm:45,casinoMin:o.cm!=null?o.cm:12,
+    hideMin:o.hm!=null?o.hm:10,totalMin:o.tm!=null?o.tm:45,casinoMin:o.cm!=null?o.cm:12,gameMod:o.gm||'classic',
     startedAt:o.sa||0,hideEndsAt:o.he||0,gameEndsAt:o.ge||0,winner:o.w||null,forceCasinoId:o.fc||0,
     zone:Array.isArray(o.z)?o.z.map(c=>({lat:c.a,lng:c.g})):null,
     players:(o.p||[]).map(unpackPlayer),removed:o.r||[],fx:(o.f||[]).map(unpackFx),
@@ -1480,6 +1587,13 @@ function SupabaseTransport(code){
       const c=payload&&payload.payload&&payload.payload.code?payload.payload.code:(payload&&payload.code);
       if(room&&room.code===code&&c)send({type:'broadcast',event:'room',payload:{room:packRoom(room)}});
     });
+    chan.on('broadcast',{event:'sig'},payload=>{
+      /* WebRTC signaling envelope: {from,to,m} — see the LIVE module's liveOut */
+      const pl=payload&&payload.payload?payload.payload:(payload||{});
+      if(!pl||!pl.m||!pl.from||pl.from===undefined)return;
+      if(pl.to&&pl.to!==myId)return;
+      if(sigHandler)sigHandler(pl.from,pl.m);
+    });
     ['sync','join','update'].forEach(ev=>chan.on('presence',{event:ev},syncRoom));
     return chan;
   }
@@ -1538,6 +1652,7 @@ function SupabaseTransport(code){
     trackRoom,
     ask(code){ send({type:'broadcast',event:'ask',payload:{code}}); },
     presence(){ send({type:'broadcast',event:'presence',payload:{}}); },
+    signal(m){ send({type:'broadcast',event:'sig',payload:m}); },
     close(){ document.removeEventListener('visibilitychange',onVis); if(retryT){clearTimeout(retryT);retryT=null;} pendingRoom=null; try{chan&&client&&client.removeChannel(chan);}catch(e){} chan=null; }
   };
 }
@@ -1660,7 +1775,11 @@ const BUFFS={
   {id:'cloak',icon:'mist',name:'cloak',  rarity:'mythic',desc:'vanish completely for 40 seconds — no radar, ring, scan, leak or catch. seekers can\'t see you.'},
 ]};
 const casinoWinIdx=()=>room&&room.hideEndsAt?Math.max(0,Math.floor((now()-room.hideEndsAt)/(room.casinoMin*60000))):0;
+/* camera mod is a no-casino mode — every entry point funnels through
+   casinoOpenFor, so returning false here keeps the machine, the chip
+   countdown and the auto-open completely dark for the whole round. */
 function casinoOpenFor(p){
+  if(camMod())return false;
   if(!p||room.phase==='lobby'||room.phase==='end')return false;
   if(room.forceCasinoId&&p.casinoForce!==room.forceCasinoId)return true;
   const w=casinoWinIdx(); return w>=1&&(p.casinoDone||0)<w;
@@ -1677,7 +1796,7 @@ function newPlayer(name,bot){
 function createRoom(){
   const name=myName.trim(); if(!name){toast('enter your name first','warn');return;}
   LS.set('leak.name',name);
-  room={code:genCode(),hostId:myId,phase:'lobby',hideMin:10,totalMin:45,casinoMin:12,
+  room={code:genCode(),hostId:myId,phase:'lobby',hideMin:10,totalMin:45,casinoMin:12,gameMod:'classic',
     startedAt:0,hideEndsAt:0,gameEndsAt:0,winner:null,forceCasinoId:0,zone:CORNERS.map(c=>({lat:c.lat,lng:c.lng})),players:[],removed:[],fx:[],log:[],chat:[],seq:0};
   ui.hostSeen=Date.now(); // we are host, heartbeat present
   ui.left=false; // fresh room — accept room traffic again
@@ -1778,6 +1897,7 @@ function resetRoom(){
   ui.lastCasinoWin=0;ui.casDismissed=0;
   ui.roamOut=0;ui.roamWarned=false;ui.roamHits=0;ui.lastRoamHit=0;
   if($('ov-casino').classList.contains('open'))casClose(); /* round ended with the casino up — tear it down */
+  camStop(); if($('ov-live'))closeLive(); /* camera mod: back to the lobby — cams off until the next round */
   closeOv('ov-end');closeOv('ov-caught');
   if(ui.screamOpen)closeScream();
   closeGameSheetNow();
@@ -1909,7 +2029,10 @@ function setHideSpot(){
 function doCatch(pid){
   const tgt=room.players.find(p=>p.id===pid);
   if(!tgt||tgt.status!=='alive')return; // gone / already caught (stale strip button)
-  askConfirm('catch '+tgt.name+'?','you physically found them. they are out of the game.','caught!',true,()=>{
+  askConfirm((camMod()?'tag ':'catch ')+tgt.name+'?',
+    camMod()?'physical tag — you reached & touched them. seeing them on camera is not a catch. they are out.'
+             :'you physically found them. they are out of the game.',
+    camMod()?'tagged!':'caught!',true,()=>{
     commit(r=>{const p=r.players.find(x=>x.id===pid);if(p&&p.status==='alive'){p.status='caught';p.caughtBy=myId;
       const c=r.players.find(x=>x.id===myId);if(c){c.stats=c.stats||{catches:0,buffs:0,hiddenAt:0};c.stats.catches++;}
       logEvent(ico('search',12)+' '+escN(p.name)+' was caught by '+escN(me().name)+'!');}});
@@ -2548,8 +2671,11 @@ function renderLobby(){
   $('lobby-code').textContent=room.code;
   const isHost=room.hostId===myId;
   $('set-lock').textContent=isHost?'(you are host)':'(host decides)';
-  $('sel-hide').value=room.hideMin;$('sel-total').value=room.totalMin;$('sel-casino').value=room.casinoMin;
-  $('sel-hide').disabled=!isHost;$('sel-total').disabled=!isHost;$('sel-casino').disabled=!isHost;
+  $('sel-hide').value=room.hideMin;$('sel-total').value=room.totalMin;$('sel-casino').value=room.casinoMin;$('sel-mod').value=room.gameMod||'classic';
+  $('sel-hide').disabled=!isHost;$('sel-total').disabled=!isHost;$('sel-casino').disabled=!isHost;$('sel-mod').disabled=!isHost;
+  /* camera mod runs without a casino — grey the casino picker out while it's on */
+  $('sel-casino').parentElement.classList.toggle('off',room.gameMod==='camera');
+  if(room.gameMod==='camera')$('sel-casino').disabled=true;
   $('btn-addbot').style.display=isHost?'flex':'none';
   $('btn-start').style.display=isHost?'flex':'none';
   $('pcount').textContent='('+room.players.length+')';
@@ -2748,6 +2874,7 @@ $('btn-spot').onclick=()=>setPosMode(!ui.simMode);
 
 /* ---------------- HUD render (maps-style UI) ---------------- */
 function casinoCountTxt(m,t){
+  if(camMod())return null;
   if(casinoOpenFor(m))return {open:true,txt:'open!'};
   if(room.phase==='hide'||room.phase==='seek'){
     const openAt=room.hideEndsAt+(m.casinoDone+1)*room.casinoMin*60000;
@@ -2784,6 +2911,21 @@ function renderGame(){
   /* players chip */
   const pc=$('chip-players');const pTxt=svgI('people',13,2.1)+' '+room.players.filter(p=>!p.bot).length+(room.players.some(p=>p.bot)?'+'+room.players.filter(p=>p.bot).length:'');
   if(pc.innerHTML!==pTxt)pc.innerHTML=pTxt;
+  /* camera-mod LIVE chip: everyone's feeds are on during the round */
+  const lc=$('chip-live');
+  if(camMod()&&m.role&&m.status!=='spectate'&&(ph==='hide'||ph==='seek')){
+    lc.style.display='';
+    const humans=liveParticipants();
+    const on=humans.reduce((a,p)=>a+(p.id===myId?(LIVE.local?1:0):(LIVE.remotes.has(p.id)?1:0)),0);
+    const lt=$('liveChipT');const txt='<b>'+on+'/'+humans.length+'</b>';
+    if(lt.innerHTML!==txt)lt.innerHTML=txt;
+    const all=on>=humans.length&&humans.length>0;
+    const dot=lc.querySelector('.live-dot');if(dot)dot.classList.toggle('on',all);
+    lc.classList.toggle('all',all);
+  }else{
+    lc.style.display='none';
+    if(LIVE.open&&!(ph==='hide'||ph==='seek'))closeLive();
+  }
   /* zone chip + alerts */
   const zc=$('chip-zone');
   const outZ=!!(m.pos&&!inZone(m.pos)&&ph!=='end'&&m.status==='alive');
@@ -2828,6 +2970,7 @@ function renderGame(){
 }
 function renderHiderPeek(m,ph,t){
   const title=$('hiderTitle'),sub=$('hiderSub'),hideB=$('btnHide');
+  const cam=camMod();
   const shifting=m.shiftUntil&&t<m.shiftUntil;
   if(shifting){
     const left=m.shiftUntil-t;
@@ -2840,26 +2983,49 @@ function renderHiderPeek(m,ph,t){
     return;
   }
   if(ph==='hide'){
-    if(m.hidePos){title.textContent='Locked in.';sub.innerHTML='your spot is set — seekers released in <b>'+fmt(room.hideEndsAt-t)+'</b>. stay quiet, stay in the zone.';hideB.disabled=true;hideB.innerHTML='✓&nbsp; hidden — stay quiet';}
-    else{title.textContent='Find your spot.';sub.innerHTML='vanish inside the dashed zone — <b>'+fmt(room.hideEndsAt-t)+'</b> on the clock. move yourself on the map, then lock it in.';hideB.disabled=false;hideB.innerHTML=ico('pin',14,2.2)+'&nbsp; Hide here';}
+    if(m.hidePos){
+      if(cam){title.textContent='Locked in — for now.';sub.innerHTML='spot noted · <b>no leash in camera mod</b> — move &amp; re-lock whenever a seeker gets close. seekers release in <b>'+fmt(room.hideEndsAt-t)+'</b>.';hideB.disabled=false;hideB.innerHTML=ico('pin',14,2.2)+'&nbsp; Re-lock spot here';}
+      else{title.textContent='Locked in.';sub.innerHTML='your spot is set — seekers released in <b>'+fmt(room.hideEndsAt-t)+'</b>. stay quiet, stay in the zone.';hideB.disabled=true;hideB.innerHTML='✓&nbsp; hidden — stay quiet';}
+    }else{
+      if(cam){title.textContent='Find your spot.';sub.innerHTML='vanish inside the dashed zone — <b>'+fmt(room.hideEndsAt-t)+'</b> on the clock. lock a spot to start — then keep drifting: your live feed follows you.';hideB.disabled=false;hideB.innerHTML=ico('pin',14,2.2)+'&nbsp; Hide here';}
+      else{title.textContent='Find your spot.';sub.innerHTML='vanish inside the dashed zone — <b>'+fmt(room.hideEndsAt-t)+'</b> on the clock. move yourself on the map, then lock it in.';hideB.disabled=false;hideB.innerHTML=ico('pin',14,2.2)+'&nbsp; Hide here';}
+    }
   }else if(ph==='seek'){
-    if(m.status==='alive'){title.textContent='Survive.';sub.innerHTML='seekers are hunting · <b>'+aliveHiders().length+'</b> hider'+(aliveHiders().length===1?'':'s')+' left — survive until <b>'+fmt(room.gameEndsAt-t)+'</b>.';hideB.disabled=true;hideB.innerHTML=ico('eyeoff',14,2.2)+'&nbsp; stay hidden';}
+    if(m.status==='alive'){
+      if(cam){title.textContent='Run.';sub.innerHTML='no leash — sprint to a fresh spot the moment a seeker circles in. re-lock as you move. <b>'+aliveHiders().length+'</b> hider'+(aliveHiders().length===1?'':'s')+' left — survive until <b>'+fmt(room.gameEndsAt-t)+'</b>.';hideB.disabled=false;hideB.innerHTML=ico('pin',14,2.2)+'&nbsp; Re-lock spot here';}
+      else{title.textContent='Survive.';sub.innerHTML='seekers are hunting · <b>'+aliveHiders().length+'</b> hider'+(aliveHiders().length===1?'':'s')+' left — survive until <b>'+fmt(room.gameEndsAt-t)+'</b>.';hideB.disabled=true;hideB.innerHTML=ico('eyeoff',14,2.2)+'&nbsp; stay hidden';}
+    }
     else{title.textContent='Out.';sub.innerHTML='you are out this round — watch the map and cheer your side.';hideB.disabled=true;hideB.innerHTML='—';}
   }else{title.textContent='Round over.';sub.innerHTML='';hideB.disabled=true;hideB.innerHTML='—';}
+  const hf=$('hiderFine');
+  const txt=cam
+    ?'<b>camera mod</b> — live cam mandatory for everyone · catch = physical tag only · no spot leash: keep relocating · casino is off this round'
+    :'<b>rules</b> — nobody may leave the rectangle · breaking a rule costs a ♥ · reports are honor-based. buffs unlock through the casino.';
+  if(hf&&hf.innerHTML!==txt)hf.innerHTML=txt;
 }
 function renderSeekerPeek(m,ph,t){
   const title=$('seekTitle'),sub=$('seekSub'),findB=$('btnFind');
-  const cst=casinoCountTxt(m,t);
-  const casTxt=cst?(cst.open?'casino open — spin now':('casino in <b>'+cst.txt+'</b>')):'no more casino windows';
+  const cam=camMod();
+  const cst=cam?null:casinoCountTxt(m,t);
+  const casTxt=cam?'no casino — camera mod':(cst?(cst.open?'casino open — spin now':('casino in <b>'+cst.txt+'</b>')):'no more casino windows');
   if(ph==='hide'){
-    title.textContent='Head start.';sub.innerHTML='hiders vanish until <b>'+fmt(room.hideEndsAt-t)+'</b> — then the hunt is on.';findB.disabled=true;findB.innerHTML=ico('eyeoff',14,2.2)+'&nbsp; hiders hiding…';
+    title.textContent='Head start.';sub.innerHTML=cam
+      ?'watch the <b>LIVE</b> deck — every hider is on camera while they vanish. hunt starts in <b>'+fmt(room.hideEndsAt-t)+'</b>.'
+      :'hiders vanish until <b>'+fmt(room.hideEndsAt-t)+'</b> — then the hunt is on.';findB.disabled=true;findB.innerHTML=ico('eyeoff',14,2.2)+'&nbsp; hiders hiding…';
   }else if(ph==='seek'&&m.status==='alive'){
     title.textContent='Hunt is on.';
-    sub.innerHTML='<b>'+aliveHiders().length+'</b> hider'+(aliveHiders().length===1?'':'s')+' left · '+casTxt+'. tap a name below to catch.';
-    findB.disabled=false;findB.innerHTML=ico('search',15,2.2)+'&nbsp; find &amp; catch';
+    sub.innerHTML=cam
+      ?'<b>'+aliveHiders().length+'</b> hider'+(aliveHiders().length===1?'':'s')+' left · read their feeds, chase, then <b>tag in person</b> — camera spotting is never a catch.'
+      :'<b>'+aliveHiders().length+'</b> hider'+(aliveHiders().length===1?'':'s')+' left · '+casTxt+'. tap a name below to catch.';
+    findB.disabled=false;findB.innerHTML=cam?ico('search',15,2.2)+'&nbsp; find &amp; tag':ico('search',15,2.2)+'&nbsp; find &amp; catch';
   }else if(ph==='seek'){
     title.textContent='Out.';sub.innerHTML='you are out this round — watch the map and cheer your side.';findB.disabled=true;findB.innerHTML='—';
   }else{title.textContent='Round over.';sub.innerHTML='';findB.disabled=true;findB.innerHTML='—';}
+  const sf=$('seekerFine');
+  const txt=cam
+    ?'<b>tag</b> — only a real, physical touch catches a hider. watching them on your live deck is not a catch — walk there and tag them.'
+    :'<b>catch</b> — only when you physically find them in real life. cloaked hiders can\'t be caught.';
+  if(sf&&sf.innerHTML!==txt)sf.innerHTML=txt;
 }
 
 /* ---------------- main game sheet (maps-style panel) ---------------- */
@@ -3249,11 +3415,16 @@ function renderReveal(){
   SS.set(key,'1'); ui.seenReveal.add(key);
   const ov=$('ov-reveal');ov.className='ov open '+(m.role);
   $('reveal-word').textContent=m.role==='hider'?'you hide.':'you seek.';
-  $('reveal-sub').innerHTML=m.role==='hider'
-    ?'you have <b>'+room.hideMin+' minutes</b> to vanish inside the rectangle. set your hiding spot, stay silent, survive until the end.'
-    :'hiders get <b>'+room.hideMin+' minutes</b> of head start. then you hunt. find them in real life, tap catch. use casino buffs to flush them out.';
+  $('reveal-sub').innerHTML=camMod()
+    ?(m.role==='hider'
+      ?'<b>camera mod.</b> your camera is live to everyone, all round — hide deep, then <b>keep moving</b>: no spot leash, relocation is free. vanish for <b>'+room.hideMin+' min</b>, survive to the end. casino is off.'
+      :'<b>camera mod.</b> watch every hider\'s live feed and read their background, motion &amp; surroundings. <b>tag them in person</b> — spotting them on camera is not a catch. casino is off.')
+    :(m.role==='hider'
+      ?'you have <b>'+room.hideMin+' minutes</b> to vanish inside the rectangle. set your hiding spot, stay silent, survive until the end.'
+      :'hiders get <b>'+room.hideMin+' minutes</b> of head start. then you hunt. find them in real life, tap catch. use casino buffs to flush them out.');
   /* reset what the kicked screen may have changed (text + button behavior) */
-  const bt=$('btn-enter');bt.textContent='enter the field';bt.onclick=()=>closeOv('ov-reveal');
+  const bt=$('btn-enter');bt.textContent=camMod()?'enable camera &amp; enter':'enter the field';
+  bt.onclick=()=>{closeOv('ov-reveal');if(camMod()&&me()&&me().status!=='spectate')camEnter();};
 }
 function renderEnd(){
   if(room.phase!=='end'){closeOv('ov-end');return;}
@@ -3390,8 +3561,10 @@ function tick(){
        after a heart) costs a ♥ — escalating like the zone rule. Suppressed
        while a shift window is open (the 50 m circle is legal ground). */
     const shifting=m&&m.role==='hider'&&m.shiftUntil&&t<m.shiftUntil;
+    /* camera mod: the hide-spot leash is OFF — hiders relocate freely, so the
+       classic 10 m roam rule never applies (see the roam-follow block below) */
     if(m&&m.role==='hider'&&m.hidePos&&m.status==='alive'&&(room.phase==='hide'||room.phase==='seek')
-       &&!shifting&&!((m.freezeUntil||0)>t)){
+       &&!shifting&&!camMod()&&!((m.freezeUntil||0)>t)){
       if(distM(m.pos||m.hidePos,m.hidePos)>HIDE_ROAM_M){
         if(!ui.roamOut){ui.roamOut=t;ui.roamWarned=false;}
         if(!ui.roamWarned){ui.roamWarned=true;sWarn();vib([60,40,60]);
@@ -3403,6 +3576,16 @@ function tick(){
         }
       }else{ui.roamOut=0;ui.roamWarned=false;}
     }else{ui.roamOut=0;ui.roamWarned=false;}
+    /* camera mod roam-follow: instead of a leash, the hider's spot marker
+       drifts with them (>10 m) — their "current spot" is always fresh intel
+       for seekers and relocation never costs a heart. */
+    if(camMod()&&m&&m.role==='hider'&&m.status==='alive'&&m.pos&&(room.phase==='hide'||room.phase==='seek')&&!((m.freezeUntil||0)>t)){
+      const hadSpot=!!m.hidePos;
+      if(!hadSpot||distM(m.pos,m.hidePos)>HIDE_ROAM_M){
+        const cur={lat:m.pos.lat,lng:m.pos.lng};
+        commit(r=>{const q=r.players.find(x=>x.id===myId);if(q){q.hidePos=cur;const s=q.stats=q.stats||{catches:0,buffs:0,hiddenAt:0};if(!s.hiddenAt&&!hadSpot)s.hiddenAt=now();}});
+      }
+    }
     /* shift window last-10-seconds cue, same style as other timed buffs */
     if(shifting&&m.shiftUntil-t<=10000){const wk='shiftw:'+Math.ceil((m.shiftUntil-t)/1000);
       if(!ui.buffWarned.has(wk)){ui.buffWarned.add(wk);sNotif();vib(30);}}
@@ -3485,10 +3668,334 @@ function tick(){
     }
     renderGame();
     renderScreamPop();
+    liveTick();
     if(t-ui.lastMapUpd>1200){ui.lastMapUpd=t;updateMap();renderSheet();}
   }
   if(dirty){saveRoom();renderAll();}
 }
+
+/* ================================================================
+   camera mod — the live room
+   ================================================================
+   Rules enforced at mode level:
+     · casino is switched off — casinoOpenFor/casinoCountTxt short-circuit
+     · no hide-spot leash — hiders relocate freely (tick roam-follow block)
+   The live deck: every human player streams their phone camera to every
+   other human player over a WebRTC mesh.   Signaling (offers/answers/ICE) rides the same Supabase Realtime broadcast
+   channel as the room sync ('sig' events). ICE starts with public STUN and
+   adds a TURN relay when one is configured in connection settings, so
+   camera-mod calls also work behind strict mobile networks.
+   Compression pipeline (per spec): client-side pre-processing = capture
+   clamped to 144p / 24 fps + SDP tightened to ~16 kbps opus audio and a
+   ~200 kbps video cap — nothing bigger ever leaves the device;
+   post-processing = real-time decode straight into <video> on arrival.
+   Bots have no cameras — they render as animated SIM tiles so a solo
+   prototype still feels alive.
+=============================================================== */
+const camMod=()=>!!(room&&room.gameMod==='camera');
+const camVidIco='<svg class="i" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.6" y="6.6" width="13" height="10.8" rx="2.2"/><path d="m17 10.2 4.4-2.7v8.9L17 13.8z"/></svg>';
+const LIVE={
+  open:false,          // deck overlay visible
+  local:null,          // my MediaStream (null until granted)
+  localTried:false,    // one getUserMedia attempt per round; UI re-arms it
+  denied:false,
+  peers:new Map(),     // pid -> RTCPeerConnection (every other human)
+  remotes:new Map(),   // pid -> incoming MediaStream
+  nodes:new Map(),     // pid -> .ltile element in the grid
+  sig:'',              // last grid signature (players / roles / media)
+  retryAt:new Map(),   // pid -> ms before a failed peer may retry
+  warnT:0,
+  lastT:0
+};
+/* participants = humans in the round (spectators who joined mid-game don't count) */
+const liveParticipants=()=>room?(room.players||[]).filter(p=>!p.bot&&p.role&&p.status!=='spectate'):[];
+const liveHumans=()=>room?liveParticipants().filter(p=>p.id!==myId):[];
+const liveRound=()=>room&&(room.phase==='hide'||room.phase==='seek');
+const isCaller=pid=>myId>pid; // deterministic: the larger id opens the connection (no glare)
+function liveOut(pid,m){
+  if(!transport||!transport.signal)return;
+  try{transport.signal({from:myId,to:pid,m});}catch(e){}
+}
+/* capture: 144p · 24 fps + low-bitrate audio (client-side pre-processing) */
+async function camStart(manual){
+  if(LIVE.local||LIVE.localTried)return;
+  if(!room)return;
+  LIVE.localTried=true;
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){LIVE.denied=true;if(LIVE.open)renderLive();return;}
+  try{
+    const st=await navigator.mediaDevices.getUserMedia({
+      video:{width:{ideal:256,max:320},height:{ideal:144,max:180},frameRate:{ideal:24,max:24}},
+      audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}
+    });
+    LIVE.local=st;LIVE.denied=false;
+    st.getVideoTracks().forEach(tr=>{try{tr.contentHint='motion';}catch(e){}});
+    st.getTracks().forEach(tr=>tr.addEventListener('ended',()=>{if(LIVE.local===st)camStop();}));
+    syncPeers();
+    if(LIVE.open)renderLive();
+    toast('your camera is live for the room','good',2600);
+  }catch(err){
+    LIVE.denied=true;
+    const why=(err&&err.name==='NotAllowedError')?'permission denied':(err&&err.name==='NotFoundError')?'no camera found':'unavailable';
+    toast('camera off — '+why+(manual?'':' · tap LIVE → enable'),'warn',5000);
+    if(LIVE.open)renderLive();
+  }
+}
+function camStop(){
+  LIVE.peers.forEach(pc=>{try{pc.close();}catch(e){}});
+  LIVE.peers.clear();LIVE.remotes.clear();
+  if(LIVE.local){try{LIVE.local.getTracks().forEach(tr=>tr.stop());}catch(e){}}
+  LIVE.local=null;LIVE.localTried=false;LIVE.nodes.clear();LIVE.sig='';
+}
+/* ICE configuration: public STUN always; a TURN relay from the connection
+   settings popover when the host configured one (strict mobile NATs need it
+   to relay the camera feeds). Applies to every new peer connection. */
+function withTcpTransport(u){
+  const qi=u.indexOf('?');
+  const base=qi>=0?u.slice(0,qi):u;
+  const q=qi>=0?u.slice(qi+1):'';
+  const parts=q.split('&').filter(x=>x&&!x.startsWith('transport='));
+  parts.push('transport=tcp');
+  return base+'?'+parts.join('&');
+}
+function rtcIceServers(){
+  const list=[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302']}];
+  const t=loadTurn();
+  if(t&&t.url){
+    let u=t.url.trim();
+    if(!/^(turn|turns|stun):/i.test(u))u='turn:'+u;
+    const cred={};
+    if(t.user)cred.username=t.user;
+    if(t.pass)cred.credential=t.pass;
+    const hasAuth=!!(t.user||t.pass);
+    list.push(hasAuth?Object.assign({urls:[u]},cred):{urls:[u]});
+    /* duplicate over TCP as well — many mobile networks block UDP 3478 */
+    if(/^turn:/i.test(u))list.push(hasAuth?Object.assign({urls:[withTcpTransport(u)]},cred):{urls:[withTcpTransport(u)]});
+  }
+  return list;
+}
+/* ---- WebRTC mesh: one pc per remote human ---- */
+function peerFor(pid){
+  if(!room)return null;
+  if(LIVE.peers.has(pid))return LIVE.peers.get(pid);
+  let pc=null;
+  try{
+    pc=new RTCPeerConnection({iceServers:rtcIceServers()});
+  }catch(e){return null;}
+  LIVE.peers.set(pid,pc);
+  pc.onicecandidate=e=>{if(e.candidate)liveOut(pid,{t:'ice',c:e.candidate});};
+  pc.ontrack=e=>{
+    LIVE.remotes.set(pid,(e.streams&&e.streams[0])||new MediaStream([e.track]));
+    if(LIVE.open)renderLive();
+  };
+  pc.onconnectionstatechange=()=>{
+    const st=pc.connectionState;
+    if(st==='connected'){if(LIVE.open)renderLive();}
+    else if(st==='failed'||st==='disconnected'){
+      setTimeout(()=>{
+        if(LIVE.peers.get(pid)!==pc)return;
+        if(!room||!room.players.some(p=>p.id===pid&&!p.bot))return;
+        dropPeer(pid);
+        if(liveRound())peerFor(pid);
+      },3600);
+    }
+  };
+  pc.onnegotiationneeded=()=>{if(isCaller(pid)&&!pc._negotiating)sendOffer(pid);};
+  if(liveRound())pushLocal(pid);
+  return pc;
+}
+function dropPeer(pid){
+  const pc=LIVE.peers.get(pid);
+  if(pc){try{pc.close();}catch(e){}}
+  LIVE.peers.delete(pid);LIVE.remotes.delete(pid);
+}
+function syncPeers(){
+  if(!liveRound()||!room)return;
+  const want=liveHumans().map(p=>p.id);
+  const have=[];
+  LIVE.peers.forEach((pc,pid)=>have.push(pid));
+  want.forEach(pid=>{if(!LIVE.peers.has(pid))peerFor(pid);});
+  have.forEach(pid=>{if(!want.includes(pid))dropPeer(pid);});
+}
+function pushLocal(pid){
+  const pc=LIVE.peers.get(pid);
+  if(!pc||!LIVE.local)return;
+  const n=LIVE.local.getTracks().length;
+  if(pc._tracks>=n)return;
+  LIVE.local.getTracks().forEach(tr=>{try{pc.addTrack(tr,LIVE.local);}catch(e){}});
+  pc._tracks=n;
+  if(isCaller(pid))sendOffer(pid);
+  else if(pc._established)liveOut(pid,{t:'ren'}); // cam came up late — ask the caller to renegotiate
+}
+function sendOffer(pid){
+  const pc=LIVE.peers.get(pid);
+  if(!pc||pc._negotiating)return;
+  pc._negotiating=true;
+  pc.createOffer().then(o=>pc.setLocalDescription({type:'offer',sdp:tightenSdp(o.sdp)}))
+    .then(()=>{if(LIVE.peers.get(pid)===pc)liveOut(pid,{t:'offer',s:pc.localDescription.sdp});})
+    .catch(()=>{}).then(()=>{if(LIVE.peers.get(pid)===pc)pc._negotiating=false;});
+}
+/* SDP tightening: keep every transmitted byte small. opus fmtp gets
+   maxaveragebitrate (Chrome honours it), each media section gets a b=AS
+   cap, and Google codecs get explicit bitrate hints. */
+function tightenSdp(sdp){
+  if(!sdp)return sdp;
+  try{
+    const out=[];let sec='';
+    sdp.split('\r\n').forEach(l=>{
+      if(/^m=/.test(l)){sec=l.slice(2).split(' ')[0];out.push(l);return;}
+      if(/^a=fmtp/.test(l)){
+        if(sec==='audio'&&/opus/.test(l)&&!/maxaveragebitrate/.test(l)){
+          out.push(l.replace(/;?\s*stereo=\d/,'')+';stereo=0;maxaveragebitrate=16000;maxplaybackrate=16000');
+        }else if(sec==='video'&&/vp8|vp9|av1|h264/.test(l)&&!/x-google/.test(l)){
+          out.push(l+';x-google-max-bitrate=220;x-google-min-bitrate=60;x-google-start-bitrate=150');
+        }else out.push(l);
+        return;
+      }
+      if(/^a=mid/.test(l)){
+        out.push(l);
+        if(sec==='audio')out.push('b=AS:28');
+        else if(sec==='video')out.push('b=AS:220');
+        return;
+      }
+      out.push(l);
+    });
+    return out.join('\r\n');
+  }catch(e){return sdp;}
+}
+/* ---- inbound signaling (installed below via sigHandler) ---- */
+function recvSig(from,m){
+  if(!camMod()||!m||!from||from===myId)return;
+  if(!room)return;
+  if(!room.players.some(p=>p.id===from&&!p.bot))return;
+  const pc=peerFor(from);
+  if(!pc)return;
+  if(m.t==='offer'){
+    pc._negotiating=true;
+    pc.setRemoteDescription({type:'offer',sdp:m.s}).then(()=>pc.createAnswer())
+      .then(a=>pc.setLocalDescription({type:'answer',sdp:tightenSdp(a.sdp)}))
+      .then(()=>{if(LIVE.peers.get(from)===pc)liveOut(from,{t:'answer',s:pc.localDescription.sdp});pc._established=true;})
+      .catch(()=>{}).then(()=>{if(LIVE.peers.get(from)===pc)pc._negotiating=false;});
+  }else if(m.t==='answer'){
+    if(pc.signalingState==='have-local-offer'){
+      pc.setRemoteDescription({type:'answer',sdp:m.s}).then(()=>{pc._established=true;}).catch(()=>{});
+    }
+  }else if(m.t==='ice'){
+    try{pc.addIceCandidate(m.c);}catch(e){}
+  }else if(m.t==='ren'){
+    if(isCaller(from))sendOffer(from);
+  }
+}
+/* ---- deck UI ---- */
+const liveVidHtml=pid=>'<video autoplay playsinline'+(pid===myId?' muted':'')+'></video>';
+function liveTile(p){
+  const pid=p.id,isMe=pid===myId,isBot=!!p.bot;
+  const role=p.role||(isBot?'bot':'player');
+  const liveOn=isMe?!!LIVE.local:LIVE.remotes.has(pid);
+  let v='';
+  if(isBot){
+    v='<div class="ph sim">'+camVidIco+'<b>sim feed</b><span>test bot — no camera</span></div>';
+  }else if(liveOn){
+    v=liveVidHtml(pid);
+  }else{
+    v=isMe
+      ?'<div class="ph camoff">'+camVidIco+'<b>your cam is off</b><span>cameras are mandatory in camera mod</span><button class="camgo">enable camera</button></div>'
+      :'<div class="ph camoff">'+camVidIco+'<b>cam off</b><span>waiting for '+esc(p.name)+'&apos;s feed…</span></div>';
+  }
+  const tag=isMe?'<span class="tag you">you</span>':'<span class="tag '+(role==='hider'?'hider':role==='seeker'?'seeker':'ghost')+'">'+role+'</span>';
+  const st=isBot
+    ?'<span class="st sim">sim</span>'
+    :(liveOn?'<span class="st live">● live</span>':(isMe&&LIVE.denied?'<span class="st off">denied</span>':'<span class="st">waiting</span>'));
+  return '<div class="ltile" data-pid="'+pid+'"><div class="lvid'+(isMe?' mirror':'')+'">'+v+'</div><div class="lcap"><b>'+esc(p.name)+'</b>'+tag+st+'</div></div>';
+}
+function attachMedia(){
+  if(!LIVE.local&&!LIVE.remotes.size)return;
+  LIVE.nodes.forEach((node,pid)=>{
+    const v=node&&node.querySelector('video');
+    if(!v)return;
+    const st=pid===myId?LIVE.local:LIVE.remotes.get(pid);
+    if(st&&v.srcObject!==st){
+      try{v.srcObject=st;const p=v.play();if(p&&p.catch)p.catch(()=>{});}catch(e){}
+    }
+  });
+}
+function liveSig(){
+  if(!room)return '';
+  const parts=room.players.map(p=>p.id+':'+(p.role||'?')+':'+p.status+':'+(p.bot?1:0)).join('|');
+  return parts+'|L'+(LIVE.local?1:0)+'|D'+(LIVE.denied?1:0)+'|O'+(LIVE.open?1:0)+'|R'+[...LIVE.remotes.keys()].sort().join(',');
+}
+function renderLive(){
+  if(!room||ui.screen!=='game')return;
+  const grid=$('live-grid');
+  if(!grid)return;
+  const sig=liveSig();
+  if(sig!==LIVE.sig){
+    LIVE.sig=sig;
+    const players=room.players.slice().sort((a,b)=>(a.name||'').toLowerCase().localeCompare((b.name||'').toLowerCase()));
+    grid.innerHTML='';
+    LIVE.nodes.clear();
+    players.forEach(p=>{
+      const d=document.createElement('div');
+      d.innerHTML=liveTile(p);
+      const node=d.firstChild;
+      grid.appendChild(node);
+      LIVE.nodes.set(p.id,node);
+      const go=node.querySelector('button.camgo');
+      if(go)go.onclick=()=>{LIVE.localTried=false;camStart(true);};
+    });
+  }
+  attachMedia();
+  const humans=liveParticipants();
+  const on=humans.reduce((a,p)=>a+(p.id===myId?(LIVE.local?1:0):(LIVE.remotes.has(p.id)?1:0)),0);
+  const camsEl=$('liveCams');if(camsEl)camsEl.textContent=on+'/'+humans.length+' cams';
+  const all=on>=humans.length&&humans.length>0;
+  const dot=$('liveDot');if(dot)dot.classList.toggle('on',all);
+  const ttl=document.querySelector('#ov-live .live-ttl');if(ttl)ttl.classList.toggle('all',all);
+  const sub=$('liveSub');
+  if(sub)sub.textContent=all?'all feeds live — 144p · tag to catch · keep moving · no casino':'cameras are mandatory in camera mod — turn yours on';
+}
+function openLive(){
+  if(!camMod()||!room)return;
+  LIVE.open=true;
+  syncPeers();
+  renderLive();
+  openOv('ov-live');
+}
+function closeLive(){
+  LIVE.open=false;
+  closeOv('ov-live');
+}
+/* enter-the-field entry point for camera-mod rounds: start the cam inside
+   the tap gesture, then show the deck so everyone checks their feed */
+function camEnter(){
+  camStart();
+  setTimeout(()=>{if(camMod()&&room&&ui.screen==='game')openLive();},160);
+}
+/* called from tick while a round runs (hide/seek phases only) */
+function liveTick(){
+  if(!room||ui.screen!=='game')return;
+  if(!camMod()||!liveRound()){
+    if(LIVE.open)closeLive();
+    return;
+  }
+  const t=now();
+  if(t-LIVE.lastT<900)return;
+  LIVE.lastT=t;
+  const m=me();
+  /* one no-gesture attempt ~4 s into a reload-restored round (reveal skipped);
+     normal rounds start from the reveal tap (camEnter) */
+  if(m&&m.role&&m.status==='alive'&&!LIVE.local&&!LIVE.localTried&&!LIVE.denied
+     &&t-room.startedAt>4000&&!$('ov-reveal').classList.contains('open')){
+    LIVE.localTried=true;
+    camStart();
+  }
+  if(LIVE.open)renderLive();
+  /* gentle mandatory-cam nudge */
+  if(m&&m.role&&m.status==='alive'&&!LIVE.local&&!$('ov-reveal').classList.contains('open')&&t-(LIVE.warnT||0)>25000){
+    LIVE.warnT=t;
+    toast(ico('eye',13)+' your camera is off — camera mod requires it (LIVE → enable)','warn',4500);
+  }
+}
+sigHandler=(from,m)=>recvSig(from,m);
 
 /* ---------------- wire up ---------------- */
 $('home-name').value=myName;
@@ -3504,7 +4011,7 @@ $('chat-send').onclick=sendChat;
 $('chat-input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing)sendChat();});
 $('chatScrim').addEventListener('click',closeChat);
 $('chatSeg').addEventListener('click',e=>{const b=e.target.closest('.segbtn');if(b)setChatTab(b.dataset.ch);});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&ui.chatOpen)closeChat();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&ui.chatOpen)closeChat();if(e.key==='Escape'&&LIVE.open)closeLive();});
 /* join QR — encodes this page's URL + the room code; degrades to the URL as text */
 let qrShown='';
 function openQr(){
@@ -3533,7 +4040,7 @@ function renderRecent(){
   box.style.display=arr.length?'flex':'none';
 }
 renderRecent();
-$('btn-supa-set').onclick=()=>{if(promptSupabase()){}};
+$('btn-supa-set').onclick=openConn;
 if(!supaCfg.key)setTimeout(()=>toast('tap "set Supabase key" once to enable cross-device','warn',6000),1200);
 $('btn-leave').onclick=()=>{
   if(room){
@@ -3545,6 +4052,7 @@ $('btn-leave').onclick=()=>{
   }
   ui.left=true; // ignore our own removal broadcast + any late merges
   room=null; try{transport&&transport.close();}catch(e){} transport=null; setPeerStatus('connecting');
+  camStop(); // camera mod: drop cams + peer connections when leaving the room
   ui.seenLog=new Set(); ui.seenReveal=new Set(); ui.sheetOpen=false; ui.chatOpen=false; ui.screamOpen=false;
   closeGameSheetNow(); closeChat(); showScreen('home');};
 $('btn-copy').onclick=()=>{
@@ -3556,9 +4064,12 @@ $('btn-copy').onclick=()=>{
 };  $('sel-hide').onchange=e=>commit(r=>{r.hideMin=+e.target.value;});
   $('sel-total').onchange=e=>commit(r=>{r.totalMin=+e.target.value;});
   $('sel-casino').onchange=e=>commit(r=>{r.casinoMin=+e.target.value;});
+  $('sel-mod').onchange=e=>commit(r=>{r.gameMod=e.target.value;});
 $('btn-addbot').onclick=addBot;
 $('btn-start').onclick=()=>{ac();startGame();showScreen('game');};
 $('chip-casino').onclick=()=>{if(casinoOpenFor(me()))openCasino();else toast(ico('slot',13)+' casino not open yet — watch the chip for the countdown','silent');};
+$('chip-live').onclick=()=>LIVE.open?closeLive():openLive();
+$('live-close').onclick=()=>closeLive();
 $('btn-end-home').onclick=()=>{
   closeOv('ov-end');
   if(room){
@@ -3567,13 +4078,14 @@ $('btn-end-home').onclick=()=>{
   }
   ui.left=true; // leave the room for good (same as the lobby ← button)
   closeChat();closeGameSheetNow();
+  camStop(); // camera mod: drop cams + peer connections when leaving the room
   room=null; try{transport&&transport.close();}catch(e){} transport=null; setPeerStatus('connecting');
   showScreen('home');};
 $('btn-rematch').onclick=()=>{closeOv('ov-end');resetRoom();};
 $('btn-rematch-now').onclick=rematchNow;
 $('dev-toggle').onclick=()=>$('dev').classList.toggle('open');
 $('dev-skip').onclick=()=>{if(room&&room.phase==='hide')commit(r=>{r.hideEndsAt=Date.now();});};
-$('dev-casino').onclick=()=>{if(room)commit(r=>{r.forceCasinoId=Date.now();});};
+$('dev-casino').onclick=()=>{if(!room)return;if(camMod()){toast('casino is switched off in camera mod','warn');return;}commit(r=>{r.forceCasinoId=Date.now();});};
 /* prototype helper: feel the two-sided flow without spinning the casino.
    seeker → orders a live hider bot (watch your white popup climb).
    hider → orders yourself (feel the ring → hold-to-scream → result). */
@@ -3611,6 +4123,7 @@ function leaveToHome(){
   }
   ui.left=true; ui.sheetOpen=false; ui.chatOpen=false; ui.screamOpen=false; ui.kicked=false;
   closeGameSheetNow(); closeChat();
+  camStop(); // camera mod: drop cams + peer connections when leaving the room
   room=null; try{transport&&transport.close();}catch(e){} transport=null; setPeerStatus('connecting');
   ui.seenLog=new Set(); ui.seenReveal=new Set(); ui.seenCaught=new Set();
   showScreen('home');
@@ -3656,7 +4169,7 @@ $('btnHide').onclick=()=>{
     vib(40);toast('locked ✓ new spot set — the 10 m circle is back','good');
     return;
   }
-  if(room.phase!=='hide'){toast('the hiding window is over','warn');return;}
+  if(room.phase!=='hide'&&!camMod()){toast('the hiding window is over','warn');return;}
   setHideSpot();
 };
 $('btnFind').onclick=()=>{const m=me();if(!m||m.role!=='seeker'){toast('only seekers hunt','warn');return;}openSheet();requestAnimationFrame(()=>{const b=$('seekerBody');if(b)b.scrollTop=0;});};
