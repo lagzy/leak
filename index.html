@@ -2614,9 +2614,11 @@ function openOv(id){const el=$(id); el.classList.add('open');
 function closeOv(id){const el=$(id); el.classList.remove('open');
   el.removeAttribute('role'); el.removeAttribute('aria-modal');}
 document.querySelectorAll('.ov').forEach(ov=>{
-  if(ov.id==='ov-reveal'||ov.id==='ov-scream'||ov.id==='ov-end')return;
+  if(ov.id==='ov-reveal'||ov.id==='ov-scream'||ov.id==='ov-end'||ov.id==='ov-live')return; // ov-live owns its state via closeLive
   ov.addEventListener('click',e=>{if(e.target===ov&&ov.id!=='ov-casino'&&ov.id!=='ov-confirm')closeOv(ov.id);});
 });
+const ovLiveEl=$('ov-live');
+if(ovLiveEl)ovLiveEl.addEventListener('click',e=>{if(e.target===ovLiveEl)closeLive();}); // backdrop close keeps LIVE.open in sync
 $('btn-how').onclick=()=>openOv('ov-how');
 $('btn-how-close').onclick=()=>closeOv('ov-how');
 $('btn-enter').onclick=()=>{closeOv('ov-reveal');};
@@ -4041,7 +4043,7 @@ function liveSig(){
   const parts=room.players.map(p=>p.id+':'+(p.role||'?')+':'+p.status+':'+(p.bot?1:0)).join('|');
   return parts+'|L'+(LIVE.local?1:0)+'|D'+(LIVE.denied?1:0)+'|O'+(LIVE.open?1:0)
     +'|R'+[...LIVE.remotes.keys()].sort().join(',')
-    +'|S'+[...LIVE._st.entries()].map(e=>e[0]+':'+e[1]).join(',');
+    +'|S'+Object.keys(LIVE._st).map(k=>k+':'+LIVE._st[k]).join(',');
 }
 function renderLive(){
   if(!room||ui.screen!=='game')return;
